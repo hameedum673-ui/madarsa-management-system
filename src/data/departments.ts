@@ -1,0 +1,86 @@
+import type { DepartmentGroup, Department, StatCard } from "@/lib/types";
+
+/**
+ * شعبہ جات اور اعدادوشمار کی تعریفیں — یہ وہی منظور شدہ مواد ہے جو مرحلہ 1 کی
+ * سادہ HTML فائل میں تھا۔ کوئی نیا شعبہ شامل نہیں کیا گیا، کوئی نام نہیں بدلا گیا۔
+ * ڈیٹا کو کوڈ سے الگ رکھا گیا ہے تاکہ مستقبل میں ہر شعبے پر الگ کام کیا جا سکے۔
+ */
+
+export const GROUPS: DepartmentGroup[] = [
+  {
+    id: "edu",
+    title: "تعلیمی شعبہ",
+    icon: "gradCap",
+    layout: "c5",
+    modules: [
+      { id: "students", label: "طلبہ کا ریکارڈ", icon: "users", desc: "تمام طلبہ کی مکمل تفصیلات، رجسٹریشن نمبر اور سابقہ ریکارڈ یہاں محفوظ ہوگا۔" },
+      { id: "admissions", label: "نئے داخلے", icon: "userPlus", desc: "نئے طلبہ کے داخلے، داخلہ فارم اور اندراج کا مکمل نظام یہاں ہوگا۔" },
+      { id: "idcards", label: "طلبہ کے شناختی کارڈ", icon: "idCard", desc: "طلبہ کے شناختی کارڈ کی تیاری اور پرنٹ کی سہولت یہاں فراہم کی جائے گی۔" },
+      { id: "teachers", label: "اساتذہ کا ریکارڈ", icon: "teacher", desc: "اساتذہ کی تفصیلات، تقرری اور تدریسی ذمہ داریوں کا ریکارڈ یہاں ہوگا۔" },
+      { id: "staff", label: "عملے کا ریکارڈ", icon: "staff", desc: "غیر تدریسی عملے کی تفصیلات اور ذمہ داریوں کا ریکارڈ یہاں ہوگا۔" },
+      { id: "classes", label: "درجات اور جماعتیں", icon: "classes", desc: "درجات، جماعتوں اور شعبہ جات (حفظ، ناظرہ، درسِ نظامی) کی ترتیب یہاں ہوگی۔" },
+      { id: "att-students", label: "طلبہ کی حاضری", icon: "checkCal", desc: "طلبہ کی روزانہ حاضری اور حاضری رپورٹس کا نظام یہاں تیار ہوگا۔" },
+      { id: "att-teachers", label: "اساتذہ کی حاضری", icon: "clockCheck", desc: "اساتذہ کی حاضری اور تدریسی اوقات کا ریکارڈ یہاں ہوگا۔" },
+      { id: "academic", label: "تعلیمی ریکارڈ", icon: "book", desc: "اسباق کی پیش رفت اور تعلیمی کارکردگی کا ریکارڈ یہاں محفوظ ہوگا۔" },
+      { id: "exams", label: "امتحانات اور نتائج", icon: "award", desc: "امتحانات، نمبرات، درجات اور پوزیشنوں کا مکمل نظام یہاں ہوگا۔" },
+    ],
+  },
+  {
+    id: "fin",
+    title: "مالیاتی شعبہ",
+    icon: "coins",
+    layout: "c5",
+    modules: [
+      { id: "income", label: "آمدنی کا ریکارڈ", icon: "income", desc: "مدرسے کی تمام آمدنی اور رسیدوں کا ریکارڈ یہاں محفوظ ہوگا۔" },
+      { id: "expenses", label: "اخراجات کا ریکارڈ", icon: "expense", desc: "تمام اخراجات کی تفصیل اور واؤچرز کا ریکارڈ یہاں ہوگا۔" },
+      { id: "monthly", label: "ماہانہ حسابات", icon: "monthCalc", desc: "ہر مہینے کی آمدنی و اخراجات کا خلاصہ اور بندش یہاں دیکھی جا سکے گی۔" },
+      { id: "yearly", label: "سالانہ حسابات", icon: "yearChart", desc: "سال بھر کے مالی حسابات اور سالانہ خلاصہ یہاں تیار ہوگا۔" },
+      { id: "zakat", label: "زکوٰۃ", icon: "zakat", desc: "زکوٰۃ کی وصولی اور مستحقین تک تقسیم کا الگ ریکارڈ یہاں ہوگا۔" },
+      { id: "donations", label: "صدقات اور عطیات", icon: "gift", desc: "صدقات، عطیات اور عطیہ دہندگان کا ریکارڈ یہاں محفوظ ہوگا۔" },
+      { id: "welfare", label: "وظائف اور مالی معاونت", icon: "support", desc: "مستحق طلبہ کے وظائف اور مالی معاونت کا ریکارڈ یہاں ہوگا۔" },
+      { id: "student-exp", label: "طلبہ کے اخراجات", icon: "studentExpense", desc: "فی طالبہ اخراجات اور ان کی تفصیل کا حساب یہاں ہوگا۔" },
+      { id: "fin-reports", label: "مالیاتی رپورٹس", icon: "report", desc: "آمدنی، اخراجات اور بیلنس کی مکمل مالیاتی رپورٹس یہاں تیار ہوں گی۔" },
+    ],
+  },
+  {
+    id: "admin",
+    title: "انتظامی شعبہ",
+    icon: "building",
+    layout: "c3",
+    modules: [
+      { id: "general", label: "مدرسے کا عمومی ریکارڈ", icon: "general", desc: "مدرسے کی بنیادی معلومات اور عمومی دفتری ریکارڈ یہاں ہوگا۔" },
+      { id: "users", label: "صارفین اور اکاؤنٹس", icon: "users", desc: "نظام استعمال کرنے والے تمام صارفین کے اکاؤنٹس کا انتظام یہاں ہوگا۔" },
+      { id: "permissions", label: "اختیارات اور اجازتیں", icon: "shield", desc: "ہر صارف کے اختیارات اور شعبہ جات تک رسائی کی اجازتیں یہاں مقرر ہوں گی۔" },
+      { id: "notices", label: "اطلاعات اور اعلانات", icon: "bell", desc: "مدرسے کی اطلاعات، اعلانات اور تعطیلات کا ریکارڈ یہاں ہوگا۔" },
+      { id: "documents", label: "دستاویزات", icon: "folder", desc: "سرکاری دستاویزات اور فائلوں کا محفوظ ریکارڈ یہاں ہوگا۔" },
+      { id: "reports", label: "رپورٹس", icon: "report", desc: "مختلف شعبوں کی مجموعی رپورٹس یہاں تیار اور پرنٹ کی جا سکیں گی۔" },
+    ],
+  },
+  {
+    id: "other",
+    title: "دیگر سہولیات",
+    icon: "settings",
+    layout: "c1",
+    modules: [
+      { id: "backup", label: "بیک اپ", icon: "backup", desc: "تمام ڈیٹا کا محفوظ بیک اپ اور بحالی کی سہولت یہاں ہوگی۔" },
+      { id: "settings", label: "نظام کی ترتیبات", icon: "settings", desc: "مدرسے کا نام، لوگو اور نظام کی عمومی ترتیبات یہاں بدلی جا سکیں گی۔" },
+    ],
+  },
+];
+
+/** تمام 27 شعبے — ہر شعبے کا اپنا الگ صفحہ اسی فہرست سے بنتا ہے۔ */
+export const ALL_DEPARTMENTS: Department[] = GROUPS.flatMap((g) =>
+  g.modules.map((m) => ({ ...m, group: g.title })),
+);
+
+export const DEPARTMENT_BY_ID: Record<string, Department> = Object.fromEntries(
+  ALL_DEPARTMENTS.map((m) => [m.id, m]),
+);
+
+/** ڈیش بورڈ کے چار اعدادوشمار — ابھی خالی حالت (صفر)، کوئی فرضی ڈیٹا نہیں۔ */
+export const STATS: StatCard[] = [
+  { label: "کل طلبہ", icon: "users", note: "ریکارڈ ابھی خالی ہے" },
+  { label: "کل اساتذہ", icon: "teacher", note: "ریکارڈ ابھی خالی ہے" },
+  { label: "آج کی حاضری", icon: "checkCal", note: "حاضری ابھی درج نہیں" },
+  { label: "موجودہ مالی بیلنس", icon: "wallet", note: "حساب ابھی خالی ہے" },
+];
