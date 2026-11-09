@@ -1,8 +1,10 @@
 /**
- * مرحلہ 3 — سیشن تازہ رکھنے کا middleware مددگار
- * ہر درخواست پر Supabase سیشن چیک/تازہ ہوتا ہے تاکہ لاگ اِن قائم رہے۔
- * نوٹ: اس مرحلے میں کوئی صفحہ لاگ اِن کے پیچھے بند نہیں کیا گیا —
- * ڈیش بورڈ سب کو نظر آتا رہے یا صرف لاگ اِن والوں کو، یہ فیصلہ صارف کرے گا۔
+ * مرحلہ 4 — سیشن تازہ رکھنے کا middleware مددگار + لاگ اِن کی حفاظت (gating)
+ * صارف کا فیصلہ: ڈیش بورڈ صرف لاگ اِن والوں کو نظر آئے۔
+ * - لاگ اِن نہیں ہے اور صفحہ ‎/login نہیں ہے → ‎/login پر بھیج دیا جاتا ہے۔
+ * - لاگ اِن ہے اور صفحہ ‎/login ہے → مین ڈیش بورڈ ‎/ پر بھیج دیا جاتا ہے۔
+ * نوٹ: اگر Supabase کی ترتیبات نہ ہوں تو حفاظت چھوڑ دی جاتی ہے تاکہ
+ * سائٹ خراب نہ ہو (مرحلہ 3 والا حفاظتی اصول برقرار ہے)۔
  */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
@@ -45,7 +47,26 @@ export async function updateSession(request: NextRequest) {
   );
 
   // سیشن تازہ کرنا — اہم: getUser() ضرور چلائیں، صرف getSession() کافی نہیں۔
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+  const isLoginPage = pathname === "/login";
+
+  // لاگ اِن نہیں ہے → لاگ اِن صفحے کے سوا ہر صفحہ بند ہے
+  if (!user && !isLoginPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // لاگ اِن ہے اور لاگ اِن صفحے پر ہے → سیدھا ڈیش بورڈ پر
+  if (user && isLoginPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }

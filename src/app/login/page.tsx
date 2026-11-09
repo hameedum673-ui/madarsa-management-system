@@ -6,7 +6,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -84,10 +83,6 @@ export default function LoginPage() {
             {loading ? "براہِ کرم انتظار کریں…" : "لاگ اِن کریں"}
           </button>
         </form>
-
-        <Link className="login-back" href="/">
-          ← واپس مین ڈیش بورڈ
-        </Link>
       </div>
     </main>
   );

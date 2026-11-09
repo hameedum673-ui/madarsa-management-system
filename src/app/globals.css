@@ -255,3 +255,42 @@
 .login-btn{width:100%;margin-top:18px;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:1rem;cursor:pointer}
 .login-btn:disabled{opacity:.6;cursor:wait}
 .login-back{display:inline-block;margin-top:16px;color:var(--navy);font-size:.9rem;text-decoration:none}
+
+/* Stage 4 addition: students module + gated dashboard — same navy/white/gold palette. */
+.page-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;margin-top:14px}
+.page-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.page-head h2{font-family:"Noto Nastaliq Urdu",serif;font-size:1.25rem;margin:0;color:var(--navy-ink);line-height:1.9}
+.page-count{color:var(--muted);font-size:.9rem}
+.page-head .spacer{flex:1}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:.95rem;font-weight:600;text-decoration:none}
+.btn-primary:hover{background:var(--navy-deep)}
+.btn-primary:disabled{opacity:.6;cursor:wait}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 18px;font-size:.95rem;font-weight:600;text-decoration:none}
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
+.tbl th,.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl th{color:var(--muted);font-size:.82rem}
+.tbl tbody tr:hover td{background:var(--surface-2)}
+.tbl a{color:var(--navy);font-weight:700;text-decoration:none}
+.badge{display:inline-block;padding:2px 12px;border-radius:999px;font-size:.78rem;font-weight:700;background:#e6f2e6;color:#1e5c2a}
+.badge-withdrawn{background:#fdecea;color:#8a1f16}
+.empty-state{text-align:center;color:var(--muted);padding:26px 10px;font-size:.95rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.field{display:block;margin:12px 0 0}
+.field-label{display:block;font-size:.9rem;color:var(--text);margin-bottom:6px}
+.field-input{width:100%;box-sizing:border-box;padding:11px 12px;font-size:1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--text);font-family:inherit}
+.field-input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.field-textarea{min-height:84px;resize:vertical}
+.form-error{background:#fdecea;color:#8a1f16;border:1px solid #f5c2bb;border-radius:10px;padding:10px 12px;font-size:.88rem;margin:14px 0 0}
+.form-note{color:var(--muted);font-size:.85rem;margin:14px 0 0}
+.form-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.form-section-title{font-size:1.05rem;color:var(--navy-ink);margin:22px 0 0}
+.detail-rows{max-width:640px;margin:6px 0 0;text-align:right}
+.detail-rows .row{display:flex;justify-content:space-between;gap:12px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:.93rem}
+.detail-rows .row span:first-child{color:var(--muted)}
+.detail-rows .row span:last-child{font-weight:700}
+@media (max-width:640px){
+  .page-card{padding:14px}
+  .form-grid{grid-template-columns:1fr}
+  .page-head h2{font-size:1.05rem}
+}

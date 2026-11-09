@@ -1,6 +1,6 @@
 /**
- * مرحلہ 3 — Next.js middleware: ہر درخواست پر Supabase سیشن تازہ رکھتا ہے۔
- * اس مرحلے میں یہ کسی صفحے کو بند نہیں کرتا (کوئی redirect نہیں)۔
+ * مرحلہ 4 — Next.js middleware: ہر درخواست پر Supabase سیشن تازہ رکھتا ہے
+ * اور لاگ اِن کی حفاظت کرتا ہے — ڈیش بورڈ صرف لاگ اِن والوں کو نظر آتا ہے۔
  */
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
