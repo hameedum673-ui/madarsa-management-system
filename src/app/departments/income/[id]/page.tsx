@@ -87,47 +87,47 @@ export default async function ReceiptPage({
         </div>
 
         <div className="detail-rows">
-          <div>
+          <div className="row">
             <span>رسید نمبر</span>
-            <strong>{payment.receipt_number}</strong>
+            <span>{payment.receipt_number}</span>
           </div>
-          <div>
+          <div className="row">
             <span>طالبہ</span>
-            <strong>{payment.students?.name ?? "—"}</strong>
+            <span>{payment.students?.name ?? "—"}</span>
           </div>
-          <div>
+          <div className="row">
             <span>والد کا نام</span>
-            <strong>{payment.students?.father_name ?? "—"}</strong>
+            <span>{payment.students?.father_name ?? "—"}</span>
           </div>
-          <div>
+          <div className="row">
             <span>رجسٹریشن نمبر</span>
-            <strong>{payment.students?.registration_number ?? "—"}</strong>
+            <span>{payment.students?.registration_number ?? "—"}</span>
           </div>
-          <div>
+          <div className="row">
             <span>مہینہ</span>
-            <strong>{formatMonthUrdu(payment.fee_month)}</strong>
+            <span>{formatMonthUrdu(payment.fee_month)}</span>
           </div>
-          <div>
+          <div className="row">
             <span>رقم</span>
-            <strong>{payment.amount.toLocaleString("ur-PK")} روپے</strong>
+            <span>{payment.amount.toLocaleString("ur-PK")} روپے</span>
           </div>
-          <div>
+          <div className="row">
             <span>ادائیگی کی تاریخ</span>
-            <strong>{formatDate(payment.payment_date)}</strong>
+            <span>{formatDate(payment.payment_date)}</span>
           </div>
-          <div>
+          <div className="row">
             <span>ادائیگی کا طریقہ</span>
-            <strong>{PAYMENT_METHOD_LABELS[payment.payment_method]}</strong>
+            <span>{PAYMENT_METHOD_LABELS[payment.payment_method]}</span>
           </div>
           {payment.note ? (
-            <div>
+            <div className="row">
               <span>نوٹ</span>
-              <strong>{payment.note}</strong>
+              <span>{payment.note}</span>
             </div>
           ) : null}
-          <div>
+          <div className="row">
             <span>حالت</span>
-            <strong>{FEE_PAYMENT_STATUS_LABELS[payment.status]}</strong>
+            <span>{FEE_PAYMENT_STATUS_LABELS[payment.status]}</span>
           </div>
         </div>
 

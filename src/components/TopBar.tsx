@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BELL_SVG, LOGO_SVG } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
+import { hijriTodayUrdu } from "@/lib/hijri";
 
 /**
  * اوپر کی سرخی (TopBar) — منظور شدہ ڈیزائن جوں کا توں:
@@ -39,13 +40,7 @@ export default function TopBar() {
           year: "numeric",
         }).format(now),
       );
-      setHijri(
-        new Intl.DateTimeFormat("ur-PK-u-ca-islamic", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(now),
-      );
+      setHijri(hijriTodayUrdu(now));
     } catch {
       /* تاریخ دستیاب نہ ہو تو جگہ خالی رہتی ہے، جیسے اصل فائل میں تھا */
     }
