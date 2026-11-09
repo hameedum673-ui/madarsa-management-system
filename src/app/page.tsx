@@ -55,6 +55,24 @@ export default async function DashboardPage() {
     attendanceToday = null;
   }
 
+  // مرحلہ 8 — مالی بیلنس: فعال فیس رسیدوں کی کل رقم۔
+  // ابھی خرچ کا کوئی حصہ نہیں ہے، اس لیے بیلنس = وصول شدہ فیس؛
+  // اخراجات کا مرحلہ آنے پر بیلنس خود بخود فیس − خرچ ہو جائے گا۔
+  let balance: { value: number; hasPayments: boolean } | null = null;
+  try {
+    const { data: payments } = await supabase
+      .from("fee_payments")
+      .select("amount")
+      .eq("status", "active");
+    const rows = (payments ?? []) as { amount: number }[];
+    balance = {
+      value: rows.reduce((sum, p) => sum + (p.amount ?? 0), 0),
+      hasPayments: rows.length > 0,
+    };
+  } catch {
+    balance = null;
+  }
+
   return (
     <>
       <TopBar />
@@ -62,6 +80,7 @@ export default async function DashboardPage() {
         studentsCount={totalStudents}
         teachersCount={totalTeachers}
         attendanceToday={attendanceToday}
+        balance={balance}
       />
       <DepartmentGroups />
       <footer className="foot">

@@ -8,14 +8,16 @@ import { ALL_DEPARTMENTS, DEPARTMENT_BY_ID } from "@/data/departments";
  * تمام 27 صفحے build کے وقت تیار ہوتے ہیں۔
  */
 export function generateStaticParams() {
-  // 'students'، 'teachers'، 'att-students' اور 'att-teachers' کے اپنے اصل صفحے ہیں —
-  // اس لیے یہاں سے خارج ہیں، ورنہ build میں دو صفحے ایک ہی پتے پر بنتے۔
+  // 'students'، 'teachers'، 'att-students'، 'att-teachers' اور 'income' کے اپنے
+  // اصل صفحے ہیں — اس لیے یہاں سے خارج ہیں، ورنہ build میں دو صفحے ایک ہی
+  // پتے پر بنتے۔
   return ALL_DEPARTMENTS.filter(
     (m) =>
       m.id !== "students" &&
       m.id !== "teachers" &&
       m.id !== "att-students" &&
-      m.id !== "att-teachers",
+      m.id !== "att-teachers" &&
+      m.id !== "income",
   ).map((m) => ({
     slug: m.id,
   }));

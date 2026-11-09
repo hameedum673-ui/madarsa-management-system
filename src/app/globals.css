@@ -315,3 +315,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .att-btn.sel-leave{background:var(--gold);color:#231a02;border-color:var(--gold)}
 .att-btn.sel-late{background:#b25e09;color:#fff;border-color:#b25e09}
 .att-success{background:#e6f2e6;color:#1e5c2a;border:1px solid #bcd8bc;border-radius:10px;padding:10px 12px;font-size:.9rem;margin:12px 0 0}
+
+/* مرحلہ 8 — فیس اور رسیدیں */
+.receipt-head{text-align:center;padding:6px 0 14px;border-bottom:2px solid var(--gold);margin-bottom:6px}
+.receipt-head strong{font-size:1.15rem;color:var(--navy)}
+.badge-muted{background:#eee;color:#555}
+.sub{font-size:.82rem;color:#666}
+.spacer{flex:1}
+@media print{
+  .topbar,.foot,.no-print,.back-btn{display:none!important}
+  body{background:#fff}
+  .module-view{padding:0}
+  .page-card{box-shadow:none;border:1px solid #999}
+}

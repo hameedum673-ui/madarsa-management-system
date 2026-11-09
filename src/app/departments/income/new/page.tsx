@@ -1,0 +1,49 @@
+/**
+ * مرحلہ 8 — نئی فیس درج کرنے کا صفحہ (سرور صفحہ)
+ * صرف فعال طالبات فارم میں آتی ہیں۔
+ * میز ابھی نہ بنی ہو (migration 006 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
+ */
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import FeeForm, { type FeeStudent } from "@/app/departments/income/FeeForm";
+
+export default async function NewFeePage() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("students")
+    .select("id, name, father_name, registration_number, class_name")
+    .eq("status", "active")
+    .order("name", { ascending: true });
+
+  const tableMissing =
+    (error as { code?: string } | null)?.code === "42P01";
+  const students = (data ?? []) as FeeStudent[];
+
+  return (
+    <div className="module-view open">
+      <div className="page-card">
+        <div className="page-head">
+          <h2>نئی فیس درج کریں</h2>
+        </div>
+
+        {tableMissing ? (
+          <p className="empty-state">
+            فیس کی میز ابھی نہیں بنی — پہلے مرحلہ 8 کی SQL چلائیں۔
+          </p>
+        ) : error ? (
+          <p className="empty-state">فارم نہیں کھل سکا — دوبارہ کوشش کریں۔</p>
+        ) : students.length === 0 ? (
+          <p className="empty-state">
+            کوئی فعال طالبہ نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالبہ شامل کریں۔
+          </p>
+        ) : (
+          <FeeForm students={students} />
+        )}
+
+        <Link className="back-btn" href="/departments/income">
+          واپس آمدنی کا ریکارڈ
+        </Link>
+      </div>
+    </div>
+  );
+}

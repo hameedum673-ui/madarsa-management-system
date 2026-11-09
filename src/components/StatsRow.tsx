@@ -11,10 +11,12 @@ export default function StatsRow({
   studentsCount = 0,
   teachersCount = 0,
   attendanceToday = null,
+  balance = null,
 }: {
   studentsCount?: number;
   teachersCount?: number;
   attendanceToday?: { present: number; total: number; marked: number } | null;
+  balance?: { value: number; hasPayments: boolean } | null;
 }) {
   const zero = (0).toLocaleString("ur-PK");
   return (
@@ -23,15 +25,19 @@ export default function StatsRow({
         const isStudents = index === 0;
         const isTeachers = index === 1;
         const isAttendance = index === 2;
+        const isBalance = index === 3;
         const attendanceMarked =
           isAttendance && attendanceToday && attendanceToday.marked > 0;
+        const balanceShown = isBalance && balance && balance.hasPayments;
         const value = isStudents
           ? studentsCount.toLocaleString("ur-PK")
           : isTeachers
             ? teachersCount.toLocaleString("ur-PK")
             : isAttendance && attendanceMarked
               ? attendanceToday.present.toLocaleString("ur-PK")
-              : zero;
+              : balanceShown
+                ? balance.value.toLocaleString("ur-PK")
+                : zero;
         const note =
           isStudents && studentsCount > 0
             ? "فعال طالبات"
@@ -39,7 +45,9 @@ export default function StatsRow({
               ? "فعال اساتذہ"
               : isAttendance && attendanceMarked
                 ? `آج ${attendanceToday.total.toLocaleString("ur-PK")} میں سے ${attendanceToday.present.toLocaleString("ur-PK")} حاضر`
-                : s.note;
+                : balanceShown
+                  ? "کل وصول شدہ فیس"
+                  : s.note;
         return (
           <div className="stat" key={s.label}>
             <div className="sic">
