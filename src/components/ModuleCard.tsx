@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { BACK_ARROW_SVG, Icon } from "@/components/icons";
+import BackButton from "@/components/BackButton";
+import { Icon } from "@/components/icons";
 import type { Department } from "@/lib/types";
 
 /**
@@ -16,6 +16,9 @@ export default function ModuleCard({
   return (
     <div className="module-view open">
       <div className="mod-card">
+        <div className="back-arrow-row">
+          <BackButton />
+        </div>
         <div className="m-ic">
           <Icon name={department.icon} />
         </div>
@@ -26,10 +29,6 @@ export default function ModuleCard({
         <div>
           <span className="m-state">یہ شعبہ زیرِ تعمیر ہے — اگلے مرحلے میں مکمل تیار کیا جائے گا</span>
         </div>
-        <Link className="back-btn" href="/">
-          <span dangerouslySetInnerHTML={{ __html: BACK_ARROW_SVG }} />
-          واپس مین ڈیش بورڈ
-        </Link>
       </div>
     </div>
   );

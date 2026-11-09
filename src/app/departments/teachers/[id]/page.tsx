@@ -2,7 +2,7 @@
  * مرحلہ 5 — استاد کی تفصیل اور تبدیلی کا صفحہ
  * RLS یقین دلاتی ہے کہ صرف اپنے مدرسے کا استاد کھل سکتا ہے۔
  */
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DEPARTMENT_LABELS, STUDENT_STATUS_LABELS } from "@/lib/students";
@@ -38,6 +38,7 @@ export default async function TeacherDetailPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
+          <BackButton href="/departments/teachers" />
           <h2>{teacher.name}</h2>
           <span
             className={`badge${teacher.status === "withdrawn" ? " badge-withdrawn" : ""}`}
@@ -90,9 +91,6 @@ export default async function TeacherDetailPage({
           showStatus
         />
 
-        <Link className="back-btn" href="/departments/teachers">
-          واپس اساتذہ کی فہرست
-        </Link>
       </div>
     </div>
   );

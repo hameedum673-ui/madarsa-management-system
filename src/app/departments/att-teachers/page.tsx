@@ -3,7 +3,7 @@
  * صرف اپنے مدرسے کے فعال اساتذہ نظر آتے ہیں — RLS پالیسی یہ یقین دلاتی ہے۔
  * میز ابھی نہ بنی ہو (migration 005 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import {
   isValidPastOrTodayDate,
@@ -71,6 +71,7 @@ export default async function TeacherAttendancePage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
+          <BackButton />
           <h2>اساتذہ کی حاضری</h2>
           <span className="page-count">{formatDate(date)}</span>
         </div>
@@ -90,9 +91,6 @@ export default async function TeacherAttendancePage({
           />
         )}
 
-        <Link className="back-btn" href="/">
-          واپس مین ڈیش بورڈ
-        </Link>
       </div>
     </div>
   );

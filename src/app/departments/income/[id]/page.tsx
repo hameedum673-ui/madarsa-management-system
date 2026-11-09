@@ -4,7 +4,7 @@
  * پرنٹ بٹن سے صرف رسید چھپتی ہے — اوپر کا مینیو اور بٹن نہیں۔
  * میز ابھی نہ بنی ہو (migration 006 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
@@ -41,12 +41,12 @@ export default async function ReceiptPage({
     return (
       <div className="module-view open">
         <div className="page-card">
+          <div className="back-arrow-row">
+            <BackButton />
+          </div>
           <p className="empty-state">
             فیس کی میز ابھی نہیں بنی — پہلے مرحلہ 8 کی SQL چلائیں۔
           </p>
-          <Link className="back-btn" href="/">
-            واپس مین ڈیش بورڈ
-          </Link>
         </div>
       </div>
     );
@@ -77,6 +77,7 @@ export default async function ReceiptPage({
     <div className="module-view open">
       <div className="page-card receipt">
         <div className="page-head">
+          <BackButton href="/departments/income" className="no-print" />
           <h2>فیس کی رسید</h2>
           <span className="page-count">{payment.receipt_number}</span>
         </div>
@@ -135,10 +136,6 @@ export default async function ReceiptPage({
           <PrintButton />
           {payment.status === "active" ? <VoidButton id={payment.id} /> : null}
         </div>
-
-        <Link className="back-btn no-print" href="/departments/income">
-          واپس آمدنی کا ریکارڈ
-        </Link>
       </div>
     </div>
   );

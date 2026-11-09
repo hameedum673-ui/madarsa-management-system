@@ -1,7 +1,7 @@
 /**
  * مرحلہ 5 — نیا استاد شامل کرنے کا صفحہ
  */
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import TeacherForm from "@/app/departments/teachers/TeacherForm";
 import { addTeacher } from "@/app/departments/teachers/actions";
 
@@ -10,6 +10,7 @@ export default function NewTeacherPage() {
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
+          <BackButton href="/departments/teachers" />
           <h2>نیا استاد شامل کریں</h2>
         </div>
         <TeacherForm
@@ -17,9 +18,6 @@ export default function NewTeacherPage() {
           submitLabel="محفوظ کریں"
           cancelHref="/departments/teachers"
         />
-        <Link className="back-btn" href="/departments/teachers">
-          واپس اساتذہ کی فہرست
-        </Link>
       </div>
     </div>
   );

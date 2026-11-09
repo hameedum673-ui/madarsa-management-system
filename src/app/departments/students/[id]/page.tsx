@@ -2,7 +2,7 @@
  * مرحلہ 4 — طالبہ کی تفصیل اور تبدیلی کا صفحہ
  * RLS یقین دلاتی ہے کہ صرف اپنے مدرسے کی طالبہ کھل سکتی ہے۔
  */
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -41,6 +41,7 @@ export default async function StudentDetailPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
+          <BackButton href="/departments/students" />
           <h2>
             {student.name} — {student.registration_number}
           </h2>
@@ -99,9 +100,6 @@ export default async function StudentDetailPage({
           showStatus
         />
 
-        <Link className="back-btn" href="/departments/students">
-          واپس طلبہ کی فہرست
-        </Link>
       </div>
     </div>
   );

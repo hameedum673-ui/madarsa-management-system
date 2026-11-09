@@ -3,7 +3,7 @@
  * صرف فعال طالبات فارم میں آتی ہیں۔
  * میز ابھی نہ بنی ہو (migration 006 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import FeeForm, { type FeeStudent } from "@/app/departments/income/FeeForm";
 
@@ -23,6 +23,7 @@ export default async function NewFeePage() {
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
+          <BackButton href="/departments/income" />
           <h2>نئی فیس درج کریں</h2>
         </div>
 
@@ -40,9 +41,6 @@ export default async function NewFeePage() {
           <FeeForm students={students} />
         )}
 
-        <Link className="back-btn" href="/departments/income">
-          واپس آمدنی کا ریکارڈ
-        </Link>
       </div>
     </div>
   );

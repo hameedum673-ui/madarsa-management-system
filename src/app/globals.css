@@ -328,3 +328,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
   .module-view{padding:0}
   .page-card{box-shadow:none;border:1px solid #999}
 }
+
+/* واپس جانے کا تیر — صفحے کے اوپر کونے میں (دوست کی تجویز، 9 نومبر 2026) */
+.back-arrow{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:2px solid var(--gold);color:var(--navy);background:#fff;text-decoration:none}
+.back-arrow svg{width:22px;height:22px;stroke:currentColor}
+.back-arrow:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.back-arrow-row{display:flex;justify-content:flex-start;margin-bottom:8px}

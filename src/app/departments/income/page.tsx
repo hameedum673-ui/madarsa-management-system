@@ -5,6 +5,7 @@
  * کل رقم صرف فعال رسیدوں کی ہوتی ہے — منسوخ شدہ شامل نہیں ہوتی۔
  */
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import {
   FEE_PAYMENT_STATUS_LABELS,
@@ -57,6 +58,7 @@ export default async function IncomePage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
+          <BackButton />
           <h2>آمدنی کا ریکارڈ — فیس اور رسیدیں</h2>
           <span className="page-count">
             {month === "all"
@@ -150,9 +152,6 @@ export default async function IncomePage({
           </div>
         )}
 
-        <Link className="back-btn" href="/">
-          واپس مین ڈیش بورڈ
-        </Link>
       </div>
     </div>
   );
