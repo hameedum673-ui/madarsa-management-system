@@ -294,3 +294,24 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
   .form-grid{grid-template-columns:1fr}
   .page-head h2{font-size:1.05rem}
 }
+
+/* Stage 6 addition: student attendance — same navy/white/gold palette. */
+.att-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+.att-controls .field{margin:0}
+.att-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.att-chip{display:inline-block;padding:4px 14px;border-radius:999px;font-size:.85rem;font-weight:600;background:var(--chip);color:var(--text)}
+.att-chip-present{background:#e6f2e6;color:#1e5c2a}
+.att-chip-absent{background:#fdecea;color:#8a1f16}
+.att-chip-leave{background:var(--gold-soft);color:var(--text)}
+.att-chip-late{background:#fdf0dd;color:#8a4d08}
+.att-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.att-name{flex:1;min-width:150px}
+.att-name .sub{color:var(--muted);font-size:.82rem}
+.att-reg{color:var(--muted);font-size:.82rem;font-weight:400}
+.att-btns{display:flex;gap:6px;flex-wrap:wrap}
+.att-btn{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:.85rem;font-weight:600}
+.att-btn.sel-present{background:#1e5c2a;color:#fff;border-color:#1e5c2a}
+.att-btn.sel-absent{background:#8a1f16;color:#fff;border-color:#8a1f16}
+.att-btn.sel-leave{background:var(--gold);color:#231a02;border-color:var(--gold)}
+.att-btn.sel-late{background:#b25e09;color:#fff;border-color:#b25e09}
+.att-success{background:#e6f2e6;color:#1e5c2a;border:1px solid #bcd8bc;border-radius:10px;padding:10px 12px;font-size:.9rem;margin:12px 0 0}

@@ -2,10 +2,11 @@ import TopBar from "@/components/TopBar";
 import StatsRow from "@/components/StatsRow";
 import DepartmentGroups from "@/components/DepartmentGroups";
 import { createClient } from "@/lib/supabase/server";
+import { todayInKarachi } from "@/lib/attendance";
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
 export default async function DashboardPage() {
-  // مرحلہ 4/5 — «کل طلبہ» اور «کل اساتذہ» اصل تعداد دکھاتے ہیں (صرف فعال)۔
+  // مرحلہ 4/5/6 — «کل طلبہ»، «کل اساتذہ» اور «آج کی حاضری» اصل تعداد دکھاتے ہیں۔
   // میز نہ بنی ہو یا کوئی خرابی ہو تو صفر دکھایا جاتا ہے، صفحہ نہیں ٹوٹتا۔
   const supabase = await createClient();
 
@@ -31,10 +32,37 @@ export default async function DashboardPage() {
     totalTeachers = 0;
   }
 
+  // آج کی حاضری — پاکستان کی تاریخ کے حساب سے
+  let attendanceToday: { present: number; total: number; marked: number } | null =
+    null;
+  try {
+    const today = todayInKarachi();
+    const { count: presentCount } = await supabase
+      .from("student_attendance")
+      .select("id", { count: "exact", head: true })
+      .eq("date", today)
+      .eq("status", "present");
+    const { count: markedCount } = await supabase
+      .from("student_attendance")
+      .select("id", { count: "exact", head: true })
+      .eq("date", today);
+    attendanceToday = {
+      present: presentCount ?? 0,
+      total: totalStudents,
+      marked: markedCount ?? 0,
+    };
+  } catch {
+    attendanceToday = null;
+  }
+
   return (
     <>
       <TopBar />
-      <StatsRow studentsCount={totalStudents} teachersCount={totalTeachers} />
+      <StatsRow
+        studentsCount={totalStudents}
+        teachersCount={totalTeachers}
+        attendanceToday={attendanceToday}
+      />
       <DepartmentGroups />
       <footer className="foot">
         مدرسہ سیدہ عائشہ صدیقہ <span className="gold">(رضی اللہ عنہا)</span> للبنات — شادی
