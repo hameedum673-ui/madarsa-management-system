@@ -242,3 +242,16 @@
 /* Stage 2 only addition: back button and user-menu items are now real links; keep them underline-free like the original buttons. */
 .back-btn{text-decoration:none}
 .dropdown .dd-item{text-decoration:none}
+
+/* Stage 3 addition: login page — same navy/white/gold palette as the dashboard. */
+.login-wrap{max-width:430px;margin:52px auto 24px;padding:0 14px}
+.login-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 22px;box-shadow:0 6px 24px rgba(18,58,99,.08)}
+.login-title{font-size:1.35rem;color:var(--navy-ink);margin:0 0 6px}
+.login-sub{font-size:.85rem;color:#5b6b80;margin:0 0 18px;line-height:1.7}
+.login-field{display:block;font-size:.9rem;color:var(--text);margin:14px 0 6px}
+.login-input{width:100%;box-sizing:border-box;padding:11px 12px;font-size:1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--text)}
+.login-input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.login-error{background:#fdecea;color:#8a1f16;border:1px solid #f5c2bb;border-radius:10px;padding:10px 12px;font-size:.88rem;margin:14px 0 0}
+.login-btn{width:100%;margin-top:18px;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:1rem;cursor:pointer}
+.login-btn:disabled{opacity:.6;cursor:wait}
+.login-back{display:inline-block;margin-top:16px;color:var(--navy);font-size:.9rem;text-decoration:none}
