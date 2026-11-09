@@ -1,20 +1,44 @@
 /**
- * مرحلہ 3 — لاگ اِن صفحہ (اردو RTL، ڈیش بورڈ کے رنگوں میں)
- * ای میل + پاس ورڈ سے Supabase Auth میں سائن اِن ہوتا ہے۔
- * کامیابی پر مین ڈیش بورڈ پر لے جاتا ہے۔
+ * مرحلہ 11 — لاگ اِن صفحہ، نیا ڈیزائن (اردو RTL)
+ * گہرا نیوی بلیو پس منظر، سنہری عنوان (مدرسے کا نام)، سنہری گوگل بٹن،
+ * سبز واٹس ایپ بٹن۔ گوگل سے لاگ اِن کے بعد منظوری کی جانچ سرور پر ہوتی ہے۔
+ * ای میل + پاس ورڈ والا لاگ اِن بھی موجود ہے (چھوٹا لنک) تاکہ گوگل میں کوئی
+ * مسئلہ ہو تو ایڈمن کبھی باہر نہ رہے۔
  */
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { WHATSAPP_URL } from "@/lib/approval";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [googleError, setGoogleError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  async function handleGoogleLogin() {
+    setGoogleError("");
+    setGoogleLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    setGoogleLoading(false);
+    if (error) {
+      setGoogleError(
+        "گوگل لاگ اِن ابھی ترتیب نہیں ہوا ہے — براہِ کرم ای میل اور پاس ورڈ سے لاگ اِن کریں۔",
+      );
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,50 +63,93 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-wrap">
-      <div className="login-card">
-        <h1 className="login-title">لاگ اِن</h1>
-        <p className="login-sub">
-          جامع مدرسہ مینجمنٹ سسٹم — مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات
-        </p>
+    <main className="login11-page">
+      <div className="login11-box">
+        <h1 className="login11-title">
+          مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات
+        </h1>
+        <p className="login11-sub">جامع مدرسہ مینجمنٹ سسٹم</p>
 
-        <form onSubmit={handleSubmit}>
-          <label className="login-field" htmlFor="login-email">
-            ای میل
-          </label>
-          <input
-            id="login-email"
-            className="login-input"
-            type="email"
-            dir="ltr"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-          />
+        <button
+          className="login11-google"
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={googleLoading}
+        >
+          <span className="login11-g">G</span>
+          {googleLoading
+            ? "براہِ کرم انتظار کریں…"
+            : "گوگل کے ساتھ لاگ اِن کریں"}
+        </button>
 
-          <label className="login-field" htmlFor="login-password">
-            پاس ورڈ
-          </label>
-          <input
-            id="login-password"
-            className="login-input"
-            type="password"
-            dir="ltr"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            placeholder="••••••••"
-          />
+        {googleError ? <p className="login11-error">{googleError}</p> : null}
 
-          {error ? <p className="login-error">{error}</p> : null}
+        <a
+          className="login11-whatsapp"
+          href={WHATSAPP_URL}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <svg
+            className="login11-wa-icon"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 0 1 12 4zm-3.6 4.6c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1.1 2.6c.1.2 1.9 3 4.7 4.1 2.3.9 2.8.7 3.3.7.5-.1 1.6-.7 1.8-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3l-2.1-1c-.3-.1-.5-.2-.7.1l-1 1.1c-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.5-.6c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-1-2.3c-.2-.5-.4-.5-.6-.5z" />
+          </svg>
+          واٹس ایپ پر رابطہ کریں
+        </a>
 
-          <button className="login-btn" type="submit" disabled={loading}>
-            {loading ? "براہِ کرم انتظار کریں…" : "لاگ اِن کریں"}
-          </button>
-        </form>
+        <button
+          className="login11-toggle"
+          type="button"
+          onClick={() => setShowPassword((v) => !v)}
+        >
+          {showPassword
+            ? "پاس ورڈ والا فارم بند کریں"
+            : "ای میل اور پاس ورڈ سے لاگ اِن کریں"}
+        </button>
+
+        {showPassword ? (
+          <form onSubmit={handleSubmit}>
+            <label className="login11-field" htmlFor="login-email">
+              ای میل
+            </label>
+            <input
+              id="login-email"
+              className="login11-input"
+              type="email"
+              dir="ltr"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+
+            <label className="login11-field" htmlFor="login-password">
+              پاس ورڈ
+            </label>
+            <input
+              id="login-password"
+              className="login11-input"
+              type="password"
+              dir="ltr"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+            />
+
+            {error ? <p className="login11-error">{error}</p> : null}
+
+            <button className="login11-submit" type="submit" disabled={loading}>
+              {loading ? "براہِ کرم انتظار کریں…" : "لاگ اِن کریں"}
+            </button>
+          </form>
+        ) : null}
       </div>
     </main>
   );

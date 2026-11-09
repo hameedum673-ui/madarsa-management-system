@@ -334,3 +334,22 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .back-arrow svg{width:22px;height:22px;stroke:currentColor}
 .back-arrow:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .back-arrow-row{display:flex;justify-content:flex-start;margin-bottom:8px}
+
+/* مرحلہ 11 — لاگ اِن اور غیر مجاز اسکرین: گہرا نیوی بلیو پس منظر، سنہری عنوان */
+.login11-page{min-height:100vh;background:var(--navy-deep);display:flex;align-items:flex-start;justify-content:center;padding:56px 16px 24px;box-sizing:border-box}
+.login11-box{width:100%;max-width:400px;text-align:center}
+.login11-title{color:var(--gold);font-size:1.5rem;line-height:1.8;margin:0 0 8px}
+.login11-sub{color:rgba(255,255,255,.75);font-size:.92rem;line-height:1.8;margin:0 0 18px}
+.login11-warning{color:#ff7a72;font-size:1.05rem;font-weight:700;line-height:1.9;margin:0 0 14px}
+.login11-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:var(--gold);color:var(--navy-deep);border:none;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.login11-google:disabled{opacity:.6;cursor:wait}
+.login11-g{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#fff;color:var(--navy);font-size:1.1rem;font-weight:700;flex:0 0 auto}
+.login11-whatsapp{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:12px;padding:13px;background:#25d366;color:#fff;border:none;border-radius:10px;font-size:1.05rem;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.login11-wa-icon{width:22px;height:22px;flex:0 0 auto}
+.login11-toggle{display:inline-block;margin-top:18px;background:none;border:none;color:rgba(255,255,255,.8);font-size:.9rem;cursor:pointer;text-decoration:underline;padding:4px}
+.login11-field{display:block;text-align:right;font-size:.9rem;color:rgba(255,255,255,.85);margin:14px 0 6px}
+.login11-input{width:100%;box-sizing:border-box;padding:11px 12px;font-size:1rem;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(255,255,255,.08);color:#fff}
+.login11-input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.login11-error{background:#fdecea;color:#8a1f16;border:1px solid #f5c2bb;border-radius:10px;padding:10px 12px;font-size:.88rem;margin:14px 0 0;text-align:right}
+.login11-submit{width:100%;margin-top:18px;padding:12px;background:var(--gold);color:var(--navy-deep);border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer}
+.login11-submit:disabled{opacity:.6;cursor:wait}
