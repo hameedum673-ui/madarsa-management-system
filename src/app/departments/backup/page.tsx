@@ -1,0 +1,83 @@
+/**
+ * مرحلہ 30 — بیک اپ (سرور صفحہ، صرف دیکھنے کے لیے)
+ * ہر میز کی تعداد دکھاتا ہے + "بیک اپ ڈاؤن لوڈ کریں" کا بٹن۔
+ * کوئی نئی میز نہیں، کوئی SQL نہیں۔ بحالی (restore) اس مرحلے میں نہیں ہے۔
+ */
+import BackButton from "@/components/BackButton";
+import { createClient } from "@/lib/supabase/server";
+
+const TABLE_LABELS: { table: string; label: string }[] = [
+  { table: "students", label: "طلبہ" },
+  { table: "teachers", label: "اساتذہ" },
+  { table: "staff", label: "عملہ" },
+  { table: "classes", label: "درجات اور جماعتیں" },
+  { table: "student_attendance", label: "طلبہ کی حاضری" },
+  { table: "teacher_attendance", label: "اساتذہ کی حاضری" },
+  { table: "fee_payments", label: "فیس کی رسیدیں" },
+  { table: "expenses", label: "اخراجات" },
+  { table: "donations", label: "عطیات" },
+  { table: "zakat_records", label: "زکوٰۃ کا ریکارڈ" },
+  { table: "welfare_records", label: "وظائف اور مالی معاونت" },
+  { table: "student_expenses", label: "طلبہ کے اخراجات" },
+  { table: "exams", label: "امتحانات" },
+  { table: "exam_results", label: "امتحان کے نتائج" },
+  { table: "admissions", label: "داخلے" },
+  { table: "notices", label: "اطلاعات اور اعلانات" },
+  { table: "documents", label: "دستاویزات" },
+  { table: "audit_log", label: "آڈٹ لاگ" },
+];
+
+export default async function BackupPage() {
+  const supabase = await createClient();
+
+  const counts: { label: string; count: number | null }[] = [];
+  for (const { table, label } of TABLE_LABELS) {
+    const { count, error } = await supabase
+      .from(table)
+      .select("*", { count: "exact", head: true });
+    counts.push({
+      label,
+      count: error ? null : (count ?? 0),
+    });
+  }
+
+  return (
+    <div className="module-view open">
+      <div className="page-card">
+        <div className="page-head">
+          <BackButton />
+          <h2>بیک اپ</h2>
+        </div>
+
+        <p className="sub">
+          نیچے والا بٹن دبانے سے آپ کے اپنے مدرسے کا سارا ڈیٹا ایک فائل
+          (JSON) کے طور پر ڈاؤن لوڈ ہوگا — فعال اور منسوخ ریکارڈ سمیت۔
+          صرف اپنا ڈیٹا آئے گا، دوسرے صارف کا ڈیٹا کبھی نہیں۔ فائل کو
+          محفوظ جگہ رکھیں۔ Supabase خود بھی روزانہ بیک اپ بناتا ہے — یہ
+          ڈاؤن لوڈ آپ کی اپنی اضافی کاپی ہے۔
+        </p>
+
+        <div className="form-actions">
+          <a className="btn-primary" href="/api/backup">
+            بیک اپ ڈاؤن لوڈ کریں
+          </a>
+        </div>
+
+        <h3 className="form-section-title">آپ کے ڈیٹا کی تعداد</h3>
+        <div className="detail-rows">
+          {counts.map((c) => (
+            <div className="row" key={c.label}>
+              <span>{c.label}</span>
+              <strong>{c.count === null ? "میز نہیں بنی" : c.count}</strong>
+            </div>
+          ))}
+        </div>
+
+        <p className="sub">
+          بحالی (restore) — بیک اپ واپس ڈالنا — اس مرحلے میں نہیں ہے؛ وہ
+          الگ، احتیاط والا مرحلہ ہے۔
+        </p>
+      </div>
+    </div>
+  );
+}
