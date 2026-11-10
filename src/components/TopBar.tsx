@@ -22,7 +22,11 @@ const SETTINGS_ICON_SVG =
 const LOGOUT_ICON_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
 
-export default function TopBar() {
+export default function TopBar({
+  madrasaName,
+}: {
+  madrasaName?: string | null;
+} = {}) {
   const router = useRouter();
   const [gregorian, setGregorian] = useState("—");
   const [hijri, setHijri] = useState("");
@@ -79,8 +83,14 @@ export default function TopBar() {
         </div>
         <div>
           <h1>
-            مدرسہ سیدہ عائشہ صدیقہ <span style={{ fontSize: ".72em" }}>(رضی اللہ عنہا)</span>{" "}
-            للبنات
+            {madrasaName ? (
+              madrasaName
+            ) : (
+              <>
+                مدرسہ سیدہ عائشہ صدیقہ{" "}
+                <span style={{ fontSize: ".72em" }}>(رضی اللہ عنہا)</span> للبنات
+              </>
+            )}
           </h1>
           <div className="sysname">جامع مدرسہ مینجمنٹ سسٹم — مین ڈیش بورڈ</div>
         </div>

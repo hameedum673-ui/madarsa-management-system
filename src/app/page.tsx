@@ -2,6 +2,7 @@ import TopBar from "@/components/TopBar";
 import StatsRow from "@/components/StatsRow";
 import DepartmentGroups from "@/components/DepartmentGroups";
 import { createClient } from "@/lib/supabase/server";
+import { getMyMadrasa } from "@/lib/students";
 import { todayInKarachi } from "@/lib/attendance";
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
@@ -95,9 +96,34 @@ export default async function DashboardPage() {
     balance = null;
   }
 
+  // مرحلہ 24 — مدرسے کا نام اور پتہ ڈیٹا بیس سے (عمومی ریکارڈ سے بدلتا ہے)۔
+  // نہ ملے تو پرانا لکھا ہوا نام دکھایا جاتا ہے، صفحہ نہیں ٹوٹتا۔
+  let madrasaName: string | null = null;
+  let madrasaAddress: string | null = null;
+  try {
+    const mine = await getMyMadrasa(supabase);
+    if (mine) {
+      const { data: madrasa } = await supabase
+        .from("madrasas")
+        .select("name")
+        .eq("id", mine.madrasaId)
+        .single();
+      if (madrasa?.name) madrasaName = madrasa.name as string;
+      const { data: profile } = await supabase
+        .from("madrasa_profile")
+        .select("address")
+        .eq("madrasa_id", mine.madrasaId)
+        .single();
+      if (profile?.address) madrasaAddress = profile.address as string;
+    }
+  } catch {
+    madrasaName = null;
+    madrasaAddress = null;
+  }
+
   return (
     <>
-      <TopBar />
+      <TopBar madrasaName={madrasaName} />
       <StatsRow
         studentsCount={totalStudents}
         teachersCount={totalTeachers}
@@ -106,8 +132,16 @@ export default async function DashboardPage() {
       />
       <DepartmentGroups />
       <footer className="foot">
-        مدرسہ سیدہ عائشہ صدیقہ <span className="gold">(رضی اللہ عنہا)</span> للبنات — شادی
-        لارج، ضلع بدین، سندھ
+        {madrasaName ? (
+          <>
+            {madrasaName} — {madrasaAddress ?? "شادی لارج، ضلع بدین، سندھ"}
+          </>
+        ) : (
+          <>
+            مدرسہ سیدہ عائشہ صدیقہ <span className="gold">(رضی اللہ عنہا)</span>{" "}
+            للبنات — شادی لارج، ضلع بدین، سندھ
+          </>
+        )}
       </footer>
     </>
   );
