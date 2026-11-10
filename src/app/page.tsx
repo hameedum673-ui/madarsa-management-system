@@ -55,8 +55,9 @@ export default async function DashboardPage() {
     attendanceToday = null;
   }
 
-  // مرحلہ 8 + مرحلہ 16 — مالی بیلنس: فعال فیس رسیدوں کی کل رقم
-  // مائنس فعال اخراجات کی کل رقم۔ منسوخ رسید اور منسوخ خرچ نہیں گنے جاتے۔
+  // مرحلہ 8 + مرحلہ 16 + مرحلہ 20 — مالی بیلنس: فعال فیس + فعال عطیات
+  // مائنس فعال اخراجات۔ منسوخ رسید، منسوخ عطیہ اور منسوخ خرچ نہیں گنے جاتے۔
+  // زکوٰۃ الگ فنڈ ہے — وہ بیلنس میں کبھی نہیں ملتی۔
   let balance: { value: number; hasPayments: boolean } | null = null;
   try {
     const { data: payments } = await supabase
@@ -64,19 +65,31 @@ export default async function DashboardPage() {
       .select("amount")
       .eq("status", "active");
     const feeRows = (payments ?? []) as { amount: number }[];
+    const { data: given } = await supabase
+      .from("donations")
+      .select("amount")
+      .eq("status", "active");
+    const donationRows = (given ?? []) as { amount: number }[];
     const { data: spent } = await supabase
       .from("expenses")
       .select("amount")
       .eq("status", "active");
     const expenseRows = (spent ?? []) as { amount: number }[];
     const feesTotal = feeRows.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+    const donationsTotal = donationRows.reduce(
+      (sum, d) => sum + (d.amount ?? 0),
+      0,
+    );
     const expensesTotal = expenseRows.reduce(
       (sum, e) => sum + (e.amount ?? 0),
       0,
     );
     balance = {
-      value: feesTotal - expensesTotal,
-      hasPayments: feeRows.length > 0 || expenseRows.length > 0,
+      value: feesTotal + donationsTotal - expensesTotal,
+      hasPayments:
+        feeRows.length > 0 ||
+        donationRows.length > 0 ||
+        expenseRows.length > 0,
     };
   } catch {
     balance = null;

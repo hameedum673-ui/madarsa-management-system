@@ -20,6 +20,11 @@ import {
   EXPENSE_CATEGORY_LABELS,
   type ExpenseCategory,
 } from "@/lib/expenses";
+import {
+  DONATION_KINDS,
+  DONATION_KIND_LABELS,
+  type DonationKind,
+} from "@/lib/donations";
 
 /** "2026-11" کا اگلا مہینہ — "2026-12-01" */
 function nextMonthStart(month: string): string {
@@ -57,11 +62,29 @@ export default async function MonthlyPage({
     category: ExpenseCategory;
   }[];
 
+  // مرحلہ 20 — عطیات بھی آمدنی ہیں (فیس کے ساتھ)
+  const { data: donationsData, error: donationsError } = await supabase
+    .from("donations")
+    .select("amount, kind")
+    .gte("donation_date", `${month}-01`)
+    .lt("donation_date", nextMonthStart(month))
+    .eq("status", "active");
+  const donations = (donationsData ?? []) as {
+    amount: number;
+    kind: DonationKind;
+  }[];
+
   const tableMissing =
     (feesError as { code?: string } | null)?.code === "42P01" ||
-    (expensesError as { code?: string } | null)?.code === "42P01";
+    (expensesError as { code?: string } | null)?.code === "42P01" ||
+    (donationsError as { code?: string } | null)?.code === "42P01";
 
-  const incomeTotal = fees.reduce((sum, f) => sum + (f.amount ?? 0), 0);
+  const feesTotal = fees.reduce((sum, f) => sum + (f.amount ?? 0), 0);
+  const donationsTotal = donations.reduce(
+    (sum, d) => sum + (d.amount ?? 0),
+    0,
+  );
+  const incomeTotal = feesTotal + donationsTotal;
   const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0);
   const balance = incomeTotal - expensesTotal;
 
@@ -80,6 +103,14 @@ export default async function MonthlyPage({
   const methodRows = PAYMENT_METHODS.filter(
     (m) => (byMethod.get(m) ?? 0) > 0,
   ).sort((a, b) => (byMethod.get(b) ?? 0) - (byMethod.get(a) ?? 0));
+
+  const byKind = new Map<DonationKind, number>();
+  for (const d of donations) {
+    byKind.set(d.kind, (byKind.get(d.kind) ?? 0) + d.amount);
+  }
+  const kindRows = DONATION_KINDS.filter(
+    (k) => (byKind.get(k) ?? 0) > 0,
+  ).sort((a, b) => (byKind.get(b) ?? 0) - (byKind.get(a) ?? 0));
 
   return (
     <div className="module-view open">
@@ -115,12 +146,24 @@ export default async function MonthlyPage({
             <h3 className="form-section-title">خلاصہ</h3>
             <div className="detail-rows">
               <div className="row">
-                <span>اس مہینے کی آمدنی (فیس)</span>
+                <span>اس مہینے کی فیس</span>
                 <span>
-                  {incomeTotal.toLocaleString("ur-PK")} روپے
+                  {feesTotal.toLocaleString("ur-PK")} روپے
                   {" — "}
                   {fees.length.toLocaleString("ur-PK")} رسیدیں
                 </span>
+              </div>
+              <div className="row">
+                <span>اس مہینے کے عطیات</span>
+                <span>
+                  {donationsTotal.toLocaleString("ur-PK")} روپے
+                  {" — "}
+                  {donations.length.toLocaleString("ur-PK")} عطیات
+                </span>
+              </div>
+              <div className="row">
+                <span>اس مہینے کی کل آمدنی</span>
+                <span>{incomeTotal.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">
                 <span>اس مہینے کے اخراجات</span>
@@ -162,7 +205,7 @@ export default async function MonthlyPage({
               </div>
             )}
 
-            <h3 className="form-section-title">آمدنی — طریقے کے حساب سے</h3>
+            <h3 className="form-section-title">فیس — طریقے کے حساب سے</h3>
             {methodRows.length === 0 ? (
               <p className="empty-state">اس مہینے کی کوئی فیس درج نہیں ہے۔</p>
             ) : (
@@ -180,6 +223,32 @@ export default async function MonthlyPage({
                         <td>{PAYMENT_METHOD_LABELS[m]}</td>
                         <td>
                           {(byMethod.get(m) ?? 0).toLocaleString("ur-PK")} روپے
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <h3 className="form-section-title">عطیات — قسم کے حساب سے</h3>
+            {kindRows.length === 0 ? (
+              <p className="empty-state">اس مہینے کا کوئی عطیہ درج نہیں ہے۔</p>
+            ) : (
+              <div className="tbl-wrap">
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>قسم</th>
+                      <th>رقم</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kindRows.map((k) => (
+                      <tr key={k}>
+                        <td>{DONATION_KIND_LABELS[k]}</td>
+                        <td>
+                          {(byKind.get(k) ?? 0).toLocaleString("ur-PK")} روپے
                         </td>
                       </tr>
                     ))}
