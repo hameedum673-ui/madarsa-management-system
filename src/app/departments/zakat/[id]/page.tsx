@@ -1,0 +1,125 @@
+/**
+ * مرحلہ 19 — زکوٰۃ اندراج کی تفصیل (سرور صفحہ)
+ * غلط اندراج منسوخ کرنے کا بٹن موجود ہے — ریکارڈ حذف نہیں ہوتا۔
+ * میز ابھی نہ بنی ہو (migration 013 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
+ */
+import BackButton from "@/components/BackButton";
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getMyMadrasa } from "@/lib/students";
+import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
+import {
+  ZAKAT_KIND_LABELS,
+  ZAKAT_STATUS_LABELS,
+  type ZakatRecord,
+} from "@/lib/zakat";
+import VoidButton from "@/app/departments/zakat/[id]/VoidButton";
+
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("ur-PK");
+}
+
+export default async function ZakatDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("zakat_records")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if ((error as { code?: string } | null)?.code === "42P01") {
+    return (
+      <div className="module-view open">
+        <div className="page-card">
+          <div className="page-head">
+            <BackButton href="/departments/zakat" />
+            <h2>زکوٰۃ اندراج</h2>
+          </div>
+          <p className="empty-state">
+            زکوٰۃ کی میز ابھی نہیں بنی — پہلے مرحلہ 19 کی SQL چلائیں۔
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (error || !data) {
+    notFound();
+  }
+
+  const record = data as ZakatRecord;
+  const mine = await getMyMadrasa(supabase);
+  let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
+  if (mine) {
+    const { data: madrasa } = await supabase
+      .from("madrasas")
+      .select("name")
+      .eq("id", mine.madrasaId)
+      .single();
+    if (madrasa?.name) madrasaName = madrasa.name as string;
+  }
+
+  return (
+    <div className="module-view open">
+      <div className="page-card receipt receipt-slip">
+        <div className="page-head">
+          <BackButton href="/departments/zakat" />
+          <h2>زکوٰۃ اندراج</h2>
+          <span className="page-count">{record.receipt_number}</span>
+        </div>
+
+        <div className="receipt-head">
+          <strong>{madrasaName}</strong>
+          <span>شادی لارج، ضلع بدین، سندھ</span>
+        </div>
+
+        <div className="detail-rows">
+          <div className="row">
+            <span>رسید نمبر</span>
+            <span>{record.receipt_number}</span>
+          </div>
+          <div className="row">
+            <span>قسم</span>
+            <span>{ZAKAT_KIND_LABELS[record.kind]}</span>
+          </div>
+          <div className="row">
+            <span>نام</span>
+            <span>{record.person_name}</span>
+          </div>
+          <div className="row">
+            <span>رقم</span>
+            <span>{record.amount.toLocaleString("ur-PK")} روپے</span>
+          </div>
+          <div className="row">
+            <span>تاریخ</span>
+            <span>{formatDate(record.record_date)}</span>
+          </div>
+          <div className="row">
+            <span>ادائیگی کا طریقہ</span>
+            <span>{PAYMENT_METHOD_LABELS[record.payment_method]}</span>
+          </div>
+          {record.note ? (
+            <div className="row">
+              <span>نوٹ</span>
+              <span>{record.note}</span>
+            </div>
+          ) : null}
+          <div className="row">
+            <span>حالت</span>
+            <span>{ZAKAT_STATUS_LABELS[record.status]}</span>
+          </div>
+        </div>
+
+        <div className="form-actions no-print">
+          {record.status === "active" ? <VoidButton id={record.id} /> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
