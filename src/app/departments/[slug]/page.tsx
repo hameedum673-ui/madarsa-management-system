@@ -10,8 +10,8 @@ import { ALL_DEPARTMENTS, DEPARTMENT_BY_ID } from "@/data/departments";
 export function generateStaticParams() {
   // 'students'، 'teachers'، 'att-students'، 'att-teachers'، 'income'،
   // 'admissions'، 'exams'، 'users'، 'idcards'، 'staff'، 'classes'،
-  // 'academic' اور 'expenses' کے اپنے اصل صفحے ہیں — اس لیے یہاں سے خارج ہیں،
-  // ورنہ build میں دو صفحے ایک ہی پتے پر بنتے۔
+  // 'academic'، 'expenses' اور 'monthly' کے اپنے اصل صفحے ہیں — اس لیے یہاں
+  // سے خارج ہیں، ورنہ build میں دو صفحے ایک ہی پتے پر بنتے۔
   return ALL_DEPARTMENTS.filter(
     (m) =>
       m.id !== "students" &&
@@ -26,7 +26,8 @@ export function generateStaticParams() {
       m.id !== "staff" &&
       m.id !== "classes" &&
       m.id !== "academic" &&
-      m.id !== "expenses",
+      m.id !== "expenses" &&
+      m.id !== "monthly",
   ).map((m) => ({
     slug: m.id,
   }));
