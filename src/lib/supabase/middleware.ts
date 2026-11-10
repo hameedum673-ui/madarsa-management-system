@@ -75,6 +75,7 @@ export async function updateSession(request: NextRequest) {
 
   // منظوری کی جانچ — پہلے ایڈمن کا کردار (اس کے لیے نئے فنکشن کی ضرورت نہیں)
   let approved = false;
+  let isAdmin = false;
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -82,6 +83,7 @@ export async function updateSession(request: NextRequest) {
     .single();
   if ((profile as { role?: string } | null)?.role === "super_admin") {
     approved = true;
+    isAdmin = true;
   } else {
     const { data: status, error } = await supabase.rpc("my_approval_status");
     if (!error && status === "approved") {
@@ -115,6 +117,30 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // مرحلہ 26 — شعبے کی اجازت (صرف عام صارف؛ ایڈمن پر کوئی پابندی نہیں)
+  // براہِ راست لنک کھولنے پر بھی سرور روکتا ہے — صرف بٹن چھپانا کافی نہیں۔
+  if (!isAdmin && pathname.startsWith("/departments/")) {
+    const slug = pathname.split("/")[2] ?? "";
+    // "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" صرف ایڈمن کے لیے ہیں
+    if (slug === "users" || slug === "permissions") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+    if (slug) {
+      const { data: allowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: slug },
+      );
+      // فنکشن نہ چلا (migration ابھی نہیں چلی) تو اجازت ہے — پرانا کام نہیں رکتا
+      if (allowed === false) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return supabaseResponse;

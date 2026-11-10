@@ -101,11 +101,13 @@ export default async function DashboardPage() {
   // مرحلہ 24 — مدرسے کا نام اور پتہ ڈیٹا بیس سے (عمومی ریکارڈ سے بدلتا ہے)۔
   // نہ ملے تو پرانا لکھا ہوا نام دکھایا جاتا ہے، صفحہ نہیں ٹوٹتا۔
   // مرحلہ 25 — لاگ اِن صارف کا نام/کردار بھی (اوپر والے مینو کے لیے)۔
+  // مرحلہ 26 — بند شعبوں کی فہرست (صرف عام صارف کے لیے)۔
   let madrasaName: string | null = null;
   let madrasaAddress: string | null = null;
   let userName: string | null = null;
   let userRole: string | null = null;
   let isAdmin = false;
+  let deniedModules: string[] = [];
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -131,6 +133,16 @@ export default async function DashboardPage() {
         userRole = ROLE_LABELS[myProfile.role as MadrasaRole] ?? null;
         isAdmin = myProfile.role === "super_admin";
       }
+      // بند شعبے — صرف عام صارف کے لیے (ایڈمن کو سب کچھ نظر آتا ہے)
+      if (!isAdmin) {
+        const { data: denied } = await supabase
+          .from("user_permissions")
+          .select("module")
+          .eq("allowed", false);
+        deniedModules = ((denied ?? []) as { module: string }[]).map(
+          (d) => d.module,
+        );
+      }
     }
   } catch {
     madrasaName = null;
@@ -138,6 +150,7 @@ export default async function DashboardPage() {
     userName = null;
     userRole = null;
     isAdmin = false;
+    deniedModules = [];
   }
 
   return (
@@ -154,7 +167,7 @@ export default async function DashboardPage() {
         attendanceToday={attendanceToday}
         balance={balance}
       />
-      <DepartmentGroups isAdmin={isAdmin} />
+      <DepartmentGroups isAdmin={isAdmin} deniedModules={deniedModules} />
       <footer className="foot">
         {madrasaName ? (
           <>

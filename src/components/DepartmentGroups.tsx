@@ -12,14 +12,19 @@ import type { DepartmentGroup } from "@/lib/types";
 function GroupSection({
   group,
   isAdmin,
+  deniedModules,
 }: {
   group: DepartmentGroup;
   isAdmin: boolean;
+  deniedModules: string[];
 }) {
   // مرحلہ 25 — "صارفین اور اکاؤنٹس" بٹن صرف ایڈمن کو نظر آئے؛ عام صارف
   // کو نہ بٹن نظر آئے گا، نہ 404 ملے گا (صفحہ خود بھی ایڈمن کے لیے ہے)۔
+  // مرحلہ 26 — بند شعبے کا بٹن بھی نظر نہیں آتا (middleware لنک بھی روکتا ہے)۔
   const modules = group.modules.filter(
-    (m) => isAdmin || m.id !== "users",
+    (m) =>
+      (isAdmin || m.id !== "users") &&
+      (isAdmin || !deniedModules.includes(m.id)),
   );
   return (
     <section className="group" aria-label={group.title}>
@@ -48,20 +53,22 @@ function GroupSection({
 
 export default function DepartmentGroups({
   isAdmin = false,
+  deniedModules = [],
 }: {
   isAdmin?: boolean;
+  deniedModules?: string[];
 } = {}) {
   const [edu, fin, admin, other] = GROUPS;
   return (
     <>
-      <GroupSection group={edu} isAdmin={isAdmin} />
-      <GroupSection group={fin} isAdmin={isAdmin} />
+      <GroupSection group={edu} isAdmin={isAdmin} deniedModules={deniedModules} />
+      <GroupSection group={fin} isAdmin={isAdmin} deniedModules={deniedModules} />
       <div className="split">
         <div>
-          <GroupSection group={admin} isAdmin={isAdmin} />
+          <GroupSection group={admin} isAdmin={isAdmin} deniedModules={deniedModules} />
         </div>
         <div>
-          <GroupSection group={other} isAdmin={isAdmin} />
+          <GroupSection group={other} isAdmin={isAdmin} deniedModules={deniedModules} />
         </div>
       </div>
     </>

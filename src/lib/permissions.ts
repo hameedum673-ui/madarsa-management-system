@@ -1,0 +1,21 @@
+/**
+ * مرحلہ 26 — اختیارات اور اجازتیں
+ * اجازت ای میل سے جڑی ہے (ہر صارف کی Gmail مستقل پہچان ہے)۔
+ * پہلے سے سب کچھ اجازت شدہ ہے — صرف وہی شعبہ بند ہوتا ہے جسے ایڈمن واضح
+ * طور پر بند کرے۔ "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" اس
+ * فہرست میں نہیں ہیں — وہ صرف ایڈمن کے لیے ہیں۔
+ */
+import { GROUPS } from "@/data/departments";
+
+/** وہ 25 شعبے جن کی اجازت ایڈمن مقرر کر سکتا ہے */
+export const PERMISSION_MODULE_IDS: string[] = GROUPS.flatMap((g) =>
+  g.modules
+    .filter((m) => m.id !== "users" && m.id !== "permissions")
+    .map((m) => m.id),
+);
+
+export interface UserPermissionRow {
+  user_email: string;
+  module: string;
+  allowed: boolean;
+}
