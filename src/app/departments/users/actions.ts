@@ -8,6 +8,7 @@
  */
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -67,21 +68,24 @@ async function requireAdmin(): Promise<AdminContext> {
 }
 
 /** نئے صارف کا اپنا الگ مدرسہ بنائیں — مرحلہ 25 کی علیحدگی
- *  (ایڈمن کا مدرسہ کبھی استعمال نہیں ہوتا؛ نیا مدرسہ خالی ہوتا ہے) */
+ *  (ایڈمن کا مدرسہ کبھی استعمال نہیں ہوتا؛ نیا مدرسہ خالی ہوتا ہے)
+ *  درستی (مرحلہ 25 فکس): id کوڈ میں بنایا جاتا ہے اور واپس مانگا نہیں
+ *  جاتا — کیونکہ `madrasas` کی پڑھنے والی پالیسی صرف اپنا مدرسہ دکھاتی
+ *  ہے، اس لیے نیا مدرسہ واپس مانگنے پر خالی جواب آتا تھا اور کوڈ سمجھتا
+ *  تھا کہ مدرسہ بنا ہی نہیں (حالانکہ قطار بن جاتی تھی)۔ */
 async function createWorkspace(
   supabase: Awaited<ReturnType<typeof createClient>>,
   displayName: string,
 ): Promise<{ id: string } | { error: string }> {
   const base = displayName || "نیا صارف";
-  const { data, error } = await supabase
+  const newId = randomUUID();
+  const { error } = await supabase
     .from("madrasas")
-    .insert({ name: `${base} کا مدرسہ` })
-    .select("id")
-    .single();
-  if (error || !data) {
+    .insert({ id: newId, name: `${base} کا مدرسہ` });
+  if (error) {
     return { error: "نیا مدرسہ نہیں بن سکا — پہلے مرحلہ 25 کی SQL چلائیں۔" };
   }
-  return { id: data.id as string };
+  return { id: newId };
 }
 
 /** صارف کو منظور کریں — کردار چننا ضروری ہے؛ اسے اپنا الگ مدرسہ ملتا ہے */
