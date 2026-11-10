@@ -1,7 +1,9 @@
 /**
  * مرحلہ 8 — رسید دیکھنے کا صفحہ (سرور صفحہ)
  * رسید پر مدرسے کا نام، رسید نمبر، طالبہ، مہینہ، رقم، تاریخ اور طریقہ ہوتا ہے۔
- * پرنٹ بٹن سے صرف رسید چھپتی ہے — اوپر کا مینیو اور بٹن نہیں۔
+ * رسید پرچی جیسی چھوٹی ہے (تنگ اور لمبی)؛ "تصویر محفوظ کریں" سے رسید PNG
+ * تصویر کے طور پر محفوظ ہوتی ہے — کوئی PDF نہیں بنتا۔ غلط رسید منسوخ کرنے
+ * کا بٹن ویسے ہی موجود ہے۔
  * میز ابھی نہ بنی ہو (migration 006 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
 import BackButton from "@/components/BackButton";
@@ -15,7 +17,7 @@ import {
   type FeePayment,
 } from "@/lib/fees";
 import VoidButton from "@/app/departments/income/[id]/VoidButton";
-import PrintButton from "@/app/departments/income/[id]/PrintButton";
+import SaveReceiptImageButton from "@/app/departments/income/[id]/SaveReceiptImageButton";
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("ur-PK");
@@ -75,7 +77,7 @@ export default async function ReceiptPage({
 
   return (
     <div className="module-view open">
-      <div className="page-card receipt">
+      <div className="page-card receipt receipt-slip">
         <div className="page-head">
           <BackButton href="/departments/income" className="no-print" />
           <h2>فیس کی رسید</h2>
@@ -133,7 +135,21 @@ export default async function ReceiptPage({
         </div>
 
         <div className="form-actions no-print">
-          <PrintButton />
+          <SaveReceiptImageButton
+            data={{
+              madrasaName,
+              receiptNumber: payment.receipt_number,
+              studentName: payment.students?.name ?? "—",
+              fatherName: payment.students?.father_name ?? "—",
+              registrationNumber: payment.students?.registration_number ?? "—",
+              monthLabel: formatMonthUrdu(payment.fee_month),
+              amountLabel: `${payment.amount.toLocaleString("ur-PK")} روپے`,
+              paymentDate: formatDate(payment.payment_date),
+              paymentMethodLabel: PAYMENT_METHOD_LABELS[payment.payment_method],
+              note: payment.note,
+              statusLabel: FEE_PAYMENT_STATUS_LABELS[payment.status],
+            }}
+          />
           {payment.status === "active" ? <VoidButton id={payment.id} /> : null}
         </div>
       </div>

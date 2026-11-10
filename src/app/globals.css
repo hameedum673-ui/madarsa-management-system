@@ -354,6 +354,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .login11-submit{width:100%;margin-top:18px;padding:12px;background:var(--gold);color:var(--navy-deep);border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer}
 .login11-submit:disabled{opacity:.6;cursor:wait}
 
+/* مرحلہ 8 (ترمیم) — فیس کی رسید بھی پرچی جیسی چھوٹی (تنگ اور لمبی) */
+.receipt-slip{max-width:340px;margin-left:auto;margin-right:auto}
+
 /* مرحلہ 12 — طلبہ کے شناختی کارڈ: پرچی جیسا چھوٹا کارڈ (تنگ اور لمبا)، نیوی بلیو / سنہری */
 .idcard{max-width:320px;margin:6px auto 0;background:#fff;border:2px solid var(--gold);border-radius:14px;overflow:hidden}
 .idcard-head{background:var(--navy);color:#fff;text-align:center;padding:14px 12px 10px}
