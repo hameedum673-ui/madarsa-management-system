@@ -57,7 +57,8 @@ export default async function IdCardsPage({
         </div>
 
         <p className="form-note">
-          کارڈ پر تصویر کی جگہ خالی رہے گی — پرنٹ کے بعد تصویر وہاں چپکائیں۔
+          کارڈ پرچی جیسا چھوٹا ہوگا — کارڈ والے صفحے پر "تصویر محفوظ کریں" سے
+          کارڈ تصویر کے طور پر محفوظ ہو جائے گا۔
         </p>
 
         <form className="att-controls" method="get">

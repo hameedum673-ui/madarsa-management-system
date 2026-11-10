@@ -2,7 +2,8 @@
  * مرحلہ 12 — ایک طالبہ کا شناختی کارڈ (سرور صفحہ)
  * کارڈ طلبہ کی موجودہ میز سے بنتا ہے — نام ایک جگہ بدلیں تو کارڈ پر بھی
  * نیا نام آتا ہے، کیونکہ نام کہیں نقل نہیں کیا جاتا۔
- * پرنٹ بٹن سے صرف کارڈ چھپتا ہے — اوپر کا مینیو اور بٹن نہیں۔
+ * کارڈ پرچی جیسا چھوٹا ہے (تنگ اور لمبا)؛ "تصویر محفوظ کریں" سے کارڈ PNG
+ * تصویر کے طور پر محفوظ ہوتا ہے — کوئی PDF نہیں بنتا۔
  * خارج شدہ طالبہ کا کارڈ نہیں بنتا۔
  */
 import BackButton from "@/components/BackButton";
@@ -14,7 +15,7 @@ import {
   type Student,
 } from "@/lib/students";
 import { todayInKarachi } from "@/lib/attendance";
-import PrintButton from "@/app/departments/idcards/[id]/PrintButton";
+import SaveImageButton from "@/app/departments/idcards/[id]/SaveImageButton";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -148,7 +149,20 @@ export default async function IdCardPage({
         </div>
 
         <div className="form-actions no-print">
-          <PrintButton />
+          <SaveImageButton
+            data={{
+              madrasaName,
+              name: student.name,
+              fatherName: student.father_name,
+              registrationNumber: student.registration_number,
+              departmentLabel: DEPARTMENT_LABELS[student.department],
+              className: student.class_name ?? "—",
+              dateOfBirth: formatDate(student.date_of_birth),
+              admissionDate: formatDate(student.admission_date),
+              guardianPhone: student.guardian_phone ?? "—",
+              issueDate,
+            }}
+          />
         </div>
       </div>
     </div>
