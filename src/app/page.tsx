@@ -55,19 +55,28 @@ export default async function DashboardPage() {
     attendanceToday = null;
   }
 
-  // مرحلہ 8 — مالی بیلنس: فعال فیس رسیدوں کی کل رقم۔
-  // ابھی خرچ کا کوئی حصہ نہیں ہے، اس لیے بیلنس = وصول شدہ فیس؛
-  // اخراجات کا مرحلہ آنے پر بیلنس خود بخود فیس − خرچ ہو جائے گا۔
+  // مرحلہ 8 + مرحلہ 16 — مالی بیلنس: فعال فیس رسیدوں کی کل رقم
+  // مائنس فعال اخراجات کی کل رقم۔ منسوخ رسید اور منسوخ خرچ نہیں گنے جاتے۔
   let balance: { value: number; hasPayments: boolean } | null = null;
   try {
     const { data: payments } = await supabase
       .from("fee_payments")
       .select("amount")
       .eq("status", "active");
-    const rows = (payments ?? []) as { amount: number }[];
+    const feeRows = (payments ?? []) as { amount: number }[];
+    const { data: spent } = await supabase
+      .from("expenses")
+      .select("amount")
+      .eq("status", "active");
+    const expenseRows = (spent ?? []) as { amount: number }[];
+    const feesTotal = feeRows.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+    const expensesTotal = expenseRows.reduce(
+      (sum, e) => sum + (e.amount ?? 0),
+      0,
+    );
     balance = {
-      value: rows.reduce((sum, p) => sum + (p.amount ?? 0), 0),
-      hasPayments: rows.length > 0,
+      value: feesTotal - expensesTotal,
+      hasPayments: feeRows.length > 0 || expenseRows.length > 0,
     };
   } catch {
     balance = null;
