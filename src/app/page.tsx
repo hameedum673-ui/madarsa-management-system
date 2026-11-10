@@ -3,6 +3,8 @@ import StatsRow from "@/components/StatsRow";
 import DepartmentGroups from "@/components/DepartmentGroups";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
+import { ROLE_LABELS } from "@/lib/approval";
+import type { MadrasaRole } from "@/lib/tenancy";
 import { todayInKarachi } from "@/lib/attendance";
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
@@ -98,8 +100,12 @@ export default async function DashboardPage() {
 
   // مرحلہ 24 — مدرسے کا نام اور پتہ ڈیٹا بیس سے (عمومی ریکارڈ سے بدلتا ہے)۔
   // نہ ملے تو پرانا لکھا ہوا نام دکھایا جاتا ہے، صفحہ نہیں ٹوٹتا۔
+  // مرحلہ 25 — لاگ اِن صارف کا نام/کردار بھی (اوپر والے مینو کے لیے)۔
   let madrasaName: string | null = null;
   let madrasaAddress: string | null = null;
+  let userName: string | null = null;
+  let userRole: string | null = null;
+  let isAdmin = false;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -115,22 +121,40 @@ export default async function DashboardPage() {
         .eq("madrasa_id", mine.madrasaId)
         .single();
       if (profile?.address) madrasaAddress = profile.address as string;
+      const { data: myProfile } = await supabase
+        .from("profiles")
+        .select("name, role")
+        .eq("id", mine.userId)
+        .single();
+      if (myProfile?.name) userName = myProfile.name as string;
+      if (myProfile?.role) {
+        userRole = ROLE_LABELS[myProfile.role as MadrasaRole] ?? null;
+        isAdmin = myProfile.role === "super_admin";
+      }
     }
   } catch {
     madrasaName = null;
     madrasaAddress = null;
+    userName = null;
+    userRole = null;
+    isAdmin = false;
   }
 
   return (
     <>
-      <TopBar madrasaName={madrasaName} />
+      <TopBar
+        madrasaName={madrasaName}
+        isAdmin={isAdmin}
+        userName={userName}
+        userRole={userRole}
+      />
       <StatsRow
         studentsCount={totalStudents}
         teachersCount={totalTeachers}
         attendanceToday={attendanceToday}
         balance={balance}
       />
-      <DepartmentGroups />
+      <DepartmentGroups isAdmin={isAdmin} />
       <footer className="foot">
         {madrasaName ? (
           <>

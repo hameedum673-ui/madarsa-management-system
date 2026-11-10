@@ -24,8 +24,14 @@ const LOGOUT_ICON_SVG =
 
 export default function TopBar({
   madrasaName,
+  isAdmin = true,
+  userName,
+  userRole,
 }: {
   madrasaName?: string | null;
+  isAdmin?: boolean;
+  userName?: string | null;
+  userRole?: string | null;
 } = {}) {
   const router = useRouter();
   const [gregorian, setGregorian] = useState("—");
@@ -136,12 +142,12 @@ export default function TopBar({
           }}
         >
           <span className="avatar" aria-hidden="true">
-            ح
+            {(userName ?? "حمید").trim().charAt(0) || "ح"}
           </span>
           <span className="umeta">
-            <span className="uname">حمید</span>
+            <span className="uname">{userName ?? "حمید"}</span>
             <br />
-            <span className="urole">سپر ایڈمن</span>
+            <span className="urole">{userRole ?? "سپر ایڈمن"}</span>
           </span>
         </button>
         <div
@@ -149,15 +155,23 @@ export default function TopBar({
           role="menu"
           onClick={(ev) => ev.stopPropagation()}
         >
-          <div className="dd-head">حمید — سپر ایڈمن</div>
+          <div className="dd-head">
+            {userName ?? "حمید"} — {userRole ?? "سپر ایڈمن"}
+          </div>
           <Link className="dd-item" href="/profile" onClick={closeMenus}>
             <span dangerouslySetInnerHTML={{ __html: PROFILE_ICON_SVG }} />
             میرا پروفائل
           </Link>
-          <Link className="dd-item" href="/departments/users" onClick={closeMenus}>
-            <span dangerouslySetInnerHTML={{ __html: USERS_ICON_SVG }} />
-            صارفین اور اکاؤنٹس
-          </Link>
+          {isAdmin ? (
+            <Link
+              className="dd-item"
+              href="/departments/users"
+              onClick={closeMenus}
+            >
+              <span dangerouslySetInnerHTML={{ __html: USERS_ICON_SVG }} />
+              صارفین اور اکاؤنٹس
+            </Link>
+          ) : null}
           <Link className="dd-item" href="/departments/settings" onClick={closeMenus}>
             <span dangerouslySetInnerHTML={{ __html: SETTINGS_ICON_SVG }} />
             نظام کی ترتیبات

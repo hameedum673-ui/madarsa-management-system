@@ -1,14 +1,14 @@
 /**
- * مرحلہ 24 — مدرسے کا عمومی ریکارڈ (سرور صفحہ)
- * صرف ایڈمن (super_admin) یہ صفحہ دیکھ سکتا ہے — عام صارف کو صفحہ نہیں
- * کھلے گا۔ نام `madrasas` میز سے، باقی معلومات `madrasa_profile` سے۔
+ * مرحلہ 24 + مرحلہ 25 — مدرسے کا عمومی ریکارڈ (سرور صفحہ)
+ * ہر صارف صرف اپنے مدرسے کا ریکارڈ دیکھ/بدل سکتا ہے — RLS پالیسیاں یہ
+ * یقین دلاتی ہیں (مرحلہ 25 سے ہر صارف کا اپنا الگ مدرسہ ہے)۔ نام
+ * `madrasas` میز سے، باقی معلومات `madrasa_profile` سے۔
  * میز ابھی نہ بنی ہو (migration 017 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
 import type {
   MadrasaProfile,
   MadrasaProfileFormValues,
@@ -18,11 +18,6 @@ import { updateMadrasaProfile } from "@/app/departments/general/actions";
 
 export default async function GeneralPage() {
   const supabase = await createClient();
-
-  const admin = await isAppAdmin(supabase);
-  if (!admin) {
-    notFound();
-  }
 
   const mine = await getMyMadrasa(supabase);
   if (!mine) {
@@ -74,8 +69,9 @@ export default async function GeneralPage() {
         ) : (
           <>
             <p className="sub">
-              یہ معلومات صرف ایڈمن بدل سکتا ہے۔ نام بدلنے پر ڈیش بورڈ کے اوپر
-              والے حصے، نیچے والے حصے اور رسیدوں/کارڈوں پر نیا نام نظر آئے گا۔
+              یہ معلومات صرف آپ کے اپنے مدرسے کی ہیں۔ نام بدلنے پر ڈیش بورڈ
+              کے اوپر والے حصے، نیچے والے حصے اور رسیدوں/کارڈوں پر نیا نام
+              نظر آئے گا۔
             </p>
             <ProfileForm initial={initial} action={updateMadrasaProfile} />
           </>

@@ -9,7 +9,18 @@ import type { DepartmentGroup } from "@/lib/types";
  * ہر بٹن اپنے شعبے کے الگ صفحے (/departments/…) پر جاتا ہے۔
  */
 
-function GroupSection({ group }: { group: DepartmentGroup }) {
+function GroupSection({
+  group,
+  isAdmin,
+}: {
+  group: DepartmentGroup;
+  isAdmin: boolean;
+}) {
+  // مرحلہ 25 — "صارفین اور اکاؤنٹس" بٹن صرف ایڈمن کو نظر آئے؛ عام صارف
+  // کو نہ بٹن نظر آئے گا، نہ 404 ملے گا (صفحہ خود بھی ایڈمن کے لیے ہے)۔
+  const modules = group.modules.filter(
+    (m) => isAdmin || m.id !== "users",
+  );
   return (
     <section className="group" aria-label={group.title}>
       <div className="g-head">
@@ -19,7 +30,7 @@ function GroupSection({ group }: { group: DepartmentGroup }) {
         <h2>{group.title}</h2>
       </div>
       <div className={`tiles ${group.layout}`}>
-        {group.modules.map((m) => (
+        {modules.map((m) => (
           <Link key={m.id} href={`/departments/${m.id}`} className="tile">
             <span className="tic">
               <Icon name={m.icon} />
@@ -35,18 +46,22 @@ function GroupSection({ group }: { group: DepartmentGroup }) {
   );
 }
 
-export default function DepartmentGroups() {
+export default function DepartmentGroups({
+  isAdmin = false,
+}: {
+  isAdmin?: boolean;
+} = {}) {
   const [edu, fin, admin, other] = GROUPS;
   return (
     <>
-      <GroupSection group={edu} />
-      <GroupSection group={fin} />
+      <GroupSection group={edu} isAdmin={isAdmin} />
+      <GroupSection group={fin} isAdmin={isAdmin} />
       <div className="split">
         <div>
-          <GroupSection group={admin} />
+          <GroupSection group={admin} isAdmin={isAdmin} />
         </div>
         <div>
-          <GroupSection group={other} />
+          <GroupSection group={other} isAdmin={isAdmin} />
         </div>
       </div>
     </>

@@ -88,6 +88,9 @@ export async function updateSession(request: NextRequest) {
       approved = true;
       // منظور شدہ صارف کا profile نہ ہو تو خود بنا لیں (غلطی ہو تو نظر انداز)
       await supabase.rpc("ensure_my_profile");
+      // مرحلہ 25 — اگر صارف کا مدرسہ کسی اور سے جڑا ہوا ہے تو اسے اپنا
+      // الگ مدرسہ مل جائے (غلطی ہو تو نظر انداز — پرانا کام نہیں رکتا)
+      await supabase.rpc("ensure_my_workspace");
     } else if (!error && status === "none") {
       // پہلی بار آیا ہے — "زیرِ منظوری" درج کر دیں تاکہ ایڈمن دیکھ سکے
       await supabase.rpc("request_access");

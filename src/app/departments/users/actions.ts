@@ -66,7 +66,25 @@ async function requireAdmin(): Promise<AdminContext> {
   return { supabase, ...mine };
 }
 
-/** صارف کو منظور کریں — کردار چننا ضروری ہے */
+/** نئے صارف کا اپنا الگ مدرسہ بنائیں — مرحلہ 25 کی علیحدگی
+ *  (ایڈمن کا مدرسہ کبھی استعمال نہیں ہوتا؛ نیا مدرسہ خالی ہوتا ہے) */
+async function createWorkspace(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  displayName: string,
+): Promise<{ id: string } | { error: string }> {
+  const base = displayName || "نیا صارف";
+  const { data, error } = await supabase
+    .from("madrasas")
+    .insert({ name: `${base} کا مدرسہ` })
+    .select("id")
+    .single();
+  if (error || !data) {
+    return { error: "نیا مدرسہ نہیں بن سکا — پہلے مرحلہ 25 کی SQL چلائیں۔" };
+  }
+  return { id: data.id as string };
+}
+
+/** صارف کو منظور کریں — کردار چننا ضروری ہے؛ اسے اپنا الگ مدرسہ ملتا ہے */
 export async function approveUser(formData: FormData): Promise<ActionResult> {
   const id = clean(formData.get("id"), 100);
   const role = clean(formData.get("role"), 30);
@@ -78,12 +96,27 @@ export async function approveUser(formData: FormData): Promise<ActionResult> {
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
+  // پہلے صارف کا ریکارڈ نکالیں تاکہ اس کے نام سے الگ مدرسہ بن سکے
+  const { data: existing } = await supabase
+    .from("approved_users")
+    .select("id, email, name")
+    .eq("id", id)
+    .single();
+  if (!existing) return { error: "صارف نہیں ملا۔" };
+
+  const workspace = await createWorkspace(
+    supabase,
+    (existing.name as string) ||
+      (existing.email as string).split("@")[0],
+  );
+  if ("error" in workspace) return { error: workspace.error };
+
   const { data, error } = await supabase
     .from("approved_users")
     .update({
       status: "approved",
       assigned_role: role as MadrasaRole,
-      assigned_madrasa_id: madrasaId,
+      assigned_madrasa_id: workspace.id,
       approved_by: userId,
       updated_at: new Date().toISOString(),
     })
@@ -99,6 +132,7 @@ export async function approveUser(formData: FormData): Promise<ActionResult> {
     approved_user_id: data.id as string,
     email: data.email as string,
     role,
+    workspace_madrasa_id: workspace.id,
   });
 
   revalidatePath("/departments/users");
@@ -163,6 +197,10 @@ export async function addApprovedUser(
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
+  // نیا صارف شامل کرنے سے پہلے اس کا اپنا الگ مدرسہ بنائیں
+  const workspace = await createWorkspace(supabase, name);
+  if ("error" in workspace) return { error: workspace.error };
+
   const { data, error } = await supabase
     .from("approved_users")
     .insert({
@@ -171,7 +209,7 @@ export async function addApprovedUser(
       whatsapp: whatsapp || null,
       status: "approved",
       assigned_role: role as MadrasaRole,
-      assigned_madrasa_id: madrasaId,
+      assigned_madrasa_id: workspace.id,
       approved_by: userId,
     })
     .select("id, email")
@@ -187,6 +225,7 @@ export async function addApprovedUser(
     approved_user_id: data.id as string,
     email: data.email as string,
     role,
+    workspace_madrasa_id: workspace.id,
   });
 
   revalidatePath("/departments/users");

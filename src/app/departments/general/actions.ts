@@ -1,15 +1,14 @@
 /**
- * مرحلہ 24 — مدرسے کا عمومی ریکارڈ بدلنے کا Server Action
- * صرف ایڈمن (super_admin) یہ معلومات بدل سکتا ہے — عام صارف کو صاف غلطی
- * ملتی ہے۔ نام `madrasas` میز میں بدلا جاتا ہے، باقی معلومات
- * `madrasa_profile` میں۔
+ * مرحلہ 24 + مرحلہ 25 — مدرسے کا عمومی ریکارڈ بدلنے کا Server Action
+ * ہر صارف صرف اپنے مدرسے کی معلومات بدل سکتا ہے — RLS پالیسیاں (اپنے
+ * مدرسے کی UPDATE) یہ یقین دلاتی ہیں۔ نام `madrasas` میز میں بدلا جاتا
+ * ہے، باقی معلومات `madrasa_profile` میں۔
  */
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -52,11 +51,7 @@ export async function updateMadrasaProfile(
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 
-  // صرف ایڈمن بدل سکتا ہے
-  const admin = await isAppAdmin(supabase);
-  if (!admin) return { error: "صرف ایڈمن یہ معلومات بدل سکتا ہے۔" };
-
-  // 1) نام — madrasas میز میں
+  // 1) نام — madrasas میز میں (صرف اپنا مدرسہ — RLS پالیسی)
   const { error: nameError } = await supabase
     .from("madrasas")
     .update({ name })
