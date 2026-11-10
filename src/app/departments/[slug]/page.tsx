@@ -12,9 +12,9 @@ export function generateStaticParams() {
   // 'admissions'، 'exams'، 'users'، 'idcards'، 'staff'، 'classes'،
   // 'academic'، 'expenses'، 'monthly'، 'yearly'، 'zakat'، 'donations'،
   // 'welfare'، 'student-exp'، 'fin-reports'، 'general'، 'permissions'،
-  // 'notices'، 'documents'، 'reports' اور 'backup' کے اپنے اصل صفحے
-  // ہیں — اس لیے یہاں سے خارج ہیں، ورنہ build میں دو صفحے ایک ہی پتے پر
-  // بنتے۔
+  // 'notices'، 'documents'، 'reports'، 'backup' اور 'settings' کے اپنے
+  // اصل صفحے ہیں — اس لیے یہاں سے خارج ہیں، ورنہ build میں دو صفحے ایک
+  // ہی پتے پر بنتے۔
   return ALL_DEPARTMENTS.filter(
     (m) =>
       m.id !== "students" &&
@@ -42,7 +42,8 @@ export function generateStaticParams() {
       m.id !== "notices" &&
       m.id !== "documents" &&
       m.id !== "reports" &&
-      m.id !== "backup",
+      m.id !== "backup" &&
+      m.id !== "settings",
   ).map((m) => ({
     slug: m.id,
   }));
