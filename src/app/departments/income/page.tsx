@@ -1,14 +1,12 @@
 /**
- * مرحلہ 48 — آمدنی کا ریکارڈ: حب (سرور صفحہ)
- * ڈیش بورڈ پر "آمدنی کا ریکارڈ" بٹن اسی صفحے پر آتا ہے۔ اندر چار حصے ہیں:
+ * مرحلہ 48 + مرحلہ 49 — آمدنی کا ریکارڈ: حب (سرور صفحہ)
+ * ڈیش بورڈ پر "آمدنی کا ریکارڈ" بٹن اسی صفحے پر آتا ہے۔ اندر دو حصے ہیں:
  *   فیس — فیسوں کی فہرست + شیڈول
- *   زکوٰۃ — زکوٰۃ کا حساب
- *   عشر — عشر کا حساب
- *   صدقات اور عطیات — عطیات کا ریکارڈ
+ *   زکوٰۃ، عشر اور عطیات — ملا ہوا صفحہ (مد کے حساب سے)
  * وکالت کا اصول: زکوٰۃ اور عشر آمدنی میں شامل ہیں اور بیلنس میں گنے
- * جاتے ہیں (وصولی مائنس تقسیم)۔
+ * جاتے ہیں (صرف وصولی)۔ تقسیم ختم ہے۔
  * اجازتیں الگ الگ ہی رہتی ہیں — ہر حصہ صرف اسی کو نظر آئے گا جسے اس
- * کی اجازت ہے؛ جسے چاروں کی اجازت نہیں ہے، وہ یہ صفحہ نہیں کھول سکتا۔
+ * کی اجازت ہے؛ جسے دونوں کی اجازت نہیں ہے، وہ یہ صفحہ نہیں کھول سکتا۔
  */
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -54,12 +52,13 @@ export default async function IncomeHubPage() {
     redirect("/");
   }
 
+  const fundsAllowed = zakatAllowed || ushrAllowed || donationsAllowed;
+
   let feesTotal: number | null = null;
   let feesCount: number | null = null;
-  let zakatRemaining: number | null = null;
-  let ushrRemaining: number | null = null;
+  let zakatTotal: number | null = null;
+  let ushrTotal: number | null = null;
   let donationsTotal: number | null = null;
-  let donationsCount: number | null = null;
 
   if (incomeAllowed) {
     const { data } = await supabase
@@ -76,13 +75,10 @@ export default async function IncomeHubPage() {
       .select("kind, amount")
       .eq("status", "active");
     const rows = (data ?? []) as { kind: string; amount: number }[];
-    const received = rows
+    // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
+    zakatTotal = rows
       .filter((r) => r.kind === "received")
       .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-    const distributed = rows
-      .filter((r) => r.kind === "distributed")
-      .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-    zakatRemaining = received - distributed;
   }
   if (ushrAllowed) {
     try {
@@ -92,13 +88,9 @@ export default async function IncomeHubPage() {
         .eq("status", "active");
       if (!error) {
         const rows = (data ?? []) as { kind: string; amount: number }[];
-        const received = rows
+        ushrTotal = rows
           .filter((r) => r.kind === "received")
           .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-        const distributed = rows
-          .filter((r) => r.kind === "distributed")
-          .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-        ushrRemaining = received - distributed;
       }
     } catch {
       /* میز ابھی نہ بنی ہو تو عشر کا حصہ خالی رقم دکھائے گا */
@@ -111,7 +103,6 @@ export default async function IncomeHubPage() {
       .eq("status", "active");
     const rows = (data ?? []) as { amount: number }[];
     donationsTotal = rows.reduce((sum, r) => sum + (r.amount ?? 0), 0);
-    donationsCount = rows.length;
   }
 
   return (
@@ -155,78 +146,48 @@ export default async function IncomeHubPage() {
           </>
         ) : null}
 
-        {zakatAllowed ? (
+        {fundsAllowed ? (
           <>
-            <h3 className="form-section-title">زکوٰۃ</h3>
+            <h3 className="form-section-title">زکوٰۃ، عشر اور عطیات</h3>
             <p className="sub">
-              زکوٰۃ کی وصولی اور تقسیم کا حساب — وکالت کے اصول سے یہ آمدنی
-              میں شامل ہے۔
+              زکوٰۃ، عشر اور عطیات کا ملا ہوا ریکارڈ — نیا اندراج کرتے
+              وقت "مد" بتائیں کہ پیسہ کس مد میں دے رہا ہے۔
             </p>
             <div className="detail-rows">
-              <div className="row">
-                <span>باقی زکوٰۃ</span>
-                <strong>
-                  {zakatRemaining === null
-                    ? "—"
-                    : `${zakatRemaining.toLocaleString("ur-PK")} روپے`}
-                </strong>
-              </div>
+              {zakatAllowed ? (
+                <div className="row">
+                  <span>کل وصول شدہ زکوٰۃ</span>
+                  <strong>
+                    {zakatTotal === null
+                      ? "—"
+                      : `${zakatTotal.toLocaleString("ur-PK")} روپے`}
+                  </strong>
+                </div>
+              ) : null}
+              {ushrAllowed ? (
+                <div className="row">
+                  <span>کل وصول شدہ عشر</span>
+                  <strong>
+                    {ushrTotal === null
+                      ? "—"
+                      : `${ushrTotal.toLocaleString("ur-PK")} روپے`}
+                  </strong>
+                </div>
+              ) : null}
+              {donationsAllowed ? (
+                <div className="row">
+                  <span>کل عطیات</span>
+                  <strong>
+                    {donationsTotal === null
+                      ? "—"
+                      : `${donationsTotal.toLocaleString("ur-PK")} روپے`}
+                  </strong>
+                </div>
+              ) : null}
             </div>
             <div className="form-actions">
-              <Link className="btn-primary" href="/departments/zakat">
-                زکوٰۃ دیکھیں
-              </Link>
-            </div>
-          </>
-        ) : null}
-
-        {ushrAllowed ? (
-          <>
-            <h3 className="form-section-title">عشر</h3>
-            <p className="sub">
-              عشر کی وصولی اور تقسیم کا حساب — وکالت کے اصول سے یہ آمدنی
-              میں شامل ہے۔
-            </p>
-            <div className="detail-rows">
-              <div className="row">
-                <span>باقی عشر</span>
-                <strong>
-                  {ushrRemaining === null
-                    ? "—"
-                    : `${ushrRemaining.toLocaleString("ur-PK")} روپے`}
-                </strong>
-              </div>
-            </div>
-            <div className="form-actions">
-              <Link className="btn-primary" href="/departments/ushr">
-                عشر دیکھیں
-              </Link>
-            </div>
-          </>
-        ) : null}
-
-        {donationsAllowed ? (
-          <>
-            <h3 className="form-section-title">صدقات اور عطیات</h3>
-            <p className="sub">
-              صدقات، عطیات اور عطیہ دہندگان کا ریکارڈ دیکھیں اور نیا عطیہ
-              درج کریں۔
-            </p>
-            <div className="detail-rows">
-              <div className="row">
-                <span>کل عطیات</span>
-                <strong>
-                  {donationsTotal === null
-                    ? "—"
-                    : `${donationsTotal.toLocaleString("ur-PK")} روپے — ${(
-                        donationsCount ?? 0
-                      ).toLocaleString("ur-PK")} عطیات`}
-                </strong>
-              </div>
-            </div>
-            <div className="form-actions">
-              <Link className="btn-primary" href="/departments/donations">
-                صدقات اور عطیات دیکھیں
+              <Link className="btn-primary" href="/departments/income/funds">
+                زکوٰۃ، عشر اور عطیات دیکھیں
               </Link>
             </div>
           </>

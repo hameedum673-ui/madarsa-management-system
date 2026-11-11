@@ -54,7 +54,7 @@ export default async function DonationsPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/income" />
           <h2>صدقات اور عطیات</h2>
           <span className="page-count">
             کل: {totalDonations.toLocaleString("ur-PK")} روپے

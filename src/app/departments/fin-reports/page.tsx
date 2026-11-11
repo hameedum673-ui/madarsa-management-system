@@ -117,22 +117,15 @@ export default async function FinReportsPage({
     (sum, d) => sum + (d.amount ?? 0),
     0,
   );
+  // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
   const zakatReceived = zakat
     .filter((z) => z.kind === "received")
     .reduce((sum, z) => sum + (z.amount ?? 0), 0);
-  const zakatDistributed = zakat
-    .filter((z) => z.kind === "distributed")
-    .reduce((sum, z) => sum + (z.amount ?? 0), 0);
-  const zakatRemaining = zakatReceived - zakatDistributed;
   const ushrReceived = ushr
     .filter((u) => u.kind === "received")
     .reduce((sum, u) => sum + (u.amount ?? 0), 0);
-  const ushrDistributed = ushr
-    .filter((u) => u.kind === "distributed")
-    .reduce((sum, u) => sum + (u.amount ?? 0), 0);
-  const ushrRemaining = ushrReceived - ushrDistributed;
   const incomeTotal =
-    feesTotal + donationsTotal + zakatRemaining + ushrRemaining;
+    feesTotal + donationsTotal + zakatReceived + ushrReceived;
   const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0);
   const balance = incomeTotal - expensesTotal;
 
@@ -221,12 +214,12 @@ export default async function FinReportsPage({
                 </span>
               </div>
               <div className="row">
-                <span>زکوٰۃ (وصولی − تقسیم)</span>
-                <span>{zakatRemaining.toLocaleString("ur-PK")} روپے</span>
+                <span>زکوٰۃ (وصولی)</span>
+                <span>{zakatReceived.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">
-                <span>عشر (وصولی − تقسیم)</span>
-                <span>{ushrRemaining.toLocaleString("ur-PK")} روپے</span>
+                <span>عشر (وصولی)</span>
+                <span>{ushrReceived.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">
                 <span>کل آمدنی</span>
@@ -252,14 +245,6 @@ export default async function FinReportsPage({
                 <span>کل وصول شدہ زکوٰۃ</span>
                 <span>{zakatReceived.toLocaleString("ur-PK")} روپے</span>
               </div>
-              <div className="row">
-                <span>کل تقسیم شدہ زکوٰۃ</span>
-                <span>{zakatDistributed.toLocaleString("ur-PK")} روپے</span>
-              </div>
-              <div className="row">
-                <span>باقی زکوٰۃ</span>
-                <span>{zakatRemaining.toLocaleString("ur-PK")} روپے</span>
-              </div>
             </div>
 
             <h3 className="form-section-title">عشر</h3>
@@ -267,14 +252,6 @@ export default async function FinReportsPage({
               <div className="row">
                 <span>کل وصول شدہ عشر</span>
                 <span>{ushrReceived.toLocaleString("ur-PK")} روپے</span>
-              </div>
-              <div className="row">
-                <span>کل تقسیم شدہ عشر</span>
-                <span>{ushrDistributed.toLocaleString("ur-PK")} روپے</span>
-              </div>
-              <div className="row">
-                <span>باقی عشر</span>
-                <span>{ushrRemaining.toLocaleString("ur-PK")} روپے</span>
               </div>
             </div>
 

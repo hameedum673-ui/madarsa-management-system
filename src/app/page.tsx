@@ -59,8 +59,9 @@ export default async function DashboardPage() {
   }
 
   // مرحلہ 8 + مرحلہ 16 + مرحلہ 20 + مرحلہ 48 (وکالت کا اصول) — مالی بیلنس:
-  // فعال فیس + فعال عطیات + (زکوٰۃ وصولی − تقسیم) + (عشر وصولی − تقسیم)
+  // فعال فیس + فعال عطیات + زکوٰۃ (وصولی) + عشر (وصولی)
   // مائنس فعال اخراجات۔ منسوخ ریکارڈ نہیں گنے جاتے۔
+  // (مرحلہ 49 — تقسیم ختم، صرف وصولی گنی جاتی ہے)
   let balance: { value: number; hasPayments: boolean } | null = null;
   try {
     const { data: payments } = await supabase
@@ -97,20 +98,13 @@ export default async function DashboardPage() {
       (sum, e) => sum + (e.amount ?? 0),
       0,
     );
-    const zakatNet =
-      zakatRows
-        .filter((r) => r.kind === "received")
-        .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
-      zakatRows
-        .filter((r) => r.kind === "distributed")
-        .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-    const ushrNet =
-      ushrRows
-        .filter((r) => r.kind === "received")
-        .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
-      ushrRows
-        .filter((r) => r.kind === "distributed")
-        .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+    // مرحلہ 49 — تقسیم ختم: زکوٰۃ/عشر صرف "وصولی" گنے جاتے ہیں
+    const zakatNet = zakatRows
+      .filter((r) => r.kind === "received")
+      .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+    const ushrNet = ushrRows
+      .filter((r) => r.kind === "received")
+      .reduce((sum, r) => sum + (r.amount ?? 0), 0);
     balance = {
       value: feesTotal + donationsTotal + zakatNet + ushrNet - expensesTotal,
       hasPayments:

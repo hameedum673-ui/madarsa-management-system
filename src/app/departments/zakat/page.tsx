@@ -3,7 +3,7 @@
  * صرف اپنے مدرسے کا ریکارڈ نظر آتا ہے — RLS پالیسی یہ یقین دلاتی ہے۔
  * خلاصہ صرف فعال اندراجات کا ہے — منسوخ اندراج اس میں نہیں گنا جاتا۔
  * وکالت کا اصول (مرحلہ 48 سے): زکوٰۃ آمدنی میں شامل ہے اور ڈیش بورڈ
- * کے بیلنس میں گنی جاتی ہے (وصولی مائنس تقسیم) — پہلے یہ الگ فنڈ تھی۔
+ * کے بیلنس میں گنی جاتی ہے (صرف وصولی)۔
  * میز ابھی نہ بنی ہو (migration 013 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
 import Link from "next/link";
@@ -11,10 +11,7 @@ import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
-  ZAKAT_KINDS,
-  ZAKAT_KIND_LABELS,
   ZAKAT_STATUS_LABELS,
-  type ZakatKind,
   type ZakatRecord,
 } from "@/lib/zakat";
 
@@ -23,46 +20,32 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString("ur-PK");
 }
 
-export default async function ZakatPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ kind?: string }>;
-}) {
-  const params = await searchParams;
-  const rawKind = params.kind ?? "all";
-  const kind: ZakatKind | "all" = (ZAKAT_KINDS as string[]).includes(rawKind)
-    ? (rawKind as ZakatKind)
-    : "all";
-
+export default async function ZakatPage() {
   const supabase = await createClient();
-  let query = supabase
+  const { data, error } = await supabase
     .from("zakat_records")
     .select("*")
     .order("record_date", { ascending: false })
     .order("receipt_number", { ascending: false });
-  if (kind !== "all") query = query.eq("kind", kind);
-  const { data, error } = await query;
 
   const records = (data ?? []) as ZakatRecord[];
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
   const active = records.filter((r) => r.status === "active");
+  // مرحلہ 49 — تقسیم ختم: صرف "وصولی" والے اندراج گنے جاتے ہیں —
+  // پرانے تقسیم والے اندراج (اگر کوئی ہوں) یہاں نہیں گنے جاتے
   const totalReceived = active
     .filter((r) => r.kind === "received")
     .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-  const totalDistributed = active
-    .filter((r) => r.kind === "distributed")
-    .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-  const remaining = totalReceived - totalDistributed;
 
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/income" />
           <h2>زکوٰۃ کا حساب</h2>
           <span className="page-count">
-            باقی: {remaining.toLocaleString("ur-PK")} روپے
+            کل وصول شدہ: {totalReceived.toLocaleString("ur-PK")} روپے
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/zakat/new">
@@ -75,32 +58,7 @@ export default async function ZakatPage({
             <span>کل وصول شدہ زکوٰۃ</span>
             <span>{totalReceived.toLocaleString("ur-PK")} روپے</span>
           </div>
-          <div className="row">
-            <span>کل تقسیم شدہ زکوٰۃ</span>
-            <span>{totalDistributed.toLocaleString("ur-PK")} روپے</span>
-          </div>
-          <div className="row">
-            <span>باقی زکوٰۃ</span>
-            <span>{remaining.toLocaleString("ur-PK")} روپے</span>
-          </div>
         </div>
-
-        <form className="att-controls" method="get">
-          <label className="field">
-            <span className="field-label">قسم</span>
-            <select className="field-input" name="kind" defaultValue={kind}>
-              <option value="all">سب</option>
-              {ZAKAT_KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {ZAKAT_KIND_LABELS[k]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="btn-primary" type="submit">
-            دکھائیں
-          </button>
-        </form>
 
         {tableMissing ? (
           <p className="empty-state">
@@ -116,7 +74,6 @@ export default async function ZakatPage({
               <thead>
                 <tr>
                   <th>رسید نمبر</th>
-                  <th>قسم</th>
                   <th>نام</th>
                   <th>رقم</th>
                   <th>تاریخ</th>
@@ -132,7 +89,6 @@ export default async function ZakatPage({
                         {r.receipt_number}
                       </Link>
                     </td>
-                    <td>{ZAKAT_KIND_LABELS[r.kind]}</td>
                     <td>
                       <Link href={`/departments/zakat/${r.id}`}>
                         {r.person_name}

@@ -118,12 +118,10 @@ export default async function YearlyPage({
     amount: number;
     record_date: string;
   }[];
+  // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
   const netOf = (rows: { kind: string; amount: number }[]) =>
     rows
       .filter((r) => r.kind === "received")
-      .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
-    rows
-      .filter((r) => r.kind === "distributed")
       .reduce((sum, r) => sum + (r.amount ?? 0), 0);
 
   const tableMissing =
@@ -278,11 +276,11 @@ export default async function YearlyPage({
                 </span>
               </div>
               <div className="row">
-                <span>پورے سال کی زکوٰۃ (وصولی − تقسیم)</span>
+                <span>پورے سال کی زکوٰۃ (وصولی)</span>
                 <span>{zakatNet.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">
-                <span>پورے سال کا عشر (وصولی − تقسیم)</span>
+                <span>پورے سال کا عشر (وصولی)</span>
                 <span>{ushrNet.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">

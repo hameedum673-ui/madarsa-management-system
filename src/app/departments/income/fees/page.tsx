@@ -58,7 +58,7 @@ export default async function IncomePage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/income" />
           <h2>آمدنی کا ریکارڈ — فیس اور رسیدیں</h2>
           <span className="page-count">
             {month === "all"

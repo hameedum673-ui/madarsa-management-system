@@ -9,7 +9,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
-  USHR_KIND_LABELS,
   USHR_STATUS_LABELS,
   type UshrRecord,
 } from "@/lib/ushr";
@@ -70,7 +69,6 @@ export default async function UshrDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["قسم", USHR_KIND_LABELS[record.kind]],
     ["نام", record.person_name],
     ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
     ["تاریخ", formatDate(record.record_date)],
@@ -105,10 +103,6 @@ export default async function UshrDetailPage({
           <div className="row">
             <span>رسید نمبر</span>
             <span>{record.receipt_number}</span>
-          </div>
-          <div className="row">
-            <span>قسم</span>
-            <span>{USHR_KIND_LABELS[record.kind]}</span>
           </div>
           <div className="row">
             <span>نام</span>

@@ -9,7 +9,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
-  ZAKAT_KIND_LABELS,
   ZAKAT_STATUS_LABELS,
   type ZakatRecord,
 } from "@/lib/zakat";
@@ -70,7 +69,6 @@ export default async function ZakatDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["قسم", ZAKAT_KIND_LABELS[record.kind]],
     ["نام", record.person_name],
     ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
     ["تاریخ", formatDate(record.record_date)],
@@ -105,10 +103,6 @@ export default async function ZakatDetailPage({
           <div className="row">
             <span>رسید نمبر</span>
             <span>{record.receipt_number}</span>
-          </div>
-          <div className="row">
-            <span>قسم</span>
-            <span>{ZAKAT_KIND_LABELS[record.kind]}</span>
           </div>
           <div className="row">
             <span>نام</span>

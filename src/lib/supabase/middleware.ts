@@ -195,6 +195,34 @@ export async function updateSession(request: NextRequest) {
         url.pathname = "/";
         return NextResponse.redirect(url);
       }
+    }
+    // مرحلہ 49 — ملا ہوا صفحہ: /departments/income/funds پر زکوٰۃ،
+    // عشر یا عطیات میں سے ایک کی بھی اجازت ہو تو کھلتا ہے۔
+    else if (
+      slug === "income" &&
+      pathname.startsWith("/departments/income/funds")
+    ) {
+      const { data: zakatAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "zakat" },
+      );
+      const { data: ushrAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "ushr" },
+      );
+      const { data: donationsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "donations" },
+      );
+      if (
+        zakatAllowed === false &&
+        ushrAllowed === false &&
+        donationsAllowed === false
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
     } else if (slug) {
       const { data: allowed } = await supabase.rpc(
         "my_module_allowed",

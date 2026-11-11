@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/lib/fees";
-import { USHR_KINDS, USHR_KIND_LABELS } from "@/lib/ushr";
+/* مرحلہ 49 — "قسم" والا ڈبہ ختم: ہر نیا اندراج خودکار طور پر "وصولی" ہے */
 
 type FormAction = (
   formData: FormData,
@@ -42,17 +42,6 @@ export default function UshrForm({ action }: { action: FormAction }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
-        <label className="field">
-          <span className="field-label">قسم *</span>
-          <select className="field-input" name="kind" required>
-            {USHR_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {USHR_KIND_LABELS[k]}
-              </option>
-            ))}
-          </select>
-        </label>
-
         <label className="field">
           <span className="field-label">نام *</span>
           <input

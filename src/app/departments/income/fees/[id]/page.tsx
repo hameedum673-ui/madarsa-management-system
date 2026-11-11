@@ -44,7 +44,7 @@ export default async function ReceiptPage({
       <div className="module-view open">
         <div className="page-card">
           <div className="back-arrow-row">
-            <BackButton />
+            <BackButton href="/departments/income/fees" />
           </div>
           <p className="empty-state">
             فیس کی میز ابھی نہیں بنی — پہلے مرحلہ 8 کی SQL چلائیں۔

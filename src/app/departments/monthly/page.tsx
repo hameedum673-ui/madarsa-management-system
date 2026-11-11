@@ -94,12 +94,10 @@ export default async function MonthlyPage({
     .lt("record_date", nextMonthStart(month))
     .eq("status", "active");
   const ushrRows = (ushrData ?? []) as { kind: string; amount: number }[];
+  // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
   const netOf = (rows: { kind: string; amount: number }[]) =>
     rows
       .filter((r) => r.kind === "received")
-      .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
-    rows
-      .filter((r) => r.kind === "distributed")
       .reduce((sum, r) => sum + (r.amount ?? 0), 0);
 
   const tableMissing =
@@ -222,11 +220,11 @@ export default async function MonthlyPage({
                 </span>
               </div>
               <div className="row">
-                <span>اس مہینے کی زکوٰۃ (وصولی − تقسیم)</span>
+                <span>اس مہینے کی زکوٰۃ (وصولی)</span>
                 <span>{zakatNet.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">
-                <span>اس مہینے کا عشر (وصولی − تقسیم)</span>
+                <span>اس مہینے کا عشر (وصولی)</span>
                 <span>{ushrNet.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">

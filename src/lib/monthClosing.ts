@@ -62,8 +62,9 @@ export async function upsertClosing(
 
 /**
  * اس مہینے سے پہلے کا بقیہ = پہلے کی فعال فیس + عطیات
- * + (زکوٰۃ وصولی − تقسیم) + (عشر وصولی − تقسیم) − پہلے کے فعال اخراجات
- * (مرحلہ 48 — وکالت کا اصول: زکوٰۃ اور عشر آمدنی میں شامل ہیں)
+ * + زکوٰۃ (وصولی) + عشر (وصولی) − پہلے کے فعال اخراجات
+ * (مرحلہ 48 — وکالت کا اصول: زکوٰۃ اور عشر آمدنی میں شامل ہیں؛
+ * مرحلہ 49 — تقسیم ختم، صرف وصولی گنی جاتی ہے)
  */
 export async function getBalanceBefore(
   supabase: Client,
@@ -107,12 +108,10 @@ export async function getBalanceBefore(
       (sum, e) => sum + (e.amount ?? 0),
       0,
     );
+    // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
     const netOf = (rows: { kind: string; amount: number }[] | null) =>
       (rows ?? [])
         .filter((r) => r.kind === "received")
-        .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
-      (rows ?? [])
-        .filter((r) => r.kind === "distributed")
         .reduce((sum, r) => sum + (r.amount ?? 0), 0);
     const zakatNet = netOf(
       zakatData as { kind: string; amount: number }[] | null,

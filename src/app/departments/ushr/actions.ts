@@ -15,7 +15,7 @@ import {
 } from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/fees";
-import { USHR_KINDS, type UshrKind } from "@/lib/ushr";
+import { type UshrKind } from "@/lib/ushr";
 
 type ActionResult = { ok: true; id?: string } | { error: string };
 
@@ -36,7 +36,8 @@ interface UshrFields {
 function validateFields(
   formData: FormData,
 ): { fields: UshrFields } | { error: string } {
-  const kind = clean(formData.get("kind"), 20);
+  // مرحلہ 49 — تقسیم ختم: ہر نیا اندراج "وصولی" ہے، فارم سے قسم نہیں آتی
+  const kind: UshrKind = "received";
   const personName = clean(formData.get("person_name"), 100);
   const amountRaw = clean(formData.get("amount"), 12);
   const amount = Number(amountRaw);
@@ -44,8 +45,6 @@ function validateFields(
   const paymentMethod = clean(formData.get("payment_method"), 20);
   const note = clean(formData.get("note"), 500);
 
-  if (!USHR_KINDS.includes(kind as UshrKind))
-    return { error: "قسم درست منتخب کریں (وصولی یا تقسیم)۔" };
   if (!personName) return { error: "نام ضروری ہے۔" };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
     return { error: "رقم 1 سے 10,000,000 کے درمیان ہونی چاہیے۔" };
@@ -58,7 +57,7 @@ function validateFields(
 
   return {
     fields: {
-      kind: kind as UshrKind,
+      kind,
       personName,
       amount,
       recordDate,
