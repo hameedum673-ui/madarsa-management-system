@@ -22,3 +22,10 @@ export interface UserPermissionRow {
   module: string;
   allowed: boolean;
 }
+
+/** مرحلہ 53 — صارف کے شعبے کی اجازت (بنین / بنات) */
+export interface UserSectionRow {
+  user_email: string;
+  section: string;
+  allowed: boolean;
+}

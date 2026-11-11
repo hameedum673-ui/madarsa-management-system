@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { isAppAdmin } from "@/lib/approval";
+import { SECTION_IDS } from "@/lib/students";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
 
 type ActionResult = { ok: true } | { error: string };
@@ -61,6 +62,29 @@ export async function savePermissions(
     .upsert(rows, { onConflict: "user_email,module" });
   if (error) {
     return { error: "اجازتیں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔" };
+  }
+
+  // مرحلہ 53 — شعبے کی اجازت (بنین / بنات) — ٹک لگا ہو تو اجازت، نہ ہو تو بند
+  const sectionRows = SECTION_IDS.map((section) => ({
+    user_email: userEmail,
+    section,
+    allowed: formData.get(`sec_${section}`) === "on",
+    updated_by: mine.userId,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { error: sectionError } = await supabase
+    .from("user_sections")
+    .upsert(sectionRows, { onConflict: "user_email,section" });
+  if (sectionError) {
+    // میز ابھی نہ بنی ہو تو شعبوں کی اجازتیں محفوظ ہو چکی ہوتی ہیں —
+    // SQL چلا کر دوبارہ محفوظ کریں
+    if ((sectionError as { code?: string }).code === "42P01")
+      return {
+        error:
+          "شعبے کی اجازتیں محفوظ نہیں ہو سکیں — پہلے مرحلہ 53 کی SQL چلائیں۔ شعبوں کی اجازتیں محفوظ ہو چکی ہیں، SQL چلا کر دوبارہ محفوظ کریں۔",
+      };
+    return { error: "شعبے کی اجازتیں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔" };
   }
 
   try {

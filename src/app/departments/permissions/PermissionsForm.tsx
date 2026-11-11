@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { GROUPS } from "@/data/departments";
+import { SECTION_IDS, SECTION_LABELS } from "@/lib/students";
 
 type FormAction = (formData: FormData) => Promise<{ ok: true } | { error: string }>;
 
@@ -14,11 +15,14 @@ export default function PermissionsForm({
   userEmail,
   userName,
   allowedModules,
+  allowedSections,
   action,
 }: {
   userEmail: string;
   userName: string;
   allowedModules: Set<string>;
+  // مرحلہ 53 — شعبے کی اجازت (بنین / بنات)
+  allowedSections: Set<string>;
   action: FormAction;
 }) {
   const [error, setError] = useState("");
@@ -46,6 +50,29 @@ export default function PermissionsForm({
       <h3 className="form-section-title">
         {userName} ({userEmail}) کی اجازتیں
       </h3>
+
+      {/* مرحلہ 53 — شعبہ (بنین / بنات) کی اجازت */}
+      <h3 className="form-section-title">شعبہ (بنین / بنات)</h3>
+      <p className="sub">
+        جس شعبے کا ٹک ہٹائیں گے، وہ شعبہ اس صارف کو نظر نہیں آئے گا۔
+        پہلے سے دونوں کی اجازت ہے۔ اس سے ابھی کچھ بند نہیں ہوگا —
+        روک مرحلہ 54 میں لگے گی۔
+      </p>
+      <div className="form-grid">
+        {SECTION_IDS.map((s) => (
+          <label className="field" key={s}>
+            <span className="field-label">
+              <input
+                type="checkbox"
+                name={`sec_${s}`}
+                defaultChecked={allowedSections.has(s)}
+              />{" "}
+              {SECTION_LABELS[s]}
+            </span>
+          </label>
+        ))}
+      </div>
+
       {GROUPS.map((group) => {
         const modules = group.modules.filter(
           (m) => m.id !== "users" && m.id !== "permissions",

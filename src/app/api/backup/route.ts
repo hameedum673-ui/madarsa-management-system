@@ -44,7 +44,11 @@ const OWN_TABLES = [
 ] as const;
 
 /** صرف ایڈمن کی میزیں */
-const ADMIN_TABLES = ["approved_users", "user_permissions"] as const;
+const ADMIN_TABLES = [
+  "approved_users",
+  "user_permissions",
+  "user_sections",
+] as const;
 
 export async function GET() {
   const supabase = await createClient();

@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { isAppAdmin, type ApprovedUser } from "@/lib/approval";
+import { SECTION_IDS } from "@/lib/students";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
 import PermissionsForm from "@/app/departments/permissions/PermissionsForm";
 import { savePermissions } from "@/app/departments/permissions/actions";
@@ -62,6 +63,23 @@ export default async function PermissionsPage({
     }
   }
 
+  // مرحلہ 53 — شعبے کی اجازت (بنین / بنات)؛ میز نہ بنی ہو تو دونوں
+  let allowedSections = new Set<string>(SECTION_IDS);
+  if (selectedUser) {
+    const { data: secData } = await supabase
+      .from("user_sections")
+      .select("section, allowed")
+      .eq("user_email", selectedUser.email.toLowerCase());
+    const secRows = (secData ?? []) as {
+      section: string;
+      allowed: boolean;
+    }[];
+    allowedSections = new Set(SECTION_IDS);
+    for (const r of secRows) {
+      if (!r.allowed) allowedSections.delete(r.section);
+    }
+  }
+
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -104,7 +122,9 @@ export default async function PermissionsPage({
               پہلے سے سب کچھ اجازت شدہ ہے — جس شعبے کا ٹک ہٹائیں گے، وہ
               شعبہ اس صارف کو نظر نہیں آئے گا اور لنک بھی نہیں کھلے گا۔
               "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" صرف ایڈمن کے
-              لیے ہیں، اس لیے یہاں نہیں دکھائے گئے۔
+              لیے ہیں، اس لیے یہاں نہیں دکھائے گئے۔ شعبے (بنین / بنات) کی
+              اجازت اوپر والے حصے میں طے ہوتی ہے — اس سے ابھی کچھ بند
+              نہیں ہوگا (روک مرحلہ 54 میں لگے گی)۔
             </p>
 
             {selectedUser ? (
@@ -112,6 +132,7 @@ export default async function PermissionsPage({
                 userEmail={selectedUser.email.toLowerCase()}
                 userName={selectedUser.name}
                 allowedModules={allowedModules}
+                allowedSections={allowedSections}
                 action={savePermissions}
               />
             ) : null}
