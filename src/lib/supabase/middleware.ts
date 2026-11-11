@@ -147,6 +147,23 @@ export async function updateSession(request: NextRequest) {
       url.pathname = "/";
       return NextResponse.redirect(url);
     }
+    // مرحلہ 47 — ملا ہوا بٹن: طلبہ یا داخلے میں سے ایک کی بھی اجازت
+    // ہو تو کھلتا ہے؛ دونوں بند ہوں تو ڈیش بورڈ پر واپس۔
+    if (slug === "admissions-students") {
+      const { data: studentsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "students" },
+      );
+      const { data: admissionsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "admissions" },
+      );
+      if (studentsAllowed === false && admissionsAllowed === false) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    }
     if (slug) {
       const { data: allowed } = await supabase.rpc(
         "my_module_allowed",
