@@ -7,6 +7,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
   DEPARTMENT_LABELS,
@@ -31,6 +32,8 @@ export default async function ClassesPage({
     : "all";
 
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
   let query = supabase
     .from("classes")
     .select("*")
@@ -39,12 +42,14 @@ export default async function ClassesPage({
   if (department !== "all") query = query.eq("department", department);
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
   const rawSection = params.section ?? "all";
-  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
-    rawSection,
-  )
-    ? (rawSection as SectionId)
-    : "all";
+  const section: SectionId | "all" =
+    (SECTION_IDS as string[]).includes(rawSection) &&
+    allowedSections.has(rawSection as SectionId)
+      ? (rawSection as SectionId)
+      : "all";
   if (section !== "all") query = query.eq("section", section);
+  if (allowedSections.size < 2)
+    query = query.eq("section", [...allowedSections][0] ?? "__none__");
   const { data, error } = await query;
 
   const classes = (data ?? []) as MadrasaClass[];
@@ -90,7 +95,7 @@ export default async function ClassesPage({
               defaultValue={section}
             >
               <option value="all">سب</option>
-              {SECTION_IDS.map((s) => (
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
                   {SECTION_LABELS[s]}
                 </option>

@@ -7,7 +7,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyMadrasa,
+  type SectionId,
+} from "@/lib/students";
 import {
   CLOSED_MONTH_ERROR,
   isMonthClosed,
@@ -107,12 +110,20 @@ export async function addStudentExpense(
   // طالبہ اسی مدرسے کی اور فعال ہونی چاہیے
   const { data: student } = await supabase
     .from("students")
-    .select("id")
+    .select("id, section")
     .eq("id", f.studentId)
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
     .single();
   if (!student) return { error: "طالبہ نہیں ملی — فعال طالبہ منتخب کریں۔" };
+  // مرحلہ 54 — بند شعبے کی طالبہ کا خرچ درج نہیں ہو سکے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (
+    !allowedSections.has(
+      ((student as { section?: string | null }).section ?? "banat") as SectionId,
+    )
+  )
+    return { error: "اس شعبے کی طالبہ کا خرچ درج کرنے کی اجازت نہیں ہے۔" };
 
   // ریکارڈ نمبر: اس مدرسے کے طلبہ کے اخراجات کی گنتی + 1
   const { count } = await supabase

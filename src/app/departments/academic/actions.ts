@@ -7,7 +7,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyMadrasa,
+  type SectionId,
+} from "@/lib/students";
 import { todayInKarachi } from "@/lib/attendance";
 import {
   HIFZ_KINDS,
@@ -109,7 +112,7 @@ export async function addHifzProgress(
   // طالبہ اپنے مدرسے کی فعال اور حفظ شعبے کی ہونی چاہیے
   const { data: student } = await supabase
     .from("students")
-    .select("id, name, department")
+    .select("id, name, department, section")
     .eq("id", f.studentId)
     .eq("status", "active")
     .single();
@@ -119,6 +122,14 @@ export async function addHifzProgress(
   if (student.department !== "hifz") {
     return { error: "حفظ کی پیش رفت صرف حفظ شعبے کی طالبات کے لیے ہے۔" };
   }
+  // مرحلہ 54 — بند شعبے کی طالبہ کی پیش رفت درج نہیں ہو سکے گی
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (
+    !allowedSections.has(
+      ((student as { section?: string | null }).section ?? "banat") as SectionId,
+    )
+  )
+    return { error: "اس شعبے کی طالبہ کی پیش رفت درج کرنے کی اجازت نہیں ہے۔" };
 
   // سننے والا استاد دیا ہو تو وہ اپنے مدرسے کا فعال استاد ہونا چاہیے
   if (f.listenedBy) {

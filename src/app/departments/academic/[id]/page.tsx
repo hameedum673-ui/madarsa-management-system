@@ -11,6 +11,7 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
   STUDENT_STATUS_LABELS,
@@ -65,6 +66,9 @@ export default async function AcademicRecordPage({
     notFound();
   }
   const student = studentData as Student;
+  // مرحلہ 54 — بند شعبے کا ریکارڈ نہیں کھلے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(student.section)) notFound();
 
   // حاضری — اس طالبہ کے تمام دن
   const { data: attData } = await supabase

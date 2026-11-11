@@ -8,6 +8,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   currentMonthInKarachi,
   formatMonthUrdu,
@@ -27,7 +28,9 @@ import {
   type DonationKind,
 } from "@/lib/donations";
 import { getBalanceBefore, isMonthClosed } from "@/lib/monthClosing";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyMadrasa,
+  type SectionId,
+} from "@/lib/students";
 import MonthClosingControls from "@/app/departments/monthly/MonthClosingControls";
 
 /** "2026-11" کا اگلا مہینہ — "2026-12-01" */
@@ -47,13 +50,22 @@ export default async function MonthlyPage({
   const month = isValidMonth(rawMonth) ? rawMonth : currentMonthInKarachi();
 
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
 
   const { data: feesData, error: feesError } = await supabase
     .from("fee_payments")
-    .select("amount, payment_method")
+    .select("amount, payment_method, students(section)")
     .eq("fee_month", month)
     .eq("status", "active");
-  const fees = (feesData ?? []) as { amount: number; payment_method: PaymentMethod }[];
+  // مرحلہ 54 — فیس صرف اجازت والے شعبے کی
+  const fees = ((feesData ?? []) as unknown as {
+    amount: number;
+    payment_method: PaymentMethod;
+    students: { section: string } | null;
+  }[]).filter((f) =>
+    allowedSections.has((f.students?.section ?? "banat") as SectionId),
+  );
 
   const { data: expensesData, error: expensesError } = await supabase
     .from("expenses")
@@ -111,7 +123,7 @@ export default async function MonthlyPage({
   let openingBalance = 0;
   if (mine) {
     monthClosed = await isMonthClosed(supabase, mine.madrasaId, month);
-    openingBalance = await getBalanceBefore(supabase, month);
+    openingBalance = await getBalanceBefore(supabase, month, allowedSections);
   }
 
   const feesTotal = fees.reduce((sum, f) => sum + (f.amount ?? 0), 0);

@@ -7,6 +7,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
   type DepartmentId,
@@ -58,6 +59,8 @@ export default async function FeeSchedulePage({
       : currentMonthInKarachi();
 
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
 
   const { data: scheduleData, error: scheduleError } = await supabase
     .from("fee_schedule")
@@ -78,13 +81,20 @@ export default async function FeeSchedulePage({
 
   const classes = await getActiveClasses(supabase);
 
-  const { data: studentsData } = await supabase
+  let scheduleStudentsQuery = supabase
     .from("students")
     .select(
       "id, name, father_name, registration_number, department, class_name, guardian_phone, whatsapp_number",
     )
     .eq("status", "active")
     .order("registration_number", { ascending: true });
+  if (allowedSections.size < 2) {
+    scheduleStudentsQuery = scheduleStudentsQuery.eq(
+      "section",
+      [...allowedSections][0] ?? "__none__",
+    );
+  }
+  const { data: studentsData } = await scheduleStudentsQuery;
   const students = (studentsData ?? []) as Pick<
     Student,
     | "id"

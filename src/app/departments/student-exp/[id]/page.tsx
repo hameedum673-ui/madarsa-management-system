@@ -6,7 +6,10 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyMadrasa,
+  type SectionId,
+} from "@/lib/students";
 import {
   STUDENT_EXPENSE_CATEGORY_LABELS,
   STUDENT_EXPENSE_STATUS_LABELS,
@@ -32,7 +35,7 @@ export default async function StudentExpDetailPage({
 
   const { data, error } = await supabase
     .from("student_expenses")
-    .select("*, students(name, father_name, registration_number)")
+    .select("*, students(name, father_name, registration_number, section)")
     .eq("id", id)
     .single();
 
@@ -56,6 +59,14 @@ export default async function StudentExpDetailPage({
   }
 
   const record = data as StudentExpense;
+  // مرحلہ 54 — بند شعبے کا ریکارڈ نہیں کھلے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (
+    !allowedSections.has(
+      (record.students?.section ?? "banat") as SectionId,
+    )
+  )
+    notFound();
   const mine = await getMyMadrasa(supabase);
   let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
   if (mine) {

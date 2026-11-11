@@ -9,7 +9,10 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyMadrasa,
+  type SectionId,
+} from "@/lib/students";
 import {
   FEE_PAYMENT_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -33,7 +36,7 @@ export default async function ReceiptPage({
 
   const { data, error } = await supabase
     .from("fee_payments")
-    .select("*, students(name, father_name, registration_number)")
+    .select("*, students(name, father_name, registration_number, section)")
     .eq("id", id)
     .single();
 
@@ -60,8 +63,17 @@ export default async function ReceiptPage({
       name: string;
       father_name: string;
       registration_number: string;
+      section: string;
     } | null;
   };
+  // مرحلہ 54 — بند شعبے کی فیس نہیں کھلے گی
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (
+    !allowedSections.has(
+      (payment.students?.section ?? "banat") as SectionId,
+    )
+  )
+    notFound();
 
   // مدرسے کا نام رسید پر دکھانے کے لیے
   let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";

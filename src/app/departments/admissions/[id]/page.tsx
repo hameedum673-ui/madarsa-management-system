@@ -7,6 +7,7 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
 import {
   ADMISSION_STATUS_LABELS,
@@ -49,6 +50,9 @@ export default async function AdmissionDetailPage({
   const admission = data as Admission & {
     students: { registration_number: string } | null;
   };
+  // مرحلہ 54 — بند شعبے کا داخلہ نہیں کھلے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(admission.section)) notFound();
 
   const madrasaName = await getMadrasaNameForMessage(supabase);
 

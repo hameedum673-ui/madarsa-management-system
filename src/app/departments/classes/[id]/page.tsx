@@ -5,6 +5,7 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
 import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
 import ClassForm from "@/app/departments/classes/ClassForm";
@@ -28,6 +29,9 @@ export default async function ClassDetailPage({
   }
 
   const madrasaClass = data as MadrasaClass;
+  // مرحلہ 54 — بند شعبے کا ریکارڈ نہیں کھلے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(madrasaClass.section)) notFound();
 
   return (
     <div className="module-view open">

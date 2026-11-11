@@ -8,7 +8,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyMadrasa,
+  type SectionId,
+} from "@/lib/students";
 import { CLOSED_MONTH_ERROR, isMonthClosed } from "@/lib/monthClosing";
 import {
   PAYMENT_METHODS,
@@ -91,12 +94,20 @@ export async function addFeePayment(
   // صرف اپنے مدرسے کی فعال طالبہ کی فیس درج ہو سکتی ہے
   const { data: student } = await supabase
     .from("students")
-    .select("id, name")
+    .select("id, name, section")
     .eq("id", studentId)
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
     .single();
   if (!student) return { error: "طالبہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+  // مرحلہ 54 — بند شعبے کی طالبہ کی فیس درج نہیں ہو سکے گی
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (
+    !allowedSections.has(
+      ((student as { section?: string | null }).section ?? "banat") as SectionId,
+    )
+  )
+    return { error: "اس شعبے کی طالبہ کی فیس درج کرنے کی اجازت نہیں ہے۔" };
 
   // اگلا رسید نمبر: اپنے مدرسے کی فیس کی گنتی + 1
   const { count } = await supabase

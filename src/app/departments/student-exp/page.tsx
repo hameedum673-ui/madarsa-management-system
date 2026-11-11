@@ -9,6 +9,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   SECTION_IDS,
   SECTION_LABELS,
@@ -34,20 +35,29 @@ export default async function StudentExpPage({
   const params = await searchParams;
   const selectedStudent = params.student ?? "all";
   // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
-  const rawSection = params.section ?? "all";
-  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
-    rawSection,
-  )
-    ? (rawSection as SectionId)
-    : "all";
-
-
   const supabase = await createClient();
-  const { data: studentsData } = await supabase
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const rawSection = params.section ?? "all";
+  const section: SectionId | "all" =
+    (SECTION_IDS as string[]).includes(rawSection) &&
+    allowedSections.has(rawSection as SectionId)
+      ? (rawSection as SectionId)
+      : "all";
+
+
+  let studentsQuery = supabase
     .from("students")
     .select("*")
     .eq("status", "active")
     .order("registration_number", { ascending: true });
+  if (allowedSections.size < 2) {
+    studentsQuery = studentsQuery.eq(
+      "section",
+      [...allowedSections][0] ?? "__none__",
+    );
+  }
+  const { data: studentsData } = await studentsQuery;
   const students = (studentsData ?? []) as Student[];
 
   let query = supabase
@@ -63,10 +73,17 @@ export default async function StudentExpPage({
   // مرحلہ 52 — شعبہ چنا ہو (اور کوئی ایک طالبہ نہ چنی ہو) تو صرف
   // اسی شعبے کے ریکارڈ دکھائیں
   const allRecords = (data ?? []) as StudentExpense[];
-  const records =
-    section !== "all" && selectedStudent === "all"
-      ? allRecords.filter((r) => r.students?.section === section)
-      : allRecords;
+  // مرحلہ 54 — صرف اجازت والے شعبے کے ریکارڈ (اور شعبہ چنا ہو تو
+  // صرف وہی شعبہ — مگر کوئی ایک طالبہ چنی ہو تو وہی طالبہ)
+  const records = allRecords
+    .filter((r) =>
+      allowedSections.has((r.students?.section ?? "banat") as SectionId),
+    )
+    .filter((r) =>
+      section !== "all" && selectedStudent === "all"
+        ? r.students?.section === section
+        : true,
+    );
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
   const totalSpent = records
@@ -114,7 +131,7 @@ export default async function StudentExpPage({
               defaultValue={section}
             >
               <option value="all">سب</option>
-              {SECTION_IDS.map((s) => (
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
                   {SECTION_LABELS[s]}
                 </option>

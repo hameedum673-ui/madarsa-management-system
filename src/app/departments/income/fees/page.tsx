@@ -7,6 +7,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   SECTION_IDS,
   SECTION_LABELS,
@@ -39,14 +40,16 @@ export default async function IncomePage({
         : currentMonthInKarachi();
 
   // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
-  const rawSection = sp.section ?? "all";
-  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
-    rawSection,
-  )
-    ? (rawSection as SectionId)
-    : "all";
-
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const rawSection = sp.section ?? "all";
+  const section: SectionId | "all" =
+    (SECTION_IDS as string[]).includes(rawSection) &&
+    allowedSections.has(rawSection as SectionId)
+      ? (rawSection as SectionId)
+      : "all";
+
 
   let query = supabase
     .from("fee_payments")
@@ -64,10 +67,14 @@ export default async function IncomePage({
   const allPayments = (data ?? []) as (FeePayment & {
     students: { name: string; father_name: string; section: string } | null;
   })[];
-  const payments =
-    section !== "all"
-      ? allPayments.filter((p) => p.students?.section === section)
-      : allPayments;
+  // مرحلہ 54 — صرف اجازت والے شعبے کی فیس
+  const payments = allPayments
+    .filter((p) =>
+      allowedSections.has((p.students?.section ?? "banat") as SectionId),
+    )
+    .filter((p) =>
+      section !== "all" ? p.students?.section === section : true,
+    );
   const totalCollected = payments
     .filter((p) => p.status === "active")
     .reduce((sum, p) => sum + p.amount, 0);
@@ -114,7 +121,7 @@ export default async function IncomePage({
               defaultValue={section}
             >
               <option value="all">سب</option>
-              {SECTION_IDS.map((s) => (
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
                   {SECTION_LABELS[s]}
                 </option>

@@ -2,7 +2,8 @@ import TopBar from "@/components/TopBar";
 import StatsRow from "@/components/StatsRow";
 import DepartmentGroups from "@/components/DepartmentGroups";
 import { createClient } from "@/lib/supabase/server";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyMadrasa, type SectionId } from "@/lib/students";
 import { ROLE_LABELS } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { todayInKarachi } from "@/lib/attendance";
@@ -12,13 +13,22 @@ export default async function DashboardPage() {
   // مرحلہ 4/5/6 — «کل طلبہ»، «کل اساتذہ» اور «آج کی حاضری» اصل تعداد دکھاتے ہیں۔
   // میز نہ بنی ہو یا کوئی خرابی ہو تو صفر دکھایا جاتا ہے، صفحہ نہیں ٹوٹتا۔
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
 
   let totalStudents = 0;
   try {
-    const { count } = await supabase
+    let studentsQuery = supabase
       .from("students")
       .select("id", { count: "exact", head: true })
       .eq("status", "active");
+    if (allowedSections.size < 2) {
+      studentsQuery = studentsQuery.eq(
+        "section",
+        [...allowedSections][0] ?? "__none__",
+      );
+    }
+    const { count } = await studentsQuery;
     totalStudents = count ?? 0;
   } catch {
     totalStudents = 0;
@@ -26,10 +36,17 @@ export default async function DashboardPage() {
 
   let totalTeachers = 0;
   try {
-    const { count } = await supabase
+    let teachersQuery = supabase
       .from("teachers")
       .select("id", { count: "exact", head: true })
       .eq("status", "active");
+    if (allowedSections.size < 2) {
+      teachersQuery = teachersQuery.eq(
+        "section",
+        [...allowedSections][0] ?? "__none__",
+      );
+    }
+    const { count } = await teachersQuery;
     totalTeachers = count ?? 0;
   } catch {
     totalTeachers = 0;
@@ -50,8 +67,8 @@ export default async function DashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("status", "active")
       .eq("section", "banat");
-    studentsBanin = cBanin ?? 0;
-    studentsBanat = cBanat ?? 0;
+    studentsBanin = allowedSections.has("banin") ? (cBanin ?? 0) : 0;
+    studentsBanat = allowedSections.has("banat") ? (cBanat ?? 0) : 0;
   } catch {
     studentsBanin = 0;
     studentsBanat = 0;
@@ -70,32 +87,56 @@ export default async function DashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("status", "active")
       .eq("section", "banat");
-    teachersBanin = cBanin ?? 0;
-    teachersBanat = cBanat ?? 0;
+    teachersBanin = allowedSections.has("banin") ? (cBanin ?? 0) : 0;
+    teachersBanat = allowedSections.has("banat") ? (cBanat ?? 0) : 0;
   } catch {
     teachersBanin = 0;
     teachersBanat = 0;
   }
 
   // آج کی حاضری — پاکستان کی تاریخ کے حساب سے
+  // (مرحلہ 54 — محدود صارف کو صرف اجازت والے شعبے کی حاضری دکھے)
   let attendanceToday: { present: number; total: number; marked: number } | null =
     null;
   try {
     const today = todayInKarachi();
-    const { count: presentCount } = await supabase
-      .from("student_attendance")
-      .select("id", { count: "exact", head: true })
-      .eq("date", today)
-      .eq("status", "present");
-    const { count: markedCount } = await supabase
-      .from("student_attendance")
-      .select("id", { count: "exact", head: true })
-      .eq("date", today);
-    attendanceToday = {
-      present: presentCount ?? 0,
-      total: totalStudents,
-      marked: markedCount ?? 0,
-    };
+    if (allowedSections.size === 0) {
+      attendanceToday = { present: 0, total: totalStudents, marked: 0 };
+    } else if (allowedSections.size < 2) {
+      // محدود صارف — آج کی حاضری کی قطاریں پڑھ کر شعبے کے حساب سے گنیں
+      const { data: attRows } = await supabase
+        .from("student_attendance")
+        .select("status, students(section)")
+        .eq("date", today);
+      const allowedRows = (
+        (attRows ?? []) as unknown as {
+          status: string;
+          students: { section: string } | null;
+        }[]
+      ).filter((r) =>
+        allowedSections.has((r.students?.section ?? "banat") as SectionId),
+      );
+      attendanceToday = {
+        present: allowedRows.filter((r) => r.status === "present").length,
+        total: totalStudents,
+        marked: allowedRows.length,
+      };
+    } else {
+      const { count: presentCount } = await supabase
+        .from("student_attendance")
+        .select("id", { count: "exact", head: true })
+        .eq("date", today)
+        .eq("status", "present");
+      const { count: markedCount } = await supabase
+        .from("student_attendance")
+        .select("id", { count: "exact", head: true })
+        .eq("date", today);
+      attendanceToday = {
+        present: presentCount ?? 0,
+        total: totalStudents,
+        marked: markedCount ?? 0,
+      };
+    }
   } catch {
     attendanceToday = null;
   }
@@ -108,9 +149,17 @@ export default async function DashboardPage() {
   try {
     const { data: payments } = await supabase
       .from("fee_payments")
-      .select("amount")
+      .select("amount, students(section)")
       .eq("status", "active");
-    const feeRows = (payments ?? []) as { amount: number }[];
+    // مرحلہ 54 — بیلنس میں فیس صرف اجازت والے شعبے کی
+    const feeRows = (
+      (payments ?? []) as unknown as {
+        amount: number;
+        students: { section: string } | null;
+      }[]
+    ).filter((p) =>
+      allowedSections.has((p.students?.section ?? "banat") as SectionId),
+    );
     const { data: given } = await supabase
       .from("donations")
       .select("amount")

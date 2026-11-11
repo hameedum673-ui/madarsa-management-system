@@ -5,6 +5,7 @@
  */
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   isValidPastOrTodayDate,
   todayInKarachi,
@@ -41,14 +42,16 @@ export default async function AttendancePage({
       ? sp.department
       : "all";
   // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
-  const rawSection = sp.section ?? "all";
-  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
-    rawSection,
-  )
-    ? (rawSection as SectionId)
-    : "all";
-
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const rawSection = sp.section ?? "all";
+  const section: SectionId | "all" =
+    (SECTION_IDS as string[]).includes(rawSection) &&
+    allowedSections.has(rawSection as SectionId)
+      ? (rawSection as SectionId)
+      : "all";
+
 
   let studentsQuery = supabase
     .from("students")
@@ -60,6 +63,12 @@ export default async function AttendancePage({
   }
   if (section !== "all") {
     studentsQuery = studentsQuery.eq("section", section);
+  }
+  if (allowedSections.size < 2) {
+    studentsQuery = studentsQuery.eq(
+      "section",
+      [...allowedSections][0] ?? "__none__",
+    );
   }
   const { data: studentsData, error: studentsError } = await studentsQuery;
 
@@ -103,6 +112,7 @@ export default async function AttendancePage({
             date={date}
             department={department}
             section={section}
+            allowedSections={[...allowedSections]}
           />
         )}
 

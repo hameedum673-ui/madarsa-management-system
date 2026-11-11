@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import type { SectionId } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   formatMonthUrdu,
   PAYMENT_METHOD_LABELS,
@@ -57,17 +59,23 @@ export default async function YearlyPage({
   const year = isValidYear(rawYear) ? rawYear : currentYearInKarachi();
 
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
 
   const { data: feesData, error: feesError } = await supabase
     .from("fee_payments")
-    .select("amount, payment_method, fee_month")
+    .select("amount, payment_method, fee_month, students(section)")
     .like("fee_month", `${year}-%`)
     .eq("status", "active");
-  const fees = (feesData ?? []) as {
+  // مرحلہ 54 — فیس صرف اجازت والے شعبے کی
+  const fees = ((feesData ?? []) as unknown as {
     amount: number;
     payment_method: PaymentMethod;
     fee_month: string;
-  }[];
+    students: { section: string } | null;
+  }[]).filter((f) =>
+    allowedSections.has((f.students?.section ?? "banat") as SectionId),
+  );
 
   const { data: expensesData, error: expensesError } = await supabase
     .from("expenses")
@@ -131,7 +139,7 @@ export default async function YearlyPage({
 
   // مرحلہ 39 — سال کا ابتدائی بقیہ + مہینوں کی بندش کی حالت
   // (بندش کی میز نہ ہو تو سب مہینے کھلے مانے جاتے ہیں)
-  const openingBalance = await getBalanceBefore(supabase, `${year}-01`);
+  const openingBalance = await getBalanceBefore(supabase, `${year}-01`, allowedSections);
   const closedMonths = new Set<string>();
   try {
     const { data: closingsData } = await supabase

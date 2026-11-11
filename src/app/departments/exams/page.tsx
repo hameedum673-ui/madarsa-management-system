@@ -6,6 +6,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
   SECTION_IDS,
@@ -25,19 +26,23 @@ export default async function ExamsPage({
   searchParams: Promise<{ section?: string }>;
 }) {
   const params = await searchParams;
-  const rawSection = params.section ?? "all";
-  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
-    rawSection,
-  )
-    ? (rawSection as SectionId)
-    : "all";
-
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const rawSection = params.section ?? "all";
+  const section: SectionId | "all" =
+    (SECTION_IDS as string[]).includes(rawSection) &&
+    allowedSections.has(rawSection as SectionId)
+      ? (rawSection as SectionId)
+      : "all";
+
   let query = supabase
     .from("exams")
     .select("*")
     .order("exam_date", { ascending: false });
   if (section !== "all") query = query.eq("section", section);
+  if (allowedSections.size < 2)
+    query = query.eq("section", [...allowedSections][0] ?? "__none__");
   const { data, error } = await query;
 
   const exams = (data ?? []) as Exam[];
@@ -68,7 +73,7 @@ export default async function ExamsPage({
               defaultValue={section}
             >
               <option value="all">سب</option>
-              {SECTION_IDS.map((s) => (
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
                   {SECTION_LABELS[s]}
                 </option>

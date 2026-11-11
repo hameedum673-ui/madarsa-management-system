@@ -6,6 +6,7 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
   SECTION_LABELS,
@@ -42,6 +43,10 @@ export default async function ExamDetailPage({
   }
 
   const exam = examData as Exam;
+  // مرحلہ 54 — بند شعبے کا امتحان نہیں کھلے گا (پرانا امتحان ہو تو
+  // شعبہ خالی ہو سکتا ہے — اس صورت میں یہ جانچ نہیں لگتی)
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (exam.section && !allowedSections.has(exam.section)) notFound();
   const subjects = exam.subjects ?? [];
   const totalPossible = subjects.length * 100;
 

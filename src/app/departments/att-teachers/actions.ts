@@ -7,12 +7,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   ATTENDANCE_STATUSES,
   isValidPastOrTodayDate,
   type AttendanceStatus,
 } from "@/lib/attendance";
-import { getMyMadrasa } from "@/lib/students";
+import { getMyMadrasa,
+  type SectionId,
+} from "@/lib/students";
 
 type SaveResult =
   | {
@@ -50,10 +53,18 @@ export async function saveTeacherAttendance(
   // صرف اپنے مدرسے کے فعال اساتذہ کی حاضری لگ سکتی ہے
   const { data: owned } = await supabase
     .from("teachers")
-    .select("id")
+    .select("id, section")
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active");
-  const ownedIds = new Set((owned ?? []).map((s) => s.id as string));
+  // مرحلہ 54 — صرف اجازت والے شعبے کی حاضری لگ سکتی ہے
+  const allowedSections = await getMyAllowedSections(supabase);
+  const ownedIds = new Set(
+    ((owned ?? []) as { id: string; section: string }[])
+      .filter((s) =>
+        allowedSections.has((s.section ?? "banat") as SectionId),
+      )
+      .map((s) => s.id as string),
+  );
 
   const rows = entries
     .filter((e) => ownedIds.has(e.teacherId))

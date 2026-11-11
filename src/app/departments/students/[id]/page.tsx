@@ -5,6 +5,7 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
   SECTION_LABELS,
@@ -38,6 +39,9 @@ export default async function StudentDetailPage({
   }
 
   const student = data as Student;
+  // مرحلہ 54 — بند شعبے کا ریکارڈ نہیں کھلے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(student.section)) notFound();
   const classes = await getActiveClasses(supabase);
 
   return (

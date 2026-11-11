@@ -5,6 +5,7 @@
  * کی وجہ سے کوئی کام نہ رکے۔
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SectionId } from "@/lib/students";
 
 /** بند مہینے پر دکھائی جانے والی اردو غلطی */
 export const CLOSED_MONTH_ERROR =
@@ -69,11 +70,13 @@ export async function upsertClosing(
 export async function getBalanceBefore(
   supabase: Client,
   month: string,
+  // مرحلہ 54 — دی جائے تو فیس صرف انہی شعبوں کی گنی جاتی ہے
+  allowedSections?: Set<SectionId>,
 ): Promise<number> {
   try {
     const { data: feesData } = await supabase
       .from("fee_payments")
-      .select("amount")
+      .select("amount, students(section)")
       .lt("fee_month", month)
       .eq("status", "active");
     const { data: donationsData } = await supabase
@@ -96,10 +99,18 @@ export async function getBalanceBefore(
       .select("kind, amount")
       .lt("record_date", `${month}-01`)
       .eq("status", "active");
-    const fees = ((feesData ?? []) as { amount: number }[]).reduce(
-      (sum, f) => sum + (f.amount ?? 0),
-      0,
-    );
+    const fees = (
+      (feesData ?? []) as unknown as {
+        amount: number;
+        students: { section: string } | null;
+      }[]
+    )
+      .filter(
+        (f) =>
+          !allowedSections ||
+          allowedSections.has((f.students?.section ?? "banat") as SectionId),
+      )
+      .reduce((sum, f) => sum + (f.amount ?? 0), 0);
     const donations = ((donationsData ?? []) as { amount: number }[]).reduce(
       (sum, d) => sum + (d.amount ?? 0),
       0,

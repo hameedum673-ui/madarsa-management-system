@@ -6,6 +6,11 @@
  * "تنخواہیں" اس فہرست میں نہیں ہیں — وہ صرف ایڈمن کے لیے ہیں۔
  */
 import { GROUPS } from "@/data/departments";
+import { SECTION_IDS, type SectionId } from "@/lib/students";
+import { isAppAdmin } from "@/lib/approval";
+import type { createClient } from "@/lib/supabase/server";
+
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
 /** وہ 26 شعبے جن کی اجازت ایڈمن مقرر کر سکتا ہے (مرحلہ 48 سے عشر بھی) */
 export const PERMISSION_MODULE_IDS: string[] = GROUPS.flatMap((g) =>
@@ -28,4 +33,33 @@ export interface UserSectionRow {
   user_email: string;
   section: string;
   allowed: boolean;
+}
+
+/**
+ * مرحلہ 54 — موجودہ صارف کو کون سے شعبے (بنین / بنات) دیکھنے کی اجازت ہے۔
+ * ایڈمن → دونوں؛ ورنہ user_sections کی بند والی قطاریں ہٹا دی جاتی ہیں۔
+ * کسی غلطی پر پہلے سے دونوں (کبھی غلطی سے تالا نہیں لگے گا)۔
+ */
+export async function getMyAllowedSections(
+  supabase: ServerClient,
+): Promise<Set<SectionId>> {
+  const all = new Set<SectionId>(SECTION_IDS);
+  try {
+    if (await isAppAdmin(supabase)) return all;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.email) return all;
+    const { data } = await supabase
+      .from("user_sections")
+      .select("section, allowed")
+      .eq("user_email", user.email.toLowerCase());
+    const rows = (data ?? []) as { section: string; allowed: boolean }[];
+    for (const r of rows) {
+      if (!r.allowed) all.delete(r.section as SectionId);
+    }
+    return all;
+  } catch {
+    return all;
+  }
 }

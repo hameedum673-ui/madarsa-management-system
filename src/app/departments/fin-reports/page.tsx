@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import type { SectionId } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
 import { todayInKarachi } from "@/lib/attendance";
 import {
   currentMonthInKarachi,
@@ -52,14 +54,23 @@ export default async function FinReportsPage({
   const to = isValidDate(rawTo) && rawTo <= today && rawTo >= from ? rawTo : today;
 
   const supabase = await createClient();
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  const allowedSections = await getMyAllowedSections(supabase);
 
   const { data: feesData, error: feesError } = await supabase
     .from("fee_payments")
-    .select("amount, payment_method")
+    .select("amount, payment_method, students(section)")
     .gte("payment_date", from)
     .lte("payment_date", to)
     .eq("status", "active");
-  const fees = (feesData ?? []) as { amount: number; payment_method: PaymentMethod }[];
+  // مرحلہ 54 — فیس صرف اجازت والے شعبے کی
+  const fees = ((feesData ?? []) as unknown as {
+    amount: number;
+    payment_method: PaymentMethod;
+    students: { section: string } | null;
+  }[]).filter((f) =>
+    allowedSections.has((f.students?.section ?? "banat") as SectionId),
+  );
 
   const { data: expensesData, error: expensesError } = await supabase
     .from("expenses")

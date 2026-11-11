@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -90,6 +91,11 @@ export async function addExam(formData: FormData): Promise<AddResult> {
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 
+  // مرحلہ 54 — بند شعبے میں امتحان نہیں بن سکتا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(section as SectionId))
+    return { error: "اس شعبے میں امتحان بنانے کی اجازت نہیں ہے۔" };
+
   const { data, error } = await supabase
     .from("exams")
     .insert({
@@ -146,6 +152,10 @@ export async function saveMarks(
   if (subjects.length === 0) {
     return { error: "اس امتحان میں کوئی مضمون نہیں ہے۔" };
   }
+  // مرحلہ 54 — بند شعبے کے امتحان میں نمبر نہیں درج ہو سکتے
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (exam.section && !allowedSections.has(exam.section as SectionId))
+    return { error: "اس شعبے کے امتحان میں نمبر درج کرنے کی اجازت نہیں ہے۔" };
 
   // اس امتحان کی طالبات — اسی شعبے کی فعال طالبات (جماعت لکھی ہو تو وہی جماعت)
   let studentQuery = supabase

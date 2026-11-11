@@ -9,6 +9,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -142,6 +143,11 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 
+  // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(f.section))
+    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+
   const { data, error } = await supabase
     .from("admissions")
     .insert({
@@ -197,6 +203,14 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
   if (admission.status !== "pending") {
     return { error: "یہ درخواست پہلے ہی منظور یا مسترد ہو چکی ہے۔" };
   }
+  // مرحلہ 54 — بند شعبے کا داخلہ منظور نہیں ہو سکتا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (
+    !allowedSections.has(
+      ((admission.section as string) || "banat") as SectionId,
+    )
+  )
+    return { error: "اس شعبے کا داخلہ منظور کرنے کی اجازت نہیں ہے۔" };
 
   // اگلا رجسٹریشن نمبر: اپنے مدرسے کی طالبات کی گنتی + 1
   const { count } = await supabase

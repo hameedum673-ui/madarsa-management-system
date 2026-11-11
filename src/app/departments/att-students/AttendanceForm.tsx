@@ -37,12 +37,15 @@ export default function AttendanceForm({
   date,
   department,
   section,
+  allowedSections,
 }: {
   students: AttendanceStudent[];
   existing: Record<string, AttendanceStatus>;
   date: string;
   department: string;
   section: string;
+  // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
+  allowedSections: string[];
 }) {
   const router = useRouter();
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>(
@@ -139,7 +142,7 @@ export default function AttendanceForm({
             onChange={(e) => go(date, department, e.target.value)}
           >
             <option value="all">سب</option>
-            {SECTION_IDS.map((s) => (
+            {SECTION_IDS.filter((s) => allowedSections.includes(s)).map((s) => (
               <option key={s} value={s}>
                 {SECTION_LABELS[s]}
               </option>

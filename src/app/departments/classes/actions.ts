@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -87,6 +88,11 @@ export async function addClass(formData: FormData): Promise<ActionResult> {
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 
+  // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(f.section))
+    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+
   const { data, error } = await supabase
     .from("classes")
     .insert({
@@ -130,6 +136,11 @@ export async function updateClass(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+
+  // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(f.section))
+    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
 
   // RLS خود یقین دلاتی ہے کہ یہ جماعت اسی مدرسے کی ہے
   const { data, error } = await supabase

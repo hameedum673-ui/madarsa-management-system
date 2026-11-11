@@ -9,6 +9,7 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
   getMyMadrasa,
@@ -55,6 +56,9 @@ export default async function IdCardPage({
   if (error || !data) notFound();
 
   const student = data as Student;
+  // مرحلہ 54 — بند شعبے کا ریکارڈ نہیں کھلے گا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(student.section)) notFound();
 
   if (student.status === "withdrawn") {
     return (
