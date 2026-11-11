@@ -61,8 +61,9 @@ export async function upsertClosing(
 }
 
 /**
- * اس مہینے سے پہلے کا بقیہ = پہلے کی فعال فیس + عطیات − پہلے کے فعال اخراجات
- * (زکوٰۃ الگ فنڈ ہے — بقیے میں نہیں گنی جاتی)
+ * اس مہینے سے پہلے کا بقیہ = پہلے کی فعال فیس + عطیات
+ * + (زکوٰۃ وصولی − تقسیم) + (عشر وصولی − تقسیم) − پہلے کے فعال اخراجات
+ * (مرحلہ 48 — وکالت کا اصول: زکوٰۃ اور عشر آمدنی میں شامل ہیں)
  */
 export async function getBalanceBefore(
   supabase: Client,
@@ -84,6 +85,16 @@ export async function getBalanceBefore(
       .select("amount")
       .lt("expense_date", `${month}-01`)
       .eq("status", "active");
+    const { data: zakatData } = await supabase
+      .from("zakat_records")
+      .select("kind, amount")
+      .lt("record_date", `${month}-01`)
+      .eq("status", "active");
+    const { data: ushrData } = await supabase
+      .from("ushr_records")
+      .select("kind, amount")
+      .lt("record_date", `${month}-01`)
+      .eq("status", "active");
     const fees = ((feesData ?? []) as { amount: number }[]).reduce(
       (sum, f) => sum + (f.amount ?? 0),
       0,
@@ -96,7 +107,18 @@ export async function getBalanceBefore(
       (sum, e) => sum + (e.amount ?? 0),
       0,
     );
-    return fees + donations - expenses;
+    const netOf = (rows: { kind: string; amount: number }[] | null) =>
+      (rows ?? [])
+        .filter((r) => r.kind === "received")
+        .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
+      (rows ?? [])
+        .filter((r) => r.kind === "distributed")
+        .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+    const zakatNet = netOf(
+      zakatData as { kind: string; amount: number }[] | null,
+    );
+    const ushrNet = netOf(ushrData as { kind: string; amount: number }[] | null);
+    return fees + donations + zakatNet + ushrNet - expenses;
   } catch {
     return 0;
   }

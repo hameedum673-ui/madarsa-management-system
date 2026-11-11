@@ -164,7 +164,38 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
-    if (slug) {
+    // مرحلہ 48 — آمدنی کا حب: صرف /departments/income (حب) پر فیس،
+    // زکوٰۃ، عشر یا عطیات میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛
+    // نیچے والے صفحے (/departments/income/fees وغیرہ) پر صرف فیس
+    // کی اجازت چاہیے — اس لیے حب کے لیے عام جانچ نہیں چلتی۔
+    if (slug === "income" && pathname === "/departments/income") {
+      const { data: incomeAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "income" },
+      );
+      const { data: zakatAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "zakat" },
+      );
+      const { data: ushrAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "ushr" },
+      );
+      const { data: donationsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "donations" },
+      );
+      if (
+        incomeAllowed === false &&
+        zakatAllowed === false &&
+        ushrAllowed === false &&
+        donationsAllowed === false
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    } else if (slug) {
       const { data: allowed } = await supabase.rpc(
         "my_module_allowed",
         { p_module: slug },

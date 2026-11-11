@@ -94,6 +94,38 @@ export default async function YearlyPage({
     donation_date: string;
   }[];
 
+  // مرحلہ 48 — وکالت کا اصول: زکوٰۃ اور عشر بھی آمدنی ہیں
+  // (وصولی مائنس تقسیم)۔ میز نہ ہو تو خالی مانا جاتا ہے۔
+  const { data: zakatData } = await supabase
+    .from("zakat_records")
+    .select("kind, amount, record_date")
+    .gte("record_date", `${year}-01-01`)
+    .lt("record_date", `${Number(year) + 1}-01-01`)
+    .eq("status", "active");
+  const zakatRows = (zakatData ?? []) as {
+    kind: string;
+    amount: number;
+    record_date: string;
+  }[];
+  const { data: ushrData } = await supabase
+    .from("ushr_records")
+    .select("kind, amount, record_date")
+    .gte("record_date", `${year}-01-01`)
+    .lt("record_date", `${Number(year) + 1}-01-01`)
+    .eq("status", "active");
+  const ushrRows = (ushrData ?? []) as {
+    kind: string;
+    amount: number;
+    record_date: string;
+  }[];
+  const netOf = (rows: { kind: string; amount: number }[]) =>
+    rows
+      .filter((r) => r.kind === "received")
+      .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
+    rows
+      .filter((r) => r.kind === "distributed")
+      .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+
   const tableMissing =
     (feesError as { code?: string } | null)?.code === "42P01" ||
     (expensesError as { code?: string } | null)?.code === "42P01" ||
@@ -124,7 +156,9 @@ export default async function YearlyPage({
     (sum, d) => sum + (d.amount ?? 0),
     0,
   );
-  const incomeTotal = feesTotal + donationsTotal;
+  const zakatNet = netOf(zakatRows);
+  const ushrNet = netOf(ushrRows);
+  const incomeTotal = feesTotal + donationsTotal + zakatNet + ushrNet;
   const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0);
   const balance = incomeTotal - expensesTotal;
 
@@ -136,7 +170,13 @@ export default async function YearlyPage({
     const monthDonations = donations
       .filter((d) => d.donation_date.startsWith(key))
       .reduce((sum, d) => sum + (d.amount ?? 0), 0);
-    const monthIncome = monthFees + monthDonations;
+    const monthZakat = netOf(
+      zakatRows.filter((z) => z.record_date.startsWith(key)),
+    );
+    const monthUshr = netOf(
+      ushrRows.filter((u) => u.record_date.startsWith(key)),
+    );
+    const monthIncome = monthFees + monthDonations + monthZakat + monthUshr;
     const monthExpenses = expenses
       .filter((e) => e.expense_date.startsWith(key))
       .reduce((sum, e) => sum + (e.amount ?? 0), 0);
@@ -236,6 +276,14 @@ export default async function YearlyPage({
                   {" — "}
                   {donations.length.toLocaleString("ur-PK")} عطیات
                 </span>
+              </div>
+              <div className="row">
+                <span>پورے سال کی زکوٰۃ (وصولی − تقسیم)</span>
+                <span>{zakatNet.toLocaleString("ur-PK")} روپے</span>
+              </div>
+              <div className="row">
+                <span>پورے سال کا عشر (وصولی − تقسیم)</span>
+                <span>{ushrNet.toLocaleString("ur-PK")} روپے</span>
               </div>
               <div className="row">
                 <span>پورے سال کی کل آمدنی</span>

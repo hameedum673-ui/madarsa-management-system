@@ -83,7 +83,8 @@ export default async function FinReportsPage({
     kind: DonationKind;
   }[];
 
-  // زکوٰۃ الگ فنڈ — صرف دکھائی جائے گی، بیلنس میں نہیں ملے گی
+  // مرحلہ 48 — وکالت کا اصول: زکوٰۃ اور عشر آمدنی میں شامل ہیں
+  // (وصولی مائنس تقسیم)۔ عشر کی میز نہ ہو تو خالی مانا جاتا ہے۔
   const { data: zakatData, error: zakatError } = await supabase
     .from("zakat_records")
     .select("amount, kind")
@@ -91,6 +92,16 @@ export default async function FinReportsPage({
     .lte("record_date", to)
     .eq("status", "active");
   const zakat = (zakatData ?? []) as {
+    amount: number;
+    kind: "received" | "distributed";
+  }[];
+  const { data: ushrData } = await supabase
+    .from("ushr_records")
+    .select("amount, kind")
+    .gte("record_date", from)
+    .lte("record_date", to)
+    .eq("status", "active");
+  const ushr = (ushrData ?? []) as {
     amount: number;
     kind: "received" | "distributed";
   }[];
@@ -106,10 +117,6 @@ export default async function FinReportsPage({
     (sum, d) => sum + (d.amount ?? 0),
     0,
   );
-  const incomeTotal = feesTotal + donationsTotal;
-  const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0);
-  const balance = incomeTotal - expensesTotal;
-
   const zakatReceived = zakat
     .filter((z) => z.kind === "received")
     .reduce((sum, z) => sum + (z.amount ?? 0), 0);
@@ -117,6 +124,17 @@ export default async function FinReportsPage({
     .filter((z) => z.kind === "distributed")
     .reduce((sum, z) => sum + (z.amount ?? 0), 0);
   const zakatRemaining = zakatReceived - zakatDistributed;
+  const ushrReceived = ushr
+    .filter((u) => u.kind === "received")
+    .reduce((sum, u) => sum + (u.amount ?? 0), 0);
+  const ushrDistributed = ushr
+    .filter((u) => u.kind === "distributed")
+    .reduce((sum, u) => sum + (u.amount ?? 0), 0);
+  const ushrRemaining = ushrReceived - ushrDistributed;
+  const incomeTotal =
+    feesTotal + donationsTotal + zakatRemaining + ushrRemaining;
+  const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0);
+  const balance = incomeTotal - expensesTotal;
 
   const byCategory = new Map<ExpenseCategory, number>();
   for (const e of expenses) {
@@ -203,6 +221,14 @@ export default async function FinReportsPage({
                 </span>
               </div>
               <div className="row">
+                <span>زکوٰۃ (وصولی − تقسیم)</span>
+                <span>{zakatRemaining.toLocaleString("ur-PK")} روپے</span>
+              </div>
+              <div className="row">
+                <span>عشر (وصولی − تقسیم)</span>
+                <span>{ushrRemaining.toLocaleString("ur-PK")} روپے</span>
+              </div>
+              <div className="row">
                 <span>کل آمدنی</span>
                 <span>{incomeTotal.toLocaleString("ur-PK")} روپے</span>
               </div>
@@ -220,7 +246,7 @@ export default async function FinReportsPage({
               </div>
             </div>
 
-            <h3 className="form-section-title">زکوٰۃ (الگ فنڈ — بیلنس میں نہیں)</h3>
+            <h3 className="form-section-title">زکوٰۃ</h3>
             <div className="detail-rows">
               <div className="row">
                 <span>کل وصول شدہ زکوٰۃ</span>
@@ -233,6 +259,22 @@ export default async function FinReportsPage({
               <div className="row">
                 <span>باقی زکوٰۃ</span>
                 <span>{zakatRemaining.toLocaleString("ur-PK")} روپے</span>
+              </div>
+            </div>
+
+            <h3 className="form-section-title">عشر</h3>
+            <div className="detail-rows">
+              <div className="row">
+                <span>کل وصول شدہ عشر</span>
+                <span>{ushrReceived.toLocaleString("ur-PK")} روپے</span>
+              </div>
+              <div className="row">
+                <span>کل تقسیم شدہ عشر</span>
+                <span>{ushrDistributed.toLocaleString("ur-PK")} روپے</span>
+              </div>
+              <div className="row">
+                <span>باقی عشر</span>
+                <span>{ushrRemaining.toLocaleString("ur-PK")} روپے</span>
               </div>
             </div>
 

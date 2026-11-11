@@ -46,6 +46,13 @@ function GroupSection({
       <div className={`tiles ${group.layout}`}>
         {modules.map((m) => {
           if (showCombined && m.id === "admissions") return null;
+          // مرحلہ 48 — زکوٰۃ، عشر اور صدقات کے بٹن ڈیش بورڈ پر نہیں
+          // دکھائے جاتے — وہ "آمدنی کا ریکارڈ" حب کے اندر ہیں۔
+          if (
+            group.id === "fin" &&
+            (m.id === "zakat" || m.id === "ushr" || m.id === "donations")
+          )
+            return null;
           const href =
             showCombined && m.id === "students"
               ? "/departments/admissions-students"

@@ -136,7 +136,7 @@ export async function addFeePayment(
     amount: String(amount),
   });
 
-  revalidatePath("/departments/income");
+  revalidatePath("/departments/income/fees");
   revalidatePath("/");
   return { ok: true, id: data.id as string };
 }
@@ -186,8 +186,8 @@ export async function voidFeePayment(id: string): Promise<ActionResult> {
     amount: String(data.amount as number),
   });
 
-  revalidatePath("/departments/income");
-  revalidatePath(`/departments/income/${id}`);
+  revalidatePath("/departments/income/fees");
+  revalidatePath(`/departments/income/fees/${id}`);
   revalidatePath("/");
   return { ok: true };
 }

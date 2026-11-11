@@ -58,9 +58,9 @@ export default async function DashboardPage() {
     attendanceToday = null;
   }
 
-  // مرحلہ 8 + مرحلہ 16 + مرحلہ 20 — مالی بیلنس: فعال فیس + فعال عطیات
-  // مائنس فعال اخراجات۔ منسوخ رسید، منسوخ عطیہ اور منسوخ خرچ نہیں گنے جاتے۔
-  // زکوٰۃ الگ فنڈ ہے — وہ بیلنس میں کبھی نہیں ملتی۔
+  // مرحلہ 8 + مرحلہ 16 + مرحلہ 20 + مرحلہ 48 (وکالت کا اصول) — مالی بیلنس:
+  // فعال فیس + فعال عطیات + (زکوٰۃ وصولی − تقسیم) + (عشر وصولی − تقسیم)
+  // مائنس فعال اخراجات۔ منسوخ ریکارڈ نہیں گنے جاتے۔
   let balance: { value: number; hasPayments: boolean } | null = null;
   try {
     const { data: payments } = await supabase
@@ -78,6 +78,16 @@ export default async function DashboardPage() {
       .select("amount")
       .eq("status", "active");
     const expenseRows = (spent ?? []) as { amount: number }[];
+    const { data: zakatData } = await supabase
+      .from("zakat_records")
+      .select("kind, amount")
+      .eq("status", "active");
+    const zakatRows = (zakatData ?? []) as { kind: string; amount: number }[];
+    const { data: ushrData } = await supabase
+      .from("ushr_records")
+      .select("kind, amount")
+      .eq("status", "active");
+    const ushrRows = (ushrData ?? []) as { kind: string; amount: number }[];
     const feesTotal = feeRows.reduce((sum, p) => sum + (p.amount ?? 0), 0);
     const donationsTotal = donationRows.reduce(
       (sum, d) => sum + (d.amount ?? 0),
@@ -87,12 +97,28 @@ export default async function DashboardPage() {
       (sum, e) => sum + (e.amount ?? 0),
       0,
     );
+    const zakatNet =
+      zakatRows
+        .filter((r) => r.kind === "received")
+        .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
+      zakatRows
+        .filter((r) => r.kind === "distributed")
+        .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+    const ushrNet =
+      ushrRows
+        .filter((r) => r.kind === "received")
+        .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
+      ushrRows
+        .filter((r) => r.kind === "distributed")
+        .reduce((sum, r) => sum + (r.amount ?? 0), 0);
     balance = {
-      value: feesTotal + donationsTotal - expensesTotal,
+      value: feesTotal + donationsTotal + zakatNet + ushrNet - expensesTotal,
       hasPayments:
         feeRows.length > 0 ||
         donationRows.length > 0 ||
-        expenseRows.length > 0,
+        expenseRows.length > 0 ||
+        zakatRows.length > 0 ||
+        ushrRows.length > 0,
     };
   } catch {
     balance = null;

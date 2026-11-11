@@ -122,8 +122,8 @@ export async function saveFeeSchedule(
   );
 
   revalidatePath("/departments/income/schedule");
-  revalidatePath("/departments/income/new");
-  revalidatePath("/departments/income");
+  revalidatePath("/departments/income/fees/new");
+  revalidatePath("/departments/income/fees");
   return { ok: true };
 }
 
@@ -160,6 +160,6 @@ export async function deactivateFeeSchedule(
   );
 
   revalidatePath("/departments/income/schedule");
-  revalidatePath("/departments/income/new");
+  revalidatePath("/departments/income/fees/new");
   return { ok: true };
 }

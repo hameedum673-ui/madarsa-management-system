@@ -46,7 +46,7 @@ export default function StatsRow({
               : isAttendance && attendanceMarked
                 ? `آج ${attendanceToday.total.toLocaleString("ur-PK")} میں سے ${attendanceToday.present.toLocaleString("ur-PK")} حاضر`
                 : balanceShown
-                  ? "فیس + عطیات − اخراجات"
+                  ? "فیس + عطیات + زکوٰۃ + عشر − اخراجات"
                   : s.note;
         return (
           <div className="stat" key={s.label}>

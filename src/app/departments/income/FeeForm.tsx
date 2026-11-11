@@ -85,7 +85,7 @@ export default function FeeForm({
       setError(res.error);
       return;
     }
-    router.push(`/departments/income/${res.id}`);
+    router.push(`/departments/income/fees/${res.id}`);
   }
 
   return (

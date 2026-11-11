@@ -135,7 +135,7 @@ export default async function FeeSchedulePage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton href="/departments/income" />
+          <BackButton href="/departments/income/fees" />
           <h2>فیس کا شیڈول</h2>
           <span className="page-count">
             طے شدہ فیس: {schedule.length.toLocaleString("ur-PK")}

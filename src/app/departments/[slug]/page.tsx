@@ -5,16 +5,16 @@ import { ALL_DEPARTMENTS, DEPARTMENT_BY_ID } from "@/data/departments";
 /**
  * ہر شعبے کا الگ صفحہ، مثلاً ‎/departments/students۔
  * فی الحال ہر صفحے پر صرف «زیرِ تعمیر» حالت اور واپس جانے کا بٹن ہے۔
- * تمام 27 صفحے build کے وقت تیار ہوتے ہیں۔
+ * تمام 28 صفحے build کے وقت تیار ہوتے ہیں۔
  */
 export function generateStaticParams() {
   // 'students'، 'teachers'، 'att-students'، 'att-teachers'، 'income'،
   // 'admissions'، 'exams'، 'users'، 'idcards'، 'staff'، 'classes'،
-  // 'academic'، 'expenses'، 'monthly'، 'yearly'، 'zakat'، 'donations'،
-  // 'welfare'، 'student-exp'، 'fin-reports'، 'general'، 'permissions'،
-  // 'notices'، 'documents'، 'reports'، 'backup' اور 'settings' کے اپنے
-  // اصل صفحے ہیں — اس لیے یہاں سے خارج ہیں، ورنہ build میں دو صفحے ایک
-  // ہی پتے پر بنتے۔
+  // 'academic'، 'expenses'، 'monthly'، 'yearly'، 'zakat'، 'ushr'،
+  // 'donations'، 'welfare'، 'student-exp'، 'fin-reports'، 'general'،
+  // 'permissions'، 'notices'، 'documents'، 'reports'، 'backup' اور
+  // 'settings' کے اپنے اصل صفحے ہیں — اس لیے یہاں سے خارج ہیں، ورنہ
+  // build میں دو صفحے ایک ہی پتے پر بنتے۔
   return ALL_DEPARTMENTS.filter(
     (m) =>
       m.id !== "students" &&
@@ -33,6 +33,7 @@ export function generateStaticParams() {
       m.id !== "monthly" &&
       m.id !== "yearly" &&
       m.id !== "zakat" &&
+      m.id !== "ushr" &&
       m.id !== "donations" &&
       m.id !== "welfare" &&
       m.id !== "student-exp" &&

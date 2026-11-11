@@ -19,6 +19,7 @@ const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "expenses", label: "اخراجات" },
   { table: "donations", label: "عطیات" },
   { table: "zakat_records", label: "زکوٰۃ کا ریکارڈ" },
+  { table: "ushr_records", label: "عشر کا ریکارڈ" },
   { table: "welfare_records", label: "وظائف اور مالی معاونت" },
   { table: "student_expenses", label: "طلبہ کے اخراجات" },
   { table: "exams", label: "امتحانات" },

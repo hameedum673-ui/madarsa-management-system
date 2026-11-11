@@ -28,6 +28,7 @@ const OWN_TABLES = [
   "expenses",
   "donations",
   "zakat_records",
+  "ushr_records",
   "welfare_records",
   "student_expenses",
   "exams",
