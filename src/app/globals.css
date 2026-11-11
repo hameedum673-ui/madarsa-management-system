@@ -283,6 +283,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .tbl a{color:var(--navy);font-weight:700;text-decoration:none}
 .badge{display:inline-block;padding:2px 12px;border-radius:999px;font-size:.78rem;font-weight:700;background:#e6f2e6;color:#1e5c2a}
 .badge-withdrawn{background:#fdecea;color:#8a1f16}
+/* مرحلہ 37 — جزوی فیس کا نشان (سنہری) */
+.badge-partial{background:#f3e9cd;color:#6d5312}
 .empty-state{text-align:center;color:var(--muted);padding:26px 10px;font-size:.95rem}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
 .field{display:block;margin:12px 0 0}

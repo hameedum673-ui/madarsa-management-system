@@ -6,18 +6,31 @@
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import FeeForm, { type FeeStudent } from "@/app/departments/income/FeeForm";
+import type { FeeScheduleEntry } from "@/lib/feeSchedule";
 
 export default async function NewFeePage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("students")
-    .select("id, name, father_name, registration_number, class_name")
+    .select("id, name, father_name, registration_number, class_name, department")
     .eq("status", "active")
     .order("name", { ascending: true });
 
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
   const students = (data ?? []) as FeeStudent[];
+
+  // مرحلہ 37 — طے شدہ فیس (میز نہ بنی ہو تو خالی — رقم ہاتھ سے لکھی جائے گی)
+  let schedule: FeeScheduleEntry[] = [];
+  try {
+    const { data: scheduleData } = await supabase
+      .from("fee_schedule")
+      .select("department, class_name, amount")
+      .eq("status", "active");
+    schedule = (scheduleData ?? []) as FeeScheduleEntry[];
+  } catch {
+    schedule = [];
+  }
 
   return (
     <div className="module-view open">
@@ -38,7 +51,7 @@ export default async function NewFeePage() {
             کوئی فعال طالبہ نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالبہ شامل کریں۔
           </p>
         ) : (
-          <FeeForm students={students} />
+          <FeeForm students={students} schedule={schedule} />
         )}
 
       </div>

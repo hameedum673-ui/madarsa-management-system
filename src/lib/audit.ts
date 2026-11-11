@@ -17,6 +17,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   teacher_attendance_marked: "اساتذہ کی حاضری لگائی گئی",
   fee_payment_created: "فیس کی رسید درج کی گئی",
   fee_payment_voided: "فیس کی رسید منسوخ کی گئی",
+  fee_schedule_saved: "فیس کا شیڈول طے کیا گیا",
+  fee_schedule_deactivated: "فیس کا شیڈول غیر فعال کیا گیا",
   expense_created: "خرچ درج کیا گیا",
   expense_voided: "خرچ منسوخ کیا گیا",
   zakat_created: "زکوٰۃ کا اندراج کیا گیا",
@@ -81,6 +83,8 @@ export const AUDIT_CATEGORIES = [
     actions: [
       "fee_payment_created",
       "fee_payment_voided",
+      "fee_schedule_saved",
+      "fee_schedule_deactivated",
       "expense_created",
       "expense_voided",
       "zakat_created",

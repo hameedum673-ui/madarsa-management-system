@@ -66,6 +66,9 @@ export default async function IncomePage({
               : formatMonthUrdu(month)}
           </span>
           <span className="spacer" />
+          <Link className="btn-ghost" href="/departments/income/schedule">
+            فیس کا شیڈول دیکھیں
+          </Link>
           <Link className="btn-primary" href="/departments/income/new">
             + نئی فیس درج کریں
           </Link>

@@ -9,6 +9,11 @@ import { useRouter } from "next/navigation";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import { currentMonthInKarachi } from "@/lib/fees";
 import { addFeePayment } from "@/app/departments/income/actions";
+import {
+  feeForStudent,
+  type FeeScheduleEntry,
+} from "@/lib/feeSchedule";
+import type { DepartmentId } from "@/lib/students";
 
 export interface FeeStudent {
   id: string;
@@ -16,13 +21,22 @@ export interface FeeStudent {
   father_name: string;
   registration_number: string;
   class_name: string | null;
+  department: DepartmentId;
 }
 
-export default function FeeForm({ students }: { students: FeeStudent[] }) {
+export default function FeeForm({
+  students,
+  schedule = [],
+}: {
+  students: FeeStudent[];
+  schedule?: FeeScheduleEntry[];
+}) {
   const router = useRouter();
   const [studentId, setStudentId] = useState("");
   const [feeMonth, setFeeMonth] = useState(currentMonthInKarachi());
   const [amount, setAmount] = useState("");
+  // مرحلہ 37 — رقم طے شدہ فیس سے بھری گئی ہو تو صارف کو بتایا جائے
+  const [amountFromSchedule, setAmountFromSchedule] = useState(false);
   const [paymentDate, setPaymentDate] = useState(
     new Date().toLocaleDateString("en-CA"),
   );
@@ -30,6 +44,29 @@ export default function FeeForm({ students }: { students: FeeStudent[] }) {
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // مرحلہ 37 — طالبہ چننے پر رقم خود طے شدہ فیس سے بھر جائے (بدلی جا سکتی ہے)
+  function handleStudentChange(id: string) {
+    setStudentId(id);
+    const student = students.find((s) => s.id === id);
+    if (!student) {
+      setAmount("");
+      setAmountFromSchedule(false);
+      return;
+    }
+    const suggested = feeForStudent(
+      schedule,
+      student.department,
+      student.class_name,
+    );
+    if (suggested !== null) {
+      setAmount(String(suggested));
+      setAmountFromSchedule(true);
+    } else {
+      setAmount("");
+      setAmountFromSchedule(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -59,7 +96,7 @@ export default function FeeForm({ students }: { students: FeeStudent[] }) {
           <select
             className="field-input"
             value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
+            onChange={(e) => handleStudentChange(e.target.value)}
             required
           >
             <option value="">طالبہ منتخب کریں</option>
@@ -91,10 +128,18 @@ export default function FeeForm({ students }: { students: FeeStudent[] }) {
             step={1}
             inputMode="numeric"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              setAmount(e.target.value);
+              setAmountFromSchedule(false);
+            }}
             placeholder="مثلاً 1000"
             required
           />
+          {amountFromSchedule ? (
+            <span className="sub">
+              طے شدہ فیس سے بھری گئی ہے — بدلی جا سکتی ہے۔
+            </span>
+          ) : null}
         </label>
         <label className="field">
           <span className="field-label">ادائیگی کی تاریخ *</span>
