@@ -8,6 +8,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
+import {
+  CLOSED_MONTH_ERROR,
+  isMonthClosed,
+  monthOfDate,
+} from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/fees";
 import { DONATION_KINDS, type DonationKind } from "@/lib/donations";
@@ -95,6 +100,13 @@ export async function addDonation(
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 
+  // مرحلہ 39 — بند مہینے کا عطیہ درج نہیں ہو سکتا
+  if (
+    await isMonthClosed(supabase, mine.madrasaId, monthOfDate(f.donationDate))
+  ) {
+    return { error: CLOSED_MONTH_ERROR };
+  }
+
   // رسید نمبر: اس مدرسے کے عطیات کی گنتی + 1
   const { count } = await supabase
     .from("donations")
@@ -145,6 +157,25 @@ export async function voidDonation(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+
+  // مرحلہ 39 — بند مہینے کا عطیہ منسوخ نہیں ہو سکتا
+  const { data: row } = await supabase
+    .from("donations")
+    .select("donation_date")
+    .eq("id", id)
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (
+    row &&
+    (await isMonthClosed(
+      supabase,
+      mine.madrasaId,
+      monthOfDate(row.donation_date as string),
+    ))
+  ) {
+    return { error: CLOSED_MONTH_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("donations")

@@ -3,6 +3,8 @@
  * کوئی نئی میز نہیں — خلاصہ فیس کی رسیدوں (fee_payments) اور اخراجات
  * (expenses) سے بنتا ہے۔ منسوخ رسید اور منسوخ خرچ خلاصے میں نہیں گنے جاتے۔
  * سال چنیں (عیسوی سال)، پھر "دکھائیں" دبائیں۔
+ * مرحلہ 39 — سال کا ابتدائی بقیہ + اختتامی بقیہ + مہینوں کی بندش کی حالت
+ * + پورا سال بند کرنا۔
  */
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
@@ -23,6 +25,8 @@ import {
   DONATION_KIND_LABELS,
   type DonationKind,
 } from "@/lib/donations";
+import { getBalanceBefore } from "@/lib/monthClosing";
+import CloseYearButton from "@/app/departments/yearly/CloseYearButton";
 
 /** پاکستان کے وقت کے مطابق موجودہ عیسوی سال */
 function currentYearInKarachi(): string {
@@ -94,6 +98,26 @@ export default async function YearlyPage({
     (feesError as { code?: string } | null)?.code === "42P01" ||
     (expensesError as { code?: string } | null)?.code === "42P01" ||
     (donationsError as { code?: string } | null)?.code === "42P01";
+
+  // مرحلہ 39 — سال کا ابتدائی بقیہ + مہینوں کی بندش کی حالت
+  // (بندش کی میز نہ ہو تو سب مہینے کھلے مانے جاتے ہیں)
+  const openingBalance = await getBalanceBefore(supabase, `${year}-01`);
+  const closedMonths = new Set<string>();
+  try {
+    const { data: closingsData } = await supabase
+      .from("month_closings")
+      .select("month, is_closed")
+      .gte("month", `${year}-01`)
+      .lte("month", `${year}-12`);
+    for (const c of (closingsData ?? []) as {
+      month: string;
+      is_closed: boolean;
+    }[]) {
+      if (c.is_closed) closedMonths.add(c.month);
+    }
+  } catch {
+    /* میز نہ ہو تو سب کھلے مانے جاتے ہیں */
+  }
 
   const feesTotal = fees.reduce((sum, f) => sum + (f.amount ?? 0), 0);
   const donationsTotal = donations.reduce(
@@ -183,8 +207,20 @@ export default async function YearlyPage({
           </p>
         ) : (
           <>
+            <h3 className="form-section-title">سال کی بندش</h3>
+            <div className="form-actions">
+              <CloseYearButton
+                year={year}
+                allClosed={closedMonths.size === 12}
+              />
+            </div>
+
             <h3 className="form-section-title">خلاصہ</h3>
             <div className="detail-rows">
+              <div className="row">
+                <span>سال کا ابتدائی بقیہ</span>
+                <span>{openingBalance.toLocaleString("ur-PK")} روپے</span>
+              </div>
               <div className="row">
                 <span>پورے سال کی فیس</span>
                 <span>
@@ -217,6 +253,12 @@ export default async function YearlyPage({
                 <span>پورے سال کا بیلنس</span>
                 <span>{balance.toLocaleString("ur-PK")} روپے</span>
               </div>
+              <div className="row">
+                <span>سال کا اختتامی بقیہ</span>
+                <span>
+                  {(openingBalance + balance).toLocaleString("ur-PK")} روپے
+                </span>
+              </div>
             </div>
 
             <h3 className="form-section-title">مہینہ بہ مہینہ</h3>
@@ -228,6 +270,7 @@ export default async function YearlyPage({
                     <th>آمدنی</th>
                     <th>اخراجات</th>
                     <th>بیلنس</th>
+                    <th>حالت</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -241,6 +284,13 @@ export default async function YearlyPage({
                       <td>{row.income.toLocaleString("ur-PK")}</td>
                       <td>{row.expenses.toLocaleString("ur-PK")}</td>
                       <td>{row.balance.toLocaleString("ur-PK")}</td>
+                      <td>
+                        <span
+                          className={`badge${closedMonths.has(row.key) ? " badge-withdrawn" : ""}`}
+                        >
+                          {closedMonths.has(row.key) ? "بند ہے" : "کھلا ہے"}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

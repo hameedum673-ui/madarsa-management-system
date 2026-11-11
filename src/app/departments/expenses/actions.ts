@@ -8,6 +8,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
+import {
+  CLOSED_MONTH_ERROR,
+  isMonthClosed,
+  monthOfDate,
+} from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/fees";
 import { EXPENSE_CATEGORIES, type ExpenseCategory } from "@/lib/expenses";
@@ -93,6 +98,13 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 
+  // مرحلہ 39 — بند مہینے کا خرچ درج نہیں ہو سکتا
+  if (
+    await isMonthClosed(supabase, mine.madrasaId, monthOfDate(f.expenseDate))
+  ) {
+    return { error: CLOSED_MONTH_ERROR };
+  }
+
   // واؤچر نمبر: اس مدرسے کے اخراجات کی گنتی + 1
   const { count } = await supabase
     .from("expenses")
@@ -141,6 +153,25 @@ export async function voidExpense(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+
+  // مرحلہ 39 — بند مہینے کا خرچ منسوخ نہیں ہو سکتا
+  const { data: row } = await supabase
+    .from("expenses")
+    .select("expense_date")
+    .eq("id", id)
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (
+    row &&
+    (await isMonthClosed(
+      supabase,
+      mine.madrasaId,
+      monthOfDate(row.expense_date as string),
+    ))
+  ) {
+    return { error: CLOSED_MONTH_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("expenses")

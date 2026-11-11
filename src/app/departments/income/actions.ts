@@ -9,6 +9,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
+import { CLOSED_MONTH_ERROR, isMonthClosed } from "@/lib/monthClosing";
 import {
   PAYMENT_METHODS,
   isValidMonth,
@@ -82,6 +83,11 @@ export async function addFeePayment(
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 
+  // مرحلہ 39 — بند مہینے کی فیس درج نہیں ہو سکتی
+  if (await isMonthClosed(supabase, mine.madrasaId, feeMonth)) {
+    return { error: CLOSED_MONTH_ERROR };
+  }
+
   // صرف اپنے مدرسے کی فعال طالبہ کی فیس درج ہو سکتی ہے
   const { data: student } = await supabase
     .from("students")
@@ -143,6 +149,21 @@ export async function voidFeePayment(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+
+  // مرحلہ 39 — بند مہینے کی رسید منسوخ نہیں ہو سکتی
+  const { data: row } = await supabase
+    .from("fee_payments")
+    .select("fee_month")
+    .eq("id", id)
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (
+    row &&
+    (await isMonthClosed(supabase, mine.madrasaId, row.fee_month as string))
+  ) {
+    return { error: CLOSED_MONTH_ERROR };
+  }
 
   // RLS خود یقین دلاتی ہے کہ یہ رسید اسی مدرسے کی ہے؛
   // صرف فعال رسید منسوخ ہو سکتی ہے — منسوخ شدہ دوبارہ نہیں

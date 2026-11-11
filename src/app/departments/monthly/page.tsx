@@ -3,6 +3,7 @@
  * کوئی نئی میز نہیں — خلاصہ فیس کی رسیدوں (fee_payments) اور اخراجات
  * (expenses) سے بنتا ہے۔ منسوخ رسید اور منسوخ خرچ خلاصے میں نہیں گنے جاتے۔
  * مہینہ چنیں، پھر "دکھائیں" دبائیں۔
+ * مرحلہ 39 — پچھلے مہینے کا بقیہ + اختتامی بقیہ + مہینہ بند کرنا۔
  */
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
@@ -25,6 +26,9 @@ import {
   DONATION_KIND_LABELS,
   type DonationKind,
 } from "@/lib/donations";
+import { getBalanceBefore, isMonthClosed } from "@/lib/monthClosing";
+import { getMyMadrasa } from "@/lib/students";
+import MonthClosingControls from "@/app/departments/monthly/MonthClosingControls";
 
 /** "2026-11" کا اگلا مہینہ — "2026-12-01" */
 function nextMonthStart(month: string): string {
@@ -78,6 +82,15 @@ export default async function MonthlyPage({
     (feesError as { code?: string } | null)?.code === "42P01" ||
     (expensesError as { code?: string } | null)?.code === "42P01" ||
     (donationsError as { code?: string } | null)?.code === "42P01";
+
+  // مرحلہ 39 — اس مہینے کی بندش + پچھلا بقیہ (میز نہ ہو تو کھلا مانا جاتا ہے)
+  const mine = await getMyMadrasa(supabase);
+  let monthClosed = false;
+  let openingBalance = 0;
+  if (mine) {
+    monthClosed = await isMonthClosed(supabase, mine.madrasaId, month);
+    openingBalance = await getBalanceBefore(supabase, month);
+  }
 
   const feesTotal = fees.reduce((sum, f) => sum + (f.amount ?? 0), 0);
   const donationsTotal = donations.reduce(
@@ -143,8 +156,29 @@ export default async function MonthlyPage({
           </p>
         ) : (
           <>
+            <h3 className="form-section-title">مہینے کی بندش</h3>
+            <div className="detail-rows">
+              <div className="row">
+                <span>مہینے کی حالت</span>
+                <span>
+                  <span
+                    className={`badge${monthClosed ? " badge-withdrawn" : ""}`}
+                  >
+                    {monthClosed ? "بند ہے" : "کھلا ہے"}
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div className="form-actions">
+              <MonthClosingControls month={month} isClosed={monthClosed} />
+            </div>
+
             <h3 className="form-section-title">خلاصہ</h3>
             <div className="detail-rows">
+              <div className="row">
+                <span>پچھلے مہینے کا بقیہ</span>
+                <span>{openingBalance.toLocaleString("ur-PK")} روپے</span>
+              </div>
               <div className="row">
                 <span>اس مہینے کی فیس</span>
                 <span>
@@ -176,6 +210,12 @@ export default async function MonthlyPage({
               <div className="row">
                 <span>اس مہینے کا بیلنس</span>
                 <span>{balance.toLocaleString("ur-PK")} روپے</span>
+              </div>
+              <div className="row">
+                <span>اختتامی بقیہ</span>
+                <span>
+                  {(openingBalance + balance).toLocaleString("ur-PK")} روپے
+                </span>
               </div>
             </div>
 
