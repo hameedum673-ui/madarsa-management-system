@@ -4,6 +4,8 @@
  * طلبہ (ذاتی تفصیل)، حاضری (خلاصہ)، امتحانات اور نتائج (کارکردگی)، داخلے۔
  * جس چیز کا ریکارڈ ابھی نہیں ہے وہاں "ابھی درج نہیں ہے" لکھا ہوتا ہے۔
  * RLS یقین دلاتی ہے کہ صرف اپنے مدرسے کا ریکارڈ کھل سکتا ہے۔
+ * مرحلہ 38 — حفظ شعبے کی طالبات کے لیے "حفظ کی پیش رفت" کا حصہ بھی ہے
+ * (سبق / سبقی / منزل)۔
  */
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
@@ -24,6 +26,16 @@ import {
   type Exam,
   type ExamResult,
 } from "@/lib/exams";
+import {
+  HIFZ_KIND_LABELS,
+  HIFZ_PROGRESS_STATUS_LABELS,
+  HIFZ_QUALITY_LABELS,
+  type HifzProgress,
+} from "@/lib/hifz";
+import HifzProgressForm, {
+  type HifzTeacher,
+} from "@/app/departments/academic/HifzProgressForm";
+import VoidHifzButton from "@/app/departments/academic/VoidHifzButton";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -113,6 +125,29 @@ export default async function AcademicRecordPage({
     previous_madrasa: string | null;
     status: string;
   } | null;
+
+  // مرحلہ 38 — حفظ کی پیش رفت (صرف حفظ شعبے کی طالبات کے لیے)
+  let hifzRows: HifzProgress[] = [];
+  let hifzTableMissing = false;
+  let hifzTeachers: HifzTeacher[] = [];
+  if (student.department === "hifz") {
+    const { data: hifzData, error: hifzError } = await supabase
+      .from("hifz_progress")
+      .select("*, teachers(name, father_name)")
+      .eq("student_id", id)
+      .order("progress_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(20);
+    hifzTableMissing =
+      (hifzError as { code?: string } | null)?.code === "42P01";
+    hifzRows = (hifzData ?? []) as HifzProgress[];
+    const { data: teachersData } = await supabase
+      .from("teachers")
+      .select("id, name, father_name, position")
+      .eq("status", "active")
+      .order("name", { ascending: true });
+    hifzTeachers = (teachersData ?? []) as HifzTeacher[];
+  }
 
   return (
     <div className="module-view open">
@@ -238,6 +273,74 @@ export default async function AcademicRecordPage({
             </table>
           </div>
         )}
+
+        {student.department === "hifz" ? (
+          <>
+            <h3 className="form-section-title">حفظ کی پیش رفت</h3>
+            {hifzTableMissing ? (
+              <p className="empty-state">
+                حفظ کی پیش رفت کی میز ابھی نہیں بنی — پہلے مرحلہ 38 کی SQL چلائیں۔
+              </p>
+            ) : (
+              <>
+                <HifzProgressForm studentId={student.id} teachers={hifzTeachers} />
+                {hifzRows.length === 0 ? (
+                  <p className="empty-state">
+                    ابھی کوئی پیش رفت درج نہیں ہے — اوپر والے فارم سے پہلا اندراج شامل کریں۔
+                  </p>
+                ) : (
+                  <div className="tbl-wrap">
+                    <table className="tbl">
+                      <thead>
+                        <tr>
+                          <th>تاریخ</th>
+                          <th>قسم</th>
+                          <th>حصہ</th>
+                          <th>کیفیت</th>
+                          <th>سننے والا</th>
+                          <th>حالت</th>
+                          <th>کارروائی</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {hifzRows.map((r) => (
+                          <tr key={r.id}>
+                            <td>{formatDate(r.progress_date)}</td>
+                            <td>{HIFZ_KIND_LABELS[r.kind]}</td>
+                            <td>{r.portion}</td>
+                            <td>{HIFZ_QUALITY_LABELS[r.quality]}</td>
+                            <td>
+                              {r.teachers
+                                ? `${r.teachers.name} — ${r.teachers.father_name}`
+                                : "—"}
+                            </td>
+                            <td>
+                              <span
+                                className={`badge${r.status === "voided" ? " badge-withdrawn" : ""}`}
+                              >
+                                {HIFZ_PROGRESS_STATUS_LABELS[r.status]}
+                              </span>
+                            </td>
+                            <td>
+                              {r.status === "active" ? (
+                                <VoidHifzButton
+                                  id={r.id}
+                                  studentId={student.id}
+                                />
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        ) : null}
 
         <h3 className="form-section-title">داخلہ</h3>
         {admission ? (

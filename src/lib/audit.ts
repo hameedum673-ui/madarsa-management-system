@@ -34,6 +34,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   admission_rejected: "داخلہ مسترد کیا گیا",
   exam_created: "امتحان بنایا گیا",
   marks_saved: "نمبر محفوظ کیے گئے",
+  hifz_progress_created: "حفظ کی پیش رفت درج کی گئی",
+  hifz_progress_voided: "حفظ کی پیش رفت منسوخ کی گئی",
   notice_created: "اطلاع بنائی گئی",
   notice_updated: "اطلاع بدلی گئی",
   notice_archived: "اطلاع محفوظ کی گئی",
@@ -60,6 +62,8 @@ export const AUDIT_CATEGORIES = [
       "admission_created",
       "admission_approved",
       "admission_rejected",
+      "hifz_progress_created",
+      "hifz_progress_voided",
     ],
   },
   {
