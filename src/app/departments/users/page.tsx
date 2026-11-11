@@ -4,6 +4,7 @@
  * منظوری کے وقت کردار چنا جاتا ہے؛ صارف کا profile اگلے لاگ اِن پر خود بنتا ہے۔
  * میز ابھی نہ بنی ہو (migration 009 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
+import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +48,10 @@ export default async function UsersPage() {
             کل: {users.length.toLocaleString("ur-PK")} — زیرِ منظوری:{" "}
             {pending.length.toLocaleString("ur-PK")}
           </span>
+          <span className="spacer" />
+          <Link className="btn-ghost" href="/departments/audit">
+            سرگرمیوں کا ریکارڈ دیکھیں
+          </Link>
         </div>
 
         {tableMissing ? (
