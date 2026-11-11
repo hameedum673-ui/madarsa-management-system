@@ -3,7 +3,7 @@
  * ہر مضمون 100 نمبر کا ہے۔ درجہ فیصد سے بنتا ہے؛ پوزیشن کل نمبروں سے
  * (برابر نمبر والوں کی پوزیشن ایک جیسی ہوتی ہے: 1، 2، 2، 4)۔
  */
-import type { DepartmentId } from "@/lib/students";
+import type { DepartmentId, SectionId } from "@/lib/students";
 
 export interface Exam {
   id: string;
@@ -11,6 +11,7 @@ export interface Exam {
   name: string;
   exam_date: string;
   department: DepartmentId;
+  section: SectionId;
   class_name: string | null;
   subjects: string[];
   created_by: string | null;

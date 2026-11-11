@@ -8,6 +8,11 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import {
+  SECTION_IDS,
+  SECTION_LABELS,
+  type SectionId,
+} from "@/lib/students";
+import {
   FEE_PAYMENT_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
   currentMonthInKarachi,
@@ -23,7 +28,7 @@ function formatDate(value: string): string {
 export default async function IncomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; section?: string }>;
 }) {
   const sp = await searchParams;
   const month =
@@ -33,11 +38,19 @@ export default async function IncomePage({
         ? sp.month
         : currentMonthInKarachi();
 
+  // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
+  const rawSection = sp.section ?? "all";
+  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
+    rawSection,
+  )
+    ? (rawSection as SectionId)
+    : "all";
+
   const supabase = await createClient();
 
   let query = supabase
     .from("fee_payments")
-    .select("*, students(name, father_name)")
+    .select("*, students(name, father_name, section)")
     .order("created_at", { ascending: false });
   if (month !== "all") {
     query = query.eq("fee_month", month);
@@ -47,9 +60,14 @@ export default async function IncomePage({
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
 
-  const payments = (data ?? []) as (FeePayment & {
-    students: { name: string; father_name: string } | null;
+  // مرحلہ 52 — شعبہ چنا ہو تو صرف اسی شعبے کی فیس دکھائیں
+  const allPayments = (data ?? []) as (FeePayment & {
+    students: { name: string; father_name: string; section: string } | null;
   })[];
+  const payments =
+    section !== "all"
+      ? allPayments.filter((p) => p.students?.section === section)
+      : allPayments;
   const totalCollected = payments
     .filter((p) => p.status === "active")
     .reduce((sum, p) => sum + p.amount, 0);
@@ -88,6 +106,21 @@ export default async function IncomePage({
               defaultValue={month === "all" ? "" : month}
             />
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="field-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دیکھیں
           </button>
@@ -117,6 +150,7 @@ export default async function IncomePage({
                 <tr>
                   <th>رسید نمبر</th>
                   <th>طالبہ</th>
+                  <th>بنین / بنات</th>
                   <th>مہینہ</th>
                   <th>رقم (روپے)</th>
                   <th>طریقہ</th>
@@ -136,6 +170,11 @@ export default async function IncomePage({
                       <Link href={`/departments/income/fees/${p.id}`}>
                         {p.students?.name ?? "—"}
                       </Link>
+                    </td>
+                    <td>
+                      {p.students?.section
+                        ? SECTION_LABELS[p.students.section as SectionId]
+                        : "—"}
                     </td>
                     <td>{formatMonthUrdu(p.fee_month)}</td>
                     <td>{p.amount.toLocaleString("ur-PK")}</td>

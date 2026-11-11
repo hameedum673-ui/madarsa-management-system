@@ -9,8 +9,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_IDS,
+  SECTION_IDS,
   getMyMadrasa,
   type DepartmentId,
+  type SectionId,
 } from "@/lib/students";
 
 type ActionResult = { ok: true } | { error: string };
@@ -67,12 +69,15 @@ export async function addExam(formData: FormData): Promise<AddResult> {
   const name = clean(formData.get("name"), 200);
   const examDate = clean(formData.get("exam_date"), 10);
   const department = clean(formData.get("department"), 20);
+  const section = clean(formData.get("section"), 20);
   const className = clean(formData.get("class_name"), 100);
   const subjects = parseSubjects(clean(formData.get("subjects"), 1000));
 
   if (!name) return { error: "امتحان کا نام ضروری ہے۔" };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
     return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+  if (!SECTION_IDS.includes(section as SectionId))
+    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
   if (!validDate(examDate)) return { error: "امتحان کی تاریخ درست نہیں ہے۔" };
   if (!notFuture(examDate))
     return { error: "امتحان کی تاریخ آج سے آگے نہیں ہو سکتی۔" };
@@ -92,6 +97,7 @@ export async function addExam(formData: FormData): Promise<AddResult> {
       name,
       exam_date: examDate,
       department: department as DepartmentId,
+      section: section as SectionId,
       class_name: className || null,
       subjects,
       created_by: mine.userId,
@@ -127,7 +133,7 @@ export async function saveMarks(
   // صرف اپنے مدرسے کا امتحان
   const { data: exam, error: examError } = await supabase
     .from("exams")
-    .select("id, subjects, department, class_name")
+    .select("id, subjects, department, section, class_name")
     .eq("id", examId)
     .eq("madrasa_id", mine.madrasaId)
     .single();
@@ -148,6 +154,11 @@ export async function saveMarks(
     .eq("madrasa_id", mine.madrasaId)
     .eq("department", exam.department as string)
     .eq("status", "active");
+  // مرحلہ 52 — صرف اسی شعبے کی طالبات (پرانا امتحان ہو تو شعبہ خالی
+  // ہو سکتا ہے — اس صورت میں یہ جانچ نہیں لگتی)
+  if (exam.section) {
+    studentQuery = studentQuery.eq("section", exam.section as string);
+  }
   if (exam.class_name) {
     studentQuery = studentQuery.eq("class_name", exam.class_name as string);
   }

@@ -10,7 +10,11 @@ import {
   todayInKarachi,
   type AttendanceStatus,
 } from "@/lib/attendance";
-import { DEPARTMENT_IDS } from "@/lib/students";
+import {
+  DEPARTMENT_IDS,
+  SECTION_IDS,
+  type SectionId,
+} from "@/lib/students";
 import AttendanceForm, {
   type AttendanceStudent,
 } from "@/app/departments/att-students/AttendanceForm";
@@ -27,7 +31,7 @@ function formatDate(value: string): string {
 export default async function AttendancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; department?: string }>;
+  searchParams: Promise<{ date?: string; department?: string; section?: string }>;
 }) {
   const sp = await searchParams;
   const date =
@@ -36,16 +40,26 @@ export default async function AttendancePage({
     sp.department && DEPARTMENT_IDS.includes(sp.department as never)
       ? sp.department
       : "all";
+  // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
+  const rawSection = sp.section ?? "all";
+  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
+    rawSection,
+  )
+    ? (rawSection as SectionId)
+    : "all";
 
   const supabase = await createClient();
 
   let studentsQuery = supabase
     .from("students")
-    .select("id, registration_number, name, father_name, department, class_name")
+    .select("id, registration_number, name, father_name, department, section, class_name")
     .eq("status", "active")
     .order("name", { ascending: true });
   if (department !== "all") {
     studentsQuery = studentsQuery.eq("department", department);
+  }
+  if (section !== "all") {
+    studentsQuery = studentsQuery.eq("section", section);
   }
   const { data: studentsData, error: studentsError } = await studentsQuery;
 
@@ -88,6 +102,7 @@ export default async function AttendancePage({
             existing={existing}
             date={date}
             department={department}
+            section={section}
           />
         )}
 

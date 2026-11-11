@@ -12,7 +12,13 @@ import {
   ATTENDANCE_STATUSES,
   type AttendanceStatus,
 } from "@/lib/attendance";
-import { DEPARTMENT_IDS, DEPARTMENT_LABELS } from "@/lib/students";
+import {
+  DEPARTMENT_IDS,
+  DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
+  type SectionId,
+} from "@/lib/students";
 import { saveTeacherAttendance } from "@/app/departments/att-teachers/actions";
 
 export interface AttendanceTeacher {
@@ -20,6 +26,7 @@ export interface AttendanceTeacher {
   name: string;
   father_name: string;
   department: string;
+  section: string;
   position: string | null;
 }
 
@@ -28,11 +35,13 @@ export default function TeacherAttendanceForm({
   existing,
   date,
   department,
+  section,
 }: {
   teachers: AttendanceTeacher[];
   existing: Record<string, AttendanceStatus>;
   date: string;
   department: string;
+  section: string;
 }) {
   const router = useRouter();
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>(
@@ -52,9 +61,9 @@ export default function TeacherAttendanceForm({
     return c;
   }, [marks, teachers]);
 
-  function go(nextDate: string, nextDepartment: string) {
+  function go(nextDate: string, nextDepartment: string, nextSection: string) {
     router.push(
-      `/departments/att-teachers?date=${nextDate}&department=${nextDepartment}`,
+      `/departments/att-teachers?date=${nextDate}&department=${nextDepartment}&section=${nextSection}`,
     );
   }
 
@@ -102,7 +111,7 @@ export default function TeacherAttendanceForm({
             type="date"
             value={date}
             onChange={(e) => {
-              if (e.target.value) go(e.target.value, department);
+              if (e.target.value) go(e.target.value, department, section);
             }}
           />
         </label>
@@ -111,12 +120,27 @@ export default function TeacherAttendanceForm({
           <select
             className="field-input"
             value={department}
-            onChange={(e) => go(date, e.target.value)}
+            onChange={(e) => go(date, e.target.value, section)}
           >
             <option value="all">سب شعبے</option>
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
                 {DEPARTMENT_LABELS[d]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span className="field-label">شعبہ (بنین / بنات)</span>
+          <select
+            className="field-input"
+            value={section}
+            onChange={(e) => go(date, department, e.target.value)}
+          >
+            <option value="all">سب</option>
+            {SECTION_IDS.map((s) => (
+              <option key={s} value={s}>
+                {SECTION_LABELS[s]}
               </option>
             ))}
           </select>
@@ -171,6 +195,7 @@ export default function TeacherAttendanceForm({
                 <div className="sub">
                   {t.father_name}
                   {t.position ? ` — ${t.position}` : ""}
+                  {t.section ? ` — ${SECTION_LABELS[t.section as SectionId]}` : ""}
                 </div>
               </div>
               <div className="att-btns">

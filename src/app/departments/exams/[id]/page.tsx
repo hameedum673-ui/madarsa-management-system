@@ -6,7 +6,11 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DEPARTMENT_LABELS, type Student } from "@/lib/students";
+import {
+  DEPARTMENT_LABELS,
+  SECTION_LABELS,
+  type Student,
+} from "@/lib/students";
 import {
   summarizeExamResults,
   type Exam,
@@ -96,6 +100,7 @@ export default async function ExamDetailPage({
           <h2>{exam.name}</h2>
           <span className="page-count">
             {DEPARTMENT_LABELS[exam.department]}
+            {exam.section ? ` — ${SECTION_LABELS[exam.section]}` : ""}
             {exam.class_name ? ` — ${exam.class_name}` : ""}
           </span>
         </div>

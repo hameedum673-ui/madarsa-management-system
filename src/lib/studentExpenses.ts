@@ -57,5 +57,6 @@ export interface StudentExpense {
     name: string;
     father_name: string;
     registration_number: string;
+    section: string;
   } | null;
 }

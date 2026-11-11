@@ -9,7 +9,12 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import type { Student } from "@/lib/students";
+import {
+  SECTION_IDS,
+  SECTION_LABELS,
+  type SectionId,
+  type Student,
+} from "@/lib/students";
 import {
   STUDENT_EXPENSE_CATEGORY_LABELS,
   STUDENT_EXPENSE_STATUS_LABELS,
@@ -24,10 +29,18 @@ function formatDate(value: string | null): string {
 export default async function StudentExpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ student?: string }>;
+  searchParams: Promise<{ student?: string; section?: string }>;
 }) {
   const params = await searchParams;
   const selectedStudent = params.student ?? "all";
+  // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
+  const rawSection = params.section ?? "all";
+  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
+    rawSection,
+  )
+    ? (rawSection as SectionId)
+    : "all";
+
 
   const supabase = await createClient();
   const { data: studentsData } = await supabase
@@ -39,7 +52,7 @@ export default async function StudentExpPage({
 
   let query = supabase
     .from("student_expenses")
-    .select("*, students(name, father_name, registration_number)")
+    .select("*, students(name, father_name, registration_number, section)")
     .order("expense_date", { ascending: false })
     .order("record_number", { ascending: false });
   if (selectedStudent !== "all") {
@@ -47,7 +60,13 @@ export default async function StudentExpPage({
   }
   const { data, error } = await query;
 
-  const records = (data ?? []) as StudentExpense[];
+  // مرحلہ 52 — شعبہ چنا ہو (اور کوئی ایک طالبہ نہ چنی ہو) تو صرف
+  // اسی شعبے کے ریکارڈ دکھائیں
+  const allRecords = (data ?? []) as StudentExpense[];
+  const records =
+    section !== "all" && selectedStudent === "all"
+      ? allRecords.filter((r) => r.students?.section === section)
+      : allRecords;
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
   const totalSpent = records
@@ -87,6 +106,21 @@ export default async function StudentExpPage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="field-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
@@ -111,6 +145,7 @@ export default async function StudentExpPage({
                 <tr>
                   <th>ریکارڈ نمبر</th>
                   <th>طالبہ</th>
+                  <th>بنین / بنات</th>
                   <th>قسم</th>
                   <th>رقم</th>
                   <th>تاریخ</th>
@@ -129,6 +164,11 @@ export default async function StudentExpPage({
                       <Link href={`/departments/student-exp/${r.id}`}>
                         {r.students?.name ?? "—"}
                       </Link>
+                    </td>
+                    <td>
+                      {r.students?.section
+                        ? SECTION_LABELS[r.students.section as SectionId]
+                        : "—"}
                     </td>
                     <td>{STUDENT_EXPENSE_CATEGORY_LABELS[r.category]}</td>
                     <td>{r.amount.toLocaleString("ur-PK")}</td>
