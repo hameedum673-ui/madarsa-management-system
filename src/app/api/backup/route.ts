@@ -24,6 +24,7 @@ const OWN_TABLES = [
   "student_attendance",
   "teacher_attendance",
   "fee_payments",
+  "fee_schedule",
   "expenses",
   "donations",
   "zakat_records",
@@ -31,9 +32,12 @@ const OWN_TABLES = [
   "student_expenses",
   "exams",
   "exam_results",
+  "hifz_progress",
+  "month_closings",
   "admissions",
   "notices",
   "documents",
+  "document_files",
   "audit_log",
 ] as const;
 

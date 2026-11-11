@@ -1,9 +1,10 @@
 /**
- * مرحلہ 30 — بیک اپ (سرور صفحہ، صرف دیکھنے کے لیے)
+ * مرحلہ 30 — بیک اپ (سرور صفحہ)
  * ہر میز کی تعداد دکھاتا ہے + "بیک اپ ڈاؤن لوڈ کریں" کا بٹن۔
- * کوئی نئی میز نہیں، کوئی SQL نہیں۔ بحالی (restore) اس مرحلے میں نہیں ہے۔
+ * مرحلہ 42 — بیک اپ واپس لانے کا حصہ (RestoreBackupForm) بھی یہیں ہے۔
  */
 import BackButton from "@/components/BackButton";
+import RestoreBackupForm from "@/app/departments/backup/RestoreBackupForm";
 import { createClient } from "@/lib/supabase/server";
 
 const TABLE_LABELS: { table: string; label: string }[] = [
@@ -14,6 +15,7 @@ const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "student_attendance", label: "طلبہ کی حاضری" },
   { table: "teacher_attendance", label: "اساتذہ کی حاضری" },
   { table: "fee_payments", label: "فیس کی رسیدیں" },
+  { table: "fee_schedule", label: "طے شدہ فیس" },
   { table: "expenses", label: "اخراجات" },
   { table: "donations", label: "عطیات" },
   { table: "zakat_records", label: "زکوٰۃ کا ریکارڈ" },
@@ -21,9 +23,12 @@ const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "student_expenses", label: "طلبہ کے اخراجات" },
   { table: "exams", label: "امتحانات" },
   { table: "exam_results", label: "امتحان کے نتائج" },
+  { table: "hifz_progress", label: "حفظ کی پیش رفت" },
+  { table: "month_closings", label: "مہینے کی بندش" },
   { table: "admissions", label: "داخلے" },
   { table: "notices", label: "اطلاعات اور اعلانات" },
   { table: "documents", label: "دستاویزات" },
+  { table: "document_files", label: "دستاویز کی فائلیں" },
   { table: "audit_log", label: "آڈٹ لاگ" },
 ];
 
@@ -73,10 +78,8 @@ export default async function BackupPage() {
           ))}
         </div>
 
-        <p className="sub">
-          بحالی (restore) — بیک اپ واپس ڈالنا — اس مرحلے میں نہیں ہے؛ وہ
-          الگ، احتیاط والا مرحلہ ہے۔
-        </p>
+        <h3 className="form-section-title">بیک اپ واپس لائیں</h3>
+        <RestoreBackupForm />
       </div>
     </div>
   );
