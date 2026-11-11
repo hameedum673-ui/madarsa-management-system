@@ -33,6 +33,12 @@ export const RESTORE_TABLES: RestoreTable[] = [
   },
   { table: "fee_schedule", label: "طے شدہ فیس" },
   { table: "expenses", label: "اخراجات", monthField: "expense_date" },
+  {
+    table: "salary_payments",
+    label: "تنخواہیں",
+    monthField: "salary_month",
+    monthFieldIsMonth: true,
+  },
   { table: "donations", label: "عطیات", monthField: "donation_date" },
   { table: "zakat_records", label: "زکوٰۃ کا ریکارڈ", monthField: "record_date" },
   { table: "ushr_records", label: "عشر کا ریکارڈ", monthField: "record_date" },

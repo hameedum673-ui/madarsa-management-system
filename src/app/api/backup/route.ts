@@ -26,6 +26,7 @@ const OWN_TABLES = [
   "fee_payments",
   "fee_schedule",
   "expenses",
+  "salary_payments",
   "donations",
   "zakat_records",
   "ushr_records",

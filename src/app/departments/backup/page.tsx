@@ -17,6 +17,7 @@ const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "fee_payments", label: "فیس کی رسیدیں" },
   { table: "fee_schedule", label: "طے شدہ فیس" },
   { table: "expenses", label: "اخراجات" },
+  { table: "salary_payments", label: "تنخواہیں" },
   { table: "donations", label: "عطیات" },
   { table: "zakat_records", label: "زکوٰۃ کا ریکارڈ" },
   { table: "ushr_records", label: "عشر کا ریکارڈ" },

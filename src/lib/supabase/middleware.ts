@@ -141,8 +141,9 @@ export async function updateSession(request: NextRequest) {
   // براہِ راست لنک کھولنے پر بھی سرور روکتا ہے — صرف بٹن چھپانا کافی نہیں۔
   if (!isAdmin && pathname.startsWith("/departments/")) {
     const slug = pathname.split("/")[2] ?? "";
-    // "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" صرف ایڈمن کے لیے ہیں
-    if (slug === "users" || slug === "permissions") {
+    // "صارفین اور اکاؤنٹس"، "اختیارات اور اجازتیں" اور "تنخواہیں"
+    // صرف ایڈمن کے لیے ہیں (تنخواہ خفیہ معلومات ہے — مرحلہ 50)
+    if (slug === "users" || slug === "permissions" || slug === "salaries") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
