@@ -28,6 +28,11 @@ import {
 } from "@/lib/feeSchedule";
 import ScheduleForm from "@/app/departments/income/schedule/ScheduleForm";
 import DeactivateButton from "@/app/departments/income/schedule/DeactivateButton";
+import {
+  feeReminderMessage,
+  getMadrasaNameForMessage,
+  whatsappLink,
+} from "@/lib/whatsapp";
 
 function money(value: number): string {
   return `${value.toLocaleString("ur-PK")} روپے`;
@@ -74,13 +79,23 @@ export default async function FeeSchedulePage({
 
   const { data: studentsData } = await supabase
     .from("students")
-    .select("id, name, father_name, registration_number, department, class_name")
+    .select(
+      "id, name, father_name, registration_number, department, class_name, guardian_phone",
+    )
     .eq("status", "active")
     .order("registration_number", { ascending: true });
   const students = (studentsData ?? []) as Pick<
     Student,
-    "id" | "name" | "father_name" | "registration_number" | "department" | "class_name"
+    | "id"
+    | "name"
+    | "father_name"
+    | "registration_number"
+    | "department"
+    | "class_name"
+    | "guardian_phone"
   >[];
+
+  const madrasaName = await getMadrasaNameForMessage(supabase);
 
   const { data: paymentsData } = await supabase
     .from("fee_payments")
@@ -216,41 +231,78 @@ export default async function FeeSchedulePage({
                       <th>طے شدہ فیس</th>
                       <th>ادا شدہ</th>
                       <th>حالت</th>
+                      <th>پیغام</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {dueRows.map((r) => (
-                      <tr key={r.student.id}>
-                        <td>
-                          <Link
-                            href={`/departments/students/${r.student.id}`}
-                          >
-                            {r.student.registration_number}
-                          </Link>
-                        </td>
-                        <td>
-                          <Link
-                            href={`/departments/students/${r.student.id}`}
-                          >
-                            {r.student.name}
-                          </Link>
-                        </td>
-                        <td>{r.student.father_name}</td>
-                        <td>
-                          {DEPARTMENT_LABELS[r.student.department]}
-                        </td>
-                        <td>{r.student.class_name ?? "—"}</td>
-                        <td>
-                          {r.expected === null ? "—" : money(r.expected)}
-                        </td>
-                        <td>{money(r.paid)}</td>
-                        <td>
-                          <span className={statusBadgeClass(r.status)}>
-                            {FEE_DUE_STATUS_LABELS[r.status]}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {dueRows.map((r) => {
+                      // مرحلہ 44 — بقایا / جزوی فیس کی WhatsApp یاد دہانی
+                      const reminderLink =
+                        (r.status === "unpaid" || r.status === "partial") &&
+                        r.expected !== null
+                          ? whatsappLink(
+                              r.student.guardian_phone,
+                              feeReminderMessage({
+                                madrasaName,
+                                studentName: r.student.name,
+                                monthUrdu: formatMonthUrdu(month),
+                                expected: r.expected,
+                                paid: r.paid,
+                              }),
+                            )
+                          : null;
+                      return (
+                        <tr key={r.student.id}>
+                          <td>
+                            <Link
+                              href={`/departments/students/${r.student.id}`}
+                            >
+                              {r.student.registration_number}
+                            </Link>
+                          </td>
+                          <td>
+                            <Link
+                              href={`/departments/students/${r.student.id}`}
+                            >
+                              {r.student.name}
+                            </Link>
+                          </td>
+                          <td>{r.student.father_name}</td>
+                          <td>
+                            {DEPARTMENT_LABELS[r.student.department]}
+                          </td>
+                          <td>{r.student.class_name ?? "—"}</td>
+                          <td>
+                            {r.expected === null ? "—" : money(r.expected)}
+                          </td>
+                          <td>{money(r.paid)}</td>
+                          <td>
+                            <span className={statusBadgeClass(r.status)}>
+                              {FEE_DUE_STATUS_LABELS[r.status]}
+                            </span>
+                          </td>
+                          <td>
+                            {r.status === "unpaid" ||
+                            r.status === "partial" ? (
+                              reminderLink ? (
+                                <a
+                                  className="btn-ghost"
+                                  href={reminderLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  WhatsApp پر بھیجیں
+                                </a>
+                              ) : (
+                                "فون نمبر درج نہیں ہے"
+                              )
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

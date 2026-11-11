@@ -36,6 +36,11 @@ import HifzProgressForm, {
   type HifzTeacher,
 } from "@/app/departments/academic/HifzProgressForm";
 import VoidHifzButton from "@/app/departments/academic/VoidHifzButton";
+import {
+  examResultMessage,
+  getMadrasaNameForMessage,
+  whatsappLink,
+} from "@/lib/whatsapp";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -111,6 +116,8 @@ export default async function AcademicRecordPage({
       return { exam, mine };
     })
     .filter((row) => row.mine);
+
+  const madrasaName = await getMadrasaNameForMessage(supabase);
 
   // داخلہ — اگر یہ طالبہ داخلے سے آئی ہو
   const { data: admissionData } = await supabase
@@ -240,35 +247,71 @@ export default async function AcademicRecordPage({
                   <th>فیصد</th>
                   <th>درجہ</th>
                   <th>پوزیشن</th>
+                  <th>پیغام</th>
                 </tr>
               </thead>
               <tbody>
-                {examRows.map(({ exam, mine }) => (
-                  <tr key={exam.id}>
-                    <td>
-                      <Link href={`/departments/exams/${exam.id}`}>
-                        {exam.name}
-                      </Link>
-                    </td>
-                    <td>{formatDate(exam.exam_date)}</td>
-                    <td>
-                      {mine
-                        ? `${mine.totalObtained.toLocaleString("ur-PK")} / ${mine.totalPossible.toLocaleString("ur-PK")}`
-                        : "—"}
-                    </td>
-                    <td>
-                      {mine
-                        ? `${mine.percentage.toLocaleString("ur-PK", { maximumFractionDigits: 1 })}٪`
-                        : "—"}
-                    </td>
-                    <td>{mine ? mine.grade : "—"}</td>
-                    <td>
-                      {mine && mine.position !== null
-                        ? mine.position.toLocaleString("ur-PK")
-                        : "—"}
-                    </td>
-                  </tr>
-                ))}
+                {examRows.map(({ exam, mine }) => {
+                  // مرحلہ 44 — امتحان کے نتیجے کا WhatsApp پیغام
+                  const resultLink = mine
+                    ? whatsappLink(
+                        student.guardian_phone,
+                        examResultMessage({
+                          madrasaName,
+                          studentName: student.name,
+                          examName: exam.name,
+                          obtained: mine.totalObtained,
+                          possible: mine.totalPossible,
+                          percentage: mine.percentage,
+                          grade: mine.grade,
+                        }),
+                      )
+                    : null;
+                  return (
+                    <tr key={exam.id}>
+                      <td>
+                        <Link href={`/departments/exams/${exam.id}`}>
+                          {exam.name}
+                        </Link>
+                      </td>
+                      <td>{formatDate(exam.exam_date)}</td>
+                      <td>
+                        {mine
+                          ? `${mine.totalObtained.toLocaleString("ur-PK")} / ${mine.totalPossible.toLocaleString("ur-PK")}`
+                          : "—"}
+                      </td>
+                      <td>
+                        {mine
+                          ? `${mine.percentage.toLocaleString("ur-PK", { maximumFractionDigits: 1 })}٪`
+                          : "—"}
+                      </td>
+                      <td>{mine ? mine.grade : "—"}</td>
+                      <td>
+                        {mine && mine.position !== null
+                          ? mine.position.toLocaleString("ur-PK")
+                          : "—"}
+                      </td>
+                      <td>
+                        {mine ? (
+                          resultLink ? (
+                            <a
+                              className="btn-ghost"
+                              href={resultLink}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              WhatsApp پر بھیجیں
+                            </a>
+                          ) : (
+                            "فون نمبر درج نہیں ہے"
+                          )
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
