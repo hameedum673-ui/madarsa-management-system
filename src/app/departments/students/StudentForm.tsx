@@ -7,10 +7,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ClassSelect from "@/components/ClassSelect";
+import type { ClassOption } from "@/lib/classes";
 import {
   DEPARTMENT_IDS,
   DEPARTMENT_LABELS,
   STUDENT_STATUS_LABELS,
+  type DepartmentId,
   type Student,
 } from "@/lib/students";
 
@@ -24,16 +27,22 @@ export default function StudentForm({
   submitLabel,
   cancelHref,
   showStatus,
+  classes = [],
 }: {
   initial?: Partial<Student>;
   action: FormAction;
   submitLabel: string;
   cancelHref: string;
   showStatus?: boolean;
+  classes?: ClassOption[];
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // مرحلہ 36 — شعبہ بدلنے پر جماعت کی فہرست بھی بدلے
+  const [department, setDepartment] = useState<DepartmentId>(
+    initial?.department ?? "hifz",
+  );
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -87,7 +96,8 @@ export default function StudentForm({
             className="field-input"
             name="department"
             required
-            defaultValue={initial?.department ?? "hifz"}
+            value={department}
+            onChange={(e) => setDepartment(e.target.value as DepartmentId)}
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
@@ -97,17 +107,11 @@ export default function StudentForm({
           </select>
         </label>
 
-        <label className="field">
-          <span className="field-label">جماعت</span>
-          <input
-            className="field-input"
-            name="class_name"
-            type="text"
-            maxLength={100}
-            defaultValue={initial?.class_name ?? ""}
-            placeholder="مثلاً درجہ اول"
-          />
-        </label>
+        <ClassSelect
+          classes={classes}
+          department={department}
+          initialClassName={initial?.class_name ?? null}
+        />
 
         <label className="field">
           <span className="field-label">داخلہ کی تاریخ *</span>

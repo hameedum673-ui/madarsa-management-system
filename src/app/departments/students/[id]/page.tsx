@@ -12,6 +12,7 @@ import {
 } from "@/lib/students";
 import StudentForm from "@/app/departments/students/StudentForm";
 import { updateStudent } from "@/app/departments/students/actions";
+import { getActiveClasses } from "@/lib/classes";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -36,6 +37,7 @@ export default async function StudentDetailPage({
   }
 
   const student = data as Student;
+  const classes = await getActiveClasses(supabase);
 
   return (
     <div className="module-view open">
@@ -98,6 +100,7 @@ export default async function StudentDetailPage({
           submitLabel="تبدیلی محفوظ کریں"
           cancelHref="/departments/students"
           showStatus
+          classes={classes}
         />
 
       </div>

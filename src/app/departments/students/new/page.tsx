@@ -4,8 +4,12 @@
 import BackButton from "@/components/BackButton";
 import StudentForm from "@/app/departments/students/StudentForm";
 import { addStudent } from "@/app/departments/students/actions";
+import { getActiveClasses } from "@/lib/classes";
+import { createClient } from "@/lib/supabase/server";
 
-export default function NewStudentPage() {
+export default async function NewStudentPage() {
+  const supabase = await createClient();
+  const classes = await getActiveClasses(supabase);
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -17,6 +21,7 @@ export default function NewStudentPage() {
           action={addStudent}
           submitLabel="محفوظ کریں"
           cancelHref="/departments/students"
+          classes={classes}
         />
       </div>
     </div>

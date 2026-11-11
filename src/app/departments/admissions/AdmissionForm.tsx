@@ -8,6 +8,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ClassSelect from "@/components/ClassSelect";
+import type { ClassOption } from "@/lib/classes";
 import {
   DEPARTMENT_IDS,
   DEPARTMENT_LABELS,
@@ -17,10 +19,18 @@ type FormAction = (
   formData: FormData,
 ) => Promise<{ ok: true; id: string } | { error: string }>;
 
-export default function AdmissionForm({ action }: { action: FormAction }) {
+export default function AdmissionForm({
+  action,
+  classes = [],
+}: {
+  action: FormAction;
+  classes?: ClassOption[];
+}) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // مرحلہ 36 — شعبہ بدلنے پر جماعت کی فہرست بھی بدلے
+  const [department, setDepartment] = useState("hifz");
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -72,7 +82,8 @@ export default function AdmissionForm({ action }: { action: FormAction }) {
             className="field-input"
             name="department"
             required
-            defaultValue="hifz"
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
@@ -82,16 +93,7 @@ export default function AdmissionForm({ action }: { action: FormAction }) {
           </select>
         </label>
 
-        <label className="field">
-          <span className="field-label">جماعت</span>
-          <input
-            className="field-input"
-            name="class_name"
-            type="text"
-            maxLength={100}
-            placeholder="مثلاً درجہ اول"
-          />
-        </label>
+        <ClassSelect classes={classes} department={department} />
 
         <label className="field">
           <span className="field-label">داخلہ کی تاریخ *</span>

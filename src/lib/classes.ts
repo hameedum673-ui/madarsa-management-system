@@ -5,6 +5,9 @@
  * کیونکہ جماعت خارج نہیں ہوتی، صرف غیر فعال ہوتی ہے)۔
  */
 import type { DepartmentId } from "@/lib/students";
+import type { createClient } from "@/lib/supabase/server";
+
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
 export type ClassStatus = "active" | "inactive";
 
@@ -22,4 +25,31 @@ export interface MadrasaClass {
   status: ClassStatus;
   created_at: string;
   updated_at: string;
+}
+
+/** مرحلہ 36 — فارموں میں جماعت کی فہرست کے لیے فعال جماعتیں */
+export interface ClassOption {
+  name: string;
+  department: DepartmentId;
+}
+
+export async function getActiveClasses(
+  supabase: ServerClient,
+): Promise<ClassOption[]> {
+  try {
+    const { data } = await supabase
+      .from("classes")
+      .select("name, department")
+      .eq("status", "active")
+      .order("department", { ascending: true })
+      .order("sort_order", { ascending: true });
+    return ((data ?? []) as ClassOption[]).map((c) => ({
+      name: c.name,
+      department: c.department,
+    }));
+  } catch {
+    // میز نہ بنی ہو یا کوئی خرابی ہو تو خالی فہرست — فارم ہاتھ سے لکھنے
+    // والا خانہ دکھائے گا، صفحہ نہیں ٹوٹے گا۔
+    return [];
+  }
 }
