@@ -5,6 +5,7 @@
  */
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
@@ -178,6 +179,141 @@ export async function updateDocument(
   revalidatePath("/departments/documents");
   revalidatePath(`/departments/documents/${id}`);
   revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * مرحلہ 41 — دستاویز کے ساتھ فائل لگائیں (تصویر یا PDF، زیادہ سے زیادہ 5 MB)
+ * فائل نجی Storage بکٹ 'documents' میں جاتی ہے، راستہ اپنے مدرسے کی id
+ * سے شروع ہوتا ہے؛ ریکارڈ document_files میز میں بنتا ہے۔
+ */
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
+
+export async function uploadDocumentFile(
+  formData: FormData,
+): Promise<ActionResult> {
+  const documentId = clean(formData.get("document_id"), 100);
+  const file = formData.get("file");
+
+  if (!documentId) return { error: "دستاویز معلوم نہیں ہوئی۔" };
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "پہلے فائل چنیں۔" };
+  }
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return { error: "صرف تصویر (JPG/PNG) یا PDF فائل لگائی جا سکتی ہے۔" };
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return { error: "فائل 5 MB سے بڑی نہیں ہو سکتی۔" };
+  }
+
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+
+  // دستاویز اپنے مدرسے کی ہونی چاہیے
+  const { data: doc } = await supabase
+    .from("documents")
+    .select("id, title")
+    .eq("id", documentId)
+    .eq("madrasa_id", mine.madrasaId)
+    .single();
+  if (!doc) {
+    return { error: "دستاویز نہیں ملی — پہلے دستاویزات کی فہرست میں دیکھیں۔" };
+  }
+
+  const safeName =
+    file.name.replace(/[^\w.\-() ]+/g, "_").trim().slice(0, 100) || "file";
+  const filePath = `${mine.madrasaId}/${documentId}/${randomUUID()}-${safeName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(filePath, file, { contentType: file.type, upsert: false });
+  if (uploadError) {
+    return { error: "فائل اپلوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+  }
+
+  const { data, error } = await supabase
+    .from("document_files")
+    .insert({
+      madrasa_id: mine.madrasaId,
+      document_id: documentId,
+      file_name: file.name.slice(0, 200),
+      file_path: filePath,
+      file_type: file.type,
+      file_size: file.size,
+      status: "active",
+      uploaded_by: mine.userId,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    // ریکارڈ نہ بنے تو اپلوڈ کی ہوئی فائل بھی ہٹا دیں تاکہ کچرا نہ رہے
+    await supabase.storage.from("documents").remove([filePath]);
+    return { error: "فائل محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+  }
+
+  await writeAudit(
+    supabase,
+    mine.madrasaId,
+    mine.userId,
+    "document_file_uploaded",
+    {
+      document_id: documentId,
+      file_name: file.name.slice(0, 200),
+    },
+  );
+
+  revalidatePath("/departments/documents");
+  revalidatePath(`/departments/documents/${documentId}`);
+  return { ok: true };
+}
+
+/**
+ * مرحلہ 41 — لگی ہوئی فائل چھپائیں (منسوخ کریں)
+ * فائل Storage سے حذف نہیں ہوتی — صرف فہرست سے ہٹتی ہے، ریکارڈ رہتا ہے۔
+ */
+export async function voidDocumentFile(
+  id: string,
+  documentId: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+
+  const { data, error } = await supabase
+    .from("document_files")
+    .update({ status: "voided", updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("document_id", documentId)
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("status", "active")
+    .select("id, file_name")
+    .single();
+
+  if (error || !data) {
+    return { error: "چھپایا نہیں جا سکا۔ دوبارہ کوشش کریں۔" };
+  }
+
+  await writeAudit(
+    supabase,
+    mine.madrasaId,
+    mine.userId,
+    "document_file_voided",
+    {
+      document_id: documentId,
+      file_name: data.file_name as string,
+    },
+  );
+
+  revalidatePath("/departments/documents");
+  revalidatePath(`/departments/documents/${documentId}`);
   return { ok: true };
 }
 

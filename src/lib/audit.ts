@@ -43,6 +43,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   notice_updated: "اطلاع بدلی گئی",
   notice_archived: "اطلاع محفوظ کی گئی",
   document_created: "دستاویز درج کی گئی",
+  document_file_uploaded: "دستاویز کے ساتھ فائل لگائی گئی",
+  document_file_voided: "دستاویز کی فائل چھپائی گئی",
   document_updated: "دستاویز بدلی گئی",
   document_archived: "دستاویز محفوظ کی گئی",
   user_added: "صارف شامل کیا گیا",
@@ -122,6 +124,8 @@ export const AUDIT_CATEGORIES = [
       "document_created",
       "document_updated",
       "document_archived",
+      "document_file_uploaded",
+      "document_file_voided",
     ],
   },
   {

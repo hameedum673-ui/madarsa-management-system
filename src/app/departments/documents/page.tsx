@@ -46,6 +46,20 @@ export default async function DocumentsPage({
   const tableMissing = (error as { code?: string } | null)?.code === "42P01";
   const today = todayInKarachi();
 
+  // مرحلہ 41 — کن دستاویزات کے ساتھ فائل لگی ہے (میز نہ ہو تو کوئی نشان نہیں)
+  const docsWithFiles = new Set<string>();
+  try {
+    const { data: filesData } = await supabase
+      .from("document_files")
+      .select("document_id")
+      .eq("status", "active");
+    for (const r of (filesData ?? []) as { document_id: string }[]) {
+      docsWithFiles.add(r.document_id);
+    }
+  } catch {
+    /* میز نہ ہو تو کوئی نشان نہیں دکھایا جاتا */
+  }
+
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -108,6 +122,12 @@ export default async function DocumentsPage({
                         <Link href={`/departments/documents/${d.id}`}>
                           {d.title}
                         </Link>
+                        {docsWithFiles.has(d.id) ? (
+                          <>
+                            {" "}
+                            <span className="badge">فائل ہے</span>
+                          </>
+                        ) : null}
                       </td>
                       <td>{DOCUMENT_TYPE_LABELS[d.doc_type]}</td>
                       <td>
