@@ -10,14 +10,17 @@ import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_IDS,
   DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
   type DepartmentId,
+  type SectionId,
 } from "@/lib/students";
 import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
 
 export default async function ClassesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ department?: string }>;
+  searchParams: Promise<{ department?: string; section?: string }>;
 }) {
   const params = await searchParams;
   const rawDepartment = params.department ?? "all";
@@ -34,6 +37,14 @@ export default async function ClassesPage({
     .order("department", { ascending: true })
     .order("sort_order", { ascending: true });
   if (department !== "all") query = query.eq("department", department);
+  // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
+  const rawSection = params.section ?? "all";
+  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
+    rawSection,
+  )
+    ? (rawSection as SectionId)
+    : "all";
+  if (section !== "all") query = query.eq("section", section);
   const { data, error } = await query;
 
   const classes = (data ?? []) as MadrasaClass[];
@@ -71,6 +82,21 @@ export default async function ClassesPage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="field-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
@@ -94,6 +120,7 @@ export default async function ClassesPage({
                   <th>ترتیب نمبر</th>
                   <th>جماعت کا نام</th>
                   <th>شعبہ</th>
+                  <th>بنین / بنات</th>
                   <th>حالت</th>
                 </tr>
               </thead>
@@ -107,6 +134,7 @@ export default async function ClassesPage({
                       </Link>
                     </td>
                     <td>{DEPARTMENT_LABELS[c.department]}</td>
+                    <td>{SECTION_LABELS[c.section]}</td>
                     <td>
                       <span
                         className={`badge${c.status === "inactive" ? " badge-withdrawn" : ""}`}

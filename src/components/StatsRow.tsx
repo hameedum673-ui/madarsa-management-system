@@ -10,11 +10,20 @@ import { Icon } from "@/components/icons";
 export default function StatsRow({
   studentsCount = 0,
   teachersCount = 0,
+  studentsBanin = 0,
+  studentsBanat = 0,
+  teachersBanin = 0,
+  teachersBanat = 0,
   attendanceToday = null,
   balance = null,
 }: {
   studentsCount?: number;
   teachersCount?: number;
+  // مرحلہ 51 — بنین / بنات کی الگ گنتی
+  studentsBanin?: number;
+  studentsBanat?: number;
+  teachersBanin?: number;
+  teachersBanat?: number;
   attendanceToday?: { present: number; total: number; marked: number } | null;
   balance?: { value: number; hasPayments: boolean } | null;
 }) {
@@ -38,11 +47,23 @@ export default function StatsRow({
               : balanceShown
                 ? balance.value.toLocaleString("ur-PK")
                 : zero;
+        // مرحلہ 51 — بنین/بنات کی گنتی کا مجموعہ کل سے ملے تو الگ
+        // گنتی دکھائیں؛ نہ ملے (SQL نہ چلی ہو) تو پرانا نوٹ دکھائیں۔
+        const studentsSplitOk =
+          studentsCount > 0 &&
+          studentsBanin + studentsBanat === studentsCount;
+        const teachersSplitOk =
+          teachersCount > 0 &&
+          teachersBanin + teachersBanat === teachersCount;
         const note =
-          isStudents && studentsCount > 0
-            ? "فعال طالبات"
-            : isTeachers && teachersCount > 0
-              ? "فعال اساتذہ"
+          isStudents && studentsSplitOk
+            ? `بنین ${studentsBanin.toLocaleString("ur-PK")} · بنات ${studentsBanat.toLocaleString("ur-PK")}`
+            : isStudents && studentsCount > 0
+              ? "فعال طالبات"
+              : isTeachers && teachersSplitOk
+                ? `بنین ${teachersBanin.toLocaleString("ur-PK")} · بنات ${teachersBanat.toLocaleString("ur-PK")}`
+                : isTeachers && teachersCount > 0
+                  ? "فعال اساتذہ"
               : isAttendance && attendanceMarked
                 ? `آج ${attendanceToday.total.toLocaleString("ur-PK")} میں سے ${attendanceToday.present.toLocaleString("ur-PK")} حاضر`
                 : balanceShown

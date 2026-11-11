@@ -4,7 +4,7 @@
  * حالت یہاں "فعال / غیر فعال" ہے (طلبہ/اساتذہ والے "فعال / خارج" سے الگ،
  * کیونکہ جماعت خارج نہیں ہوتی، صرف غیر فعال ہوتی ہے)۔
  */
-import type { DepartmentId } from "@/lib/students";
+import type { DepartmentId, SectionId } from "@/lib/students";
 import type { createClient } from "@/lib/supabase/server";
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -21,6 +21,7 @@ export interface MadrasaClass {
   madrasa_id: string;
   name: string;
   department: DepartmentId;
+  section: SectionId;
   sort_order: number;
   status: ClassStatus;
   created_at: string;
@@ -31,6 +32,7 @@ export interface MadrasaClass {
 export interface ClassOption {
   name: string;
   department: DepartmentId;
+  section: SectionId;
 }
 
 export async function getActiveClasses(
@@ -39,13 +41,14 @@ export async function getActiveClasses(
   try {
     const { data } = await supabase
       .from("classes")
-      .select("name, department")
+      .select("name, department, section")
       .eq("status", "active")
       .order("department", { ascending: true })
       .order("sort_order", { ascending: true });
     return ((data ?? []) as ClassOption[]).map((c) => ({
       name: c.name,
       department: c.department,
+      section: (c.section as SectionId) ?? "banat",
     }));
   } catch {
     // میز نہ بنی ہو یا کوئی خرابی ہو تو خالی فہرست — فارم ہاتھ سے لکھنے

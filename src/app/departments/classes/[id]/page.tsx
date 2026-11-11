@@ -5,7 +5,7 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DEPARTMENT_LABELS } from "@/lib/students";
+import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
 import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
 import ClassForm from "@/app/departments/classes/ClassForm";
 import { updateClass } from "@/app/departments/classes/actions";
@@ -46,6 +46,10 @@ export default async function ClassDetailPage({
           <div className="row">
             <span>شعبہ</span>
             <span>{DEPARTMENT_LABELS[madrasaClass.department]}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[madrasaClass.section]}</span>
           </div>
           <div className="row">
             <span>ترتیب نمبر</span>

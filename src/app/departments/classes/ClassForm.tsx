@@ -7,7 +7,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DEPARTMENT_IDS, DEPARTMENT_LABELS } from "@/lib/students";
+import {
+  DEPARTMENT_IDS,
+  DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
+} from "@/lib/students";
 import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
 
 type FormAction = (
@@ -73,6 +78,22 @@ export default function ClassForm({
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
                 {DEPARTMENT_LABELS[d]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <select
+            className="field-input"
+            name="section"
+            required
+            defaultValue={initial?.section ?? "banat"}
+          >
+            {SECTION_IDS.map((s) => (
+              <option key={s} value={s}>
+                {SECTION_LABELS[s]}
               </option>
             ))}
           </select>

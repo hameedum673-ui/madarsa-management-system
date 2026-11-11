@@ -7,7 +7,7 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DEPARTMENT_LABELS } from "@/lib/students";
+import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
 import {
   ADMISSION_STATUS_LABELS,
   type Admission,
@@ -89,6 +89,10 @@ export default async function AdmissionDetailPage({
           <div className="row">
             <span>شعبہ</span>
             <span>{DEPARTMENT_LABELS[admission.department]}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[admission.section]}</span>
           </div>
           <div className="row">
             <span>جماعت</span>

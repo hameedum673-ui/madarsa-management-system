@@ -3,7 +3,7 @@
  * داخلہ ایک درخواست ہے (زیرِ غور / منظور / مسترد)؛ منظور ہونے پر اس سے
  * طالبہ کا ریکارڈ بنتا ہے اور student_id سے جڑ جاتا ہے۔
  */
-import type { DepartmentId } from "@/lib/students";
+import type { DepartmentId, SectionId } from "@/lib/students";
 
 export type AdmissionStatus = "pending" | "approved" | "rejected";
 
@@ -30,6 +30,7 @@ export interface Admission {
   whatsapp_number: string | null;
   date_of_birth: string | null;
   department: DepartmentId;
+  section: SectionId;
   class_name: string | null;
   admission_date: string;
   previous_madrasa: string | null;

@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import {
   DEPARTMENT_IDS,
   DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
   STUDENT_STATUS_LABELS,
 } from "@/lib/students";
 import type { StaffMember } from "@/lib/staff";
@@ -92,6 +94,22 @@ export default function StaffForm({
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
                 {DEPARTMENT_LABELS[d]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <select
+            className="field-input"
+            name="section"
+            required
+            defaultValue={initial?.section ?? "banat"}
+          >
+            {SECTION_IDS.map((s) => (
+              <option key={s} value={s}>
+                {SECTION_LABELS[s]}
               </option>
             ))}
           </select>

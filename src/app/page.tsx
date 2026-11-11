@@ -35,6 +35,48 @@ export default async function DashboardPage() {
     totalTeachers = 0;
   }
 
+  // مرحلہ 51 — بنین / بنات کی الگ گنتی (فعال طلبہ اور اساتذہ)
+  // میز میں section والا کالم نہ ہو (SQL نہ چلی ہو) تو گنتی صفر رہتی ہے۔
+  let studentsBanin = 0;
+  let studentsBanat = 0;
+  try {
+    const { count: cBanin } = await supabase
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("section", "banin");
+    const { count: cBanat } = await supabase
+      .from("students")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("section", "banat");
+    studentsBanin = cBanin ?? 0;
+    studentsBanat = cBanat ?? 0;
+  } catch {
+    studentsBanin = 0;
+    studentsBanat = 0;
+  }
+
+  let teachersBanin = 0;
+  let teachersBanat = 0;
+  try {
+    const { count: cBanin } = await supabase
+      .from("teachers")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("section", "banin");
+    const { count: cBanat } = await supabase
+      .from("teachers")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("section", "banat");
+    teachersBanin = cBanin ?? 0;
+    teachersBanat = cBanat ?? 0;
+  } catch {
+    teachersBanin = 0;
+    teachersBanat = 0;
+  }
+
   // آج کی حاضری — پاکستان کی تاریخ کے حساب سے
   let attendanceToday: { present: number; total: number; marked: number } | null =
     null;
@@ -220,6 +262,10 @@ export default async function DashboardPage() {
       <StatsRow
         studentsCount={totalStudents}
         teachersCount={totalTeachers}
+        studentsBanin={studentsBanin}
+        studentsBanat={studentsBanat}
+        teachersBanin={teachersBanin}
+        teachersBanat={teachersBanat}
         attendanceToday={attendanceToday}
         balance={balance}
       />

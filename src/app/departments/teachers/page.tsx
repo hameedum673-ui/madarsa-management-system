@@ -6,7 +6,13 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { DEPARTMENT_LABELS, STUDENT_STATUS_LABELS } from "@/lib/students";
+import {
+  DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
+  STUDENT_STATUS_LABELS,
+  type SectionId,
+} from "@/lib/students";
 import type { Teacher } from "@/lib/teachers";
 
 function formatDate(value: string | null): string {
@@ -14,12 +20,27 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString("ur-PK");
 }
 
-export default async function TeachersPage() {
+export default async function TeachersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
+  const params = await searchParams;
+  // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
+  const rawSection = params.section ?? "all";
+  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
+    rawSection,
+  )
+    ? (rawSection as SectionId)
+    : "all";
+
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("teachers")
     .select("*")
     .order("created_at", { ascending: false });
+  if (section !== "all") query = query.eq("section", section);
+  const { data, error } = await query;
 
   const teachers = (data ?? []) as Teacher[];
   const tableMissing =
@@ -40,6 +61,27 @@ export default async function TeachersPage() {
           </Link>
         </div>
 
+        <form className="att-controls" method="get">
+          <label className="att-field">
+            <span className="att-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="att-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="btn-primary" type="submit">
+            دکھائیں
+          </button>
+        </form>
+
         {tableMissing ? (
           <p className="empty-state">
             اساتذہ کی میز ابھی نہیں بنی — پہلے مرحلہ 5 کی SQL چلائیں۔
@@ -59,6 +101,7 @@ export default async function TeachersPage() {
                   <th>والد کا نام</th>
                   <th>فون</th>
                   <th>شعبہ</th>
+                  <th>بنین / بنات</th>
                   <th>عہدہ</th>
                   <th>تقرری</th>
                   <th>حالت</th>
@@ -75,6 +118,7 @@ export default async function TeachersPage() {
                     <td>{t.father_name}</td>
                     <td dir="ltr">{t.phone ?? "—"}</td>
                     <td>{DEPARTMENT_LABELS[t.department]}</td>
+                    <td>{SECTION_LABELS[t.section]}</td>
                     <td>{t.position ?? "—"}</td>
                     <td>{formatDate(t.joining_date)}</td>
                     <td>

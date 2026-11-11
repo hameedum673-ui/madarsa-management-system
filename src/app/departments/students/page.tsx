@@ -8,7 +8,10 @@ import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
   STUDENT_STATUS_LABELS,
+  type SectionId,
   type Student,
 } from "@/lib/students";
 
@@ -20,13 +23,20 @@ function formatDate(value: string | null): string {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; section?: string }>;
 }) {
   const sp = await searchParams;
   // مرحلہ 34 — تلاش: نام، والد کا نام، یا رجسٹریشن نمبر سے
   const q = (sp.q ?? "").trim();
   // تلاش کا لفظ صاف کریں تاکہ ڈیٹا بیس کی تلاش نہ ٹوٹے (%, _ اور , ہٹا دیں)
   const safeQ = q.replace(/[%_,\\]/g, " ").replace(/\s+/g, " ").trim();
+  // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
+  const rawSection = sp.section ?? "all";
+  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
+    rawSection,
+  )
+    ? (rawSection as SectionId)
+    : "all";
 
   const supabase = await createClient();
   let query = supabase
@@ -38,6 +48,7 @@ export default async function StudentsPage({
       `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
     );
   }
+  if (section !== "all") query = query.eq("section", section);
   const { data, error } = await query;
 
   const students = (data ?? []) as Student[];
@@ -76,6 +87,21 @@ export default async function StudentsPage({
               placeholder="نام، والد کا نام، یا رجسٹریشن نمبر"
             />
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="field-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             تلاش کریں
           </button>
@@ -86,8 +112,8 @@ export default async function StudentsPage({
           ) : null}
         </form>
         <p className="sub">
-          پہلے خانے میں نام، والد کا نام، یا رجسٹریشن نمبر لکھیں، پھر
-          &quot;تلاش کریں&quot; دبائیں۔
+          پہلے خانے میں نام، والد کا نام، یا رجسٹریشن نمبر لکھیں، یا
+          شعبہ (بنین / بنات) چنیں، پھر &quot;تلاش کریں&quot; دبائیں۔
         </p>
 
         {tableMissing ? (
@@ -111,6 +137,7 @@ export default async function StudentsPage({
                   <th>نام</th>
                   <th>والد کا نام</th>
                   <th>شعبہ</th>
+                  <th>بنین / بنات</th>
                   <th>جماعت</th>
                   <th>داخلہ</th>
                   <th>حالت</th>
@@ -131,6 +158,7 @@ export default async function StudentsPage({
                     </td>
                     <td>{s.father_name}</td>
                     <td>{DEPARTMENT_LABELS[s.department]}</td>
+                    <td>{SECTION_LABELS[s.section]}</td>
                     <td>{s.class_name ?? "—"}</td>
                     <td>{formatDate(s.admission_date)}</td>
                     <td>

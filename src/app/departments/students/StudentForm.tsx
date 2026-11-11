@@ -12,8 +12,11 @@ import type { ClassOption } from "@/lib/classes";
 import {
   DEPARTMENT_IDS,
   DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
   STUDENT_STATUS_LABELS,
   type DepartmentId,
+  type SectionId,
   type Student,
 } from "@/lib/students";
 
@@ -42,6 +45,10 @@ export default function StudentForm({
   // مرحلہ 36 — شعبہ بدلنے پر جماعت کی فہرست بھی بدلے
   const [department, setDepartment] = useState<DepartmentId>(
     initial?.department ?? "hifz",
+  );
+  // مرحلہ 51 — بنین / بنات (موجودہ مدرسہ للبنات ہے، اس لیے پہلے سے "بنات")
+  const [section, setSection] = useState<SectionId>(
+    initial?.section ?? "banat",
   );
 
   const today = new Date().toISOString().slice(0, 10);
@@ -107,9 +114,27 @@ export default function StudentForm({
           </select>
         </label>
 
+        <label className="field">
+          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <select
+            className="field-input"
+            name="section"
+            required
+            value={section}
+            onChange={(e) => setSection(e.target.value as SectionId)}
+          >
+            {SECTION_IDS.map((s) => (
+              <option key={s} value={s}>
+                {SECTION_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <ClassSelect
           classes={classes}
           department={department}
+          section={section}
           initialClassName={initial?.class_name ?? null}
         />
 

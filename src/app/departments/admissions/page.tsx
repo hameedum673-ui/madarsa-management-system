@@ -12,7 +12,12 @@ import {
   type Admission,
   type AdmissionStatus,
 } from "@/lib/admissions";
-import { DEPARTMENT_LABELS } from "@/lib/students";
+import {
+  DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
+  type SectionId,
+} from "@/lib/students";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -22,7 +27,7 @@ function formatDate(value: string | null): string {
 export default async function AdmissionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; section?: string }>;
 }) {
   const params = await searchParams;
   const rawStatus = params.status ?? "all";
@@ -32,12 +37,21 @@ export default async function AdmissionsPage({
     ? (rawStatus as AdmissionStatus)
     : "all";
 
+  // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
+  const rawSection = params.section ?? "all";
+  const section: SectionId | "all" = (SECTION_IDS as string[]).includes(
+    rawSection,
+  )
+    ? (rawSection as SectionId)
+    : "all";
+
   const supabase = await createClient();
   let query = supabase
     .from("admissions")
     .select("*")
     .order("created_at", { ascending: false });
   if (status !== "all") query = query.eq("status", status);
+  if (section !== "all") query = query.eq("section", section);
   const { data, error } = await query;
 
   const admissions = (data ?? []) as Admission[];
@@ -88,6 +102,21 @@ export default async function AdmissionsPage({
               ))}
             </select>
           </label>
+          <label className="att-field">
+            <span className="att-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="att-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
@@ -111,6 +140,7 @@ export default async function AdmissionsPage({
                   <th>نام</th>
                   <th>والد کا نام</th>
                   <th>شعبہ</th>
+                  <th>بنین / بنات</th>
                   <th>جماعت</th>
                   <th>درخواست کی تاریخ</th>
                   <th>حالت</th>
@@ -126,6 +156,7 @@ export default async function AdmissionsPage({
                     </td>
                     <td>{a.father_name}</td>
                     <td>{DEPARTMENT_LABELS[a.department]}</td>
+                    <td>{SECTION_LABELS[a.section]}</td>
                     <td>{a.class_name ?? "—"}</td>
                     <td>{formatDate(a.created_at)}</td>
                     <td>

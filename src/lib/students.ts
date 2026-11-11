@@ -18,6 +18,16 @@ export const DEPARTMENT_LABELS: Record<DepartmentId, string> = {
   dars_e_nizami: "درسِ نظامی",
 };
 
+// مرحلہ 51 — بنین / بنات (شعبہ تعلیم سے الگ خانہ)
+export type SectionId = "banin" | "banat";
+
+export const SECTION_IDS: SectionId[] = ["banin", "banat"];
+
+export const SECTION_LABELS: Record<SectionId, string> = {
+  banin: "بنین",
+  banat: "بنات",
+};
+
 export type StudentStatus = "active" | "withdrawn";
 
 export const STUDENT_STATUS_LABELS: Record<StudentStatus, string> = {
@@ -36,6 +46,7 @@ export interface Student {
   whatsapp_number: string | null;
   date_of_birth: string | null;
   department: DepartmentId;
+  section: SectionId;
   class_name: string | null;
   admission_date: string;
   address: string | null;

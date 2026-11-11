@@ -20,10 +20,14 @@ const OTHER = "__other__";
 export default function ClassSelect({
   classes,
   department,
+  section,
   initialClassName,
 }: {
   classes: ClassOption[];
   department: string;
+  // مرحلہ 51 — شعبہ دیا جائے تو جماعتیں اسی شعبے کی دکھائیں؛ نہ دیا
+  // جائے (امتحان والا فارم) تو دونوں شعبوں کی جماعتیں دکھائیں۔
+  section?: string;
   initialClassName?: string | null;
 }) {
   const inList = initialClassName
@@ -36,7 +40,9 @@ export default function ClassSelect({
     initialClassName && !inList ? initialClassName : "",
   );
 
-  const deptClasses = classes.filter((c) => c.department === department);
+  const deptClasses = classes.filter(
+    (c) => c.department === department && (!section || c.section === section),
+  );
 
   // شعبہ بدلے اور چنی ہوئی جماعت نئے شعبے میں نہ ہو تو انتخاب صاف کر دیں
   useEffect(() => {
@@ -44,12 +50,15 @@ export default function ClassSelect({
       selected !== "" &&
       selected !== OTHER &&
       !classes.some(
-        (c) => c.department === department && c.name === selected,
+        (c) =>
+          c.department === department &&
+          (!section || c.section === section) &&
+          c.name === selected,
       )
     ) {
       setSelected("");
     }
-  }, [department, selected, classes]);
+  }, [department, section, selected, classes]);
 
   // مدرسے میں کوئی جماعت درج ہی نہ ہو — ہاتھ سے لکھیں
   if (classes.length === 0) {

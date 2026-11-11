@@ -11,8 +11,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_IDS,
+  SECTION_IDS,
   getMyMadrasa,
   type DepartmentId,
+  type SectionId,
 } from "@/lib/students";
 
 type ActionResult = { ok: true } | { error: string };
@@ -49,6 +51,7 @@ interface AdmissionFields {
   whatsappNumber: string;
   dateOfBirth: string;
   department: DepartmentId;
+  section: SectionId;
   className: string;
   admissionDate: string;
   previousMadrasa: string;
@@ -66,6 +69,7 @@ function validateFields(
   const whatsappNumber = clean(formData.get("whatsapp_number"), 20);
   const dateOfBirth = clean(formData.get("date_of_birth"), 10);
   const department = clean(formData.get("department"), 20);
+  const section = clean(formData.get("section"), 20);
   const className = clean(formData.get("class_name"), 100);
   const admissionDate = clean(formData.get("admission_date"), 10);
   const previousMadrasa = clean(formData.get("previous_madrasa"), 200);
@@ -75,6 +79,8 @@ function validateFields(
   if (!fatherName) return { error: "والد کا نام ضروری ہے۔" };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
     return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+  if (!SECTION_IDS.includes(section as SectionId))
+    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
   if (!validDate(admissionDate))
     return { error: "داخلہ کی تاریخ درست نہیں ہے۔" };
   if (!notFuture(admissionDate))
@@ -97,6 +103,7 @@ function validateFields(
       whatsappNumber,
       dateOfBirth,
       department: department as DepartmentId,
+      section: section as SectionId,
       className,
       admissionDate,
       previousMadrasa,
@@ -146,6 +153,7 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
       whatsapp_number: f.whatsappNumber || null,
       date_of_birth: f.dateOfBirth || null,
       department: f.department,
+      section: f.section,
       class_name: f.className || null,
       admission_date: f.admissionDate,
       previous_madrasa: f.previousMadrasa || null,
@@ -209,6 +217,7 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       whatsapp_number: (admission.whatsapp_number as string | null) ?? null,
       date_of_birth: (admission.date_of_birth as string | null) ?? null,
       department: admission.department as string,
+      section: (admission.section as string) || "banat",
       class_name: (admission.class_name as string | null) ?? null,
       admission_date: admission.admission_date as string,
       address: null,

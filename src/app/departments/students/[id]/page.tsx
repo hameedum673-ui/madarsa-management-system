@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_LABELS,
+  SECTION_LABELS,
   STUDENT_STATUS_LABELS,
   type Student,
 } from "@/lib/students";
@@ -66,6 +67,10 @@ export default async function StudentDetailPage({
           <div className="row">
             <span>شعبہ</span>
             <span>{DEPARTMENT_LABELS[student.department]}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[student.section]}</span>
           </div>
           <div className="row">
             <span>جماعت</span>

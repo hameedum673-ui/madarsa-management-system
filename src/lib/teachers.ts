@@ -4,7 +4,7 @@
  * نوٹ: تنخواہ اس ماڈیول میں نہیں دکھائی جاتی — تنخواہ خفیہ معلومات
  * ہے، صرف تنخواہوں والے شعبے (مرحلہ 50، صرف ایڈمن) میں نظر آتی ہے۔
  */
-import type { DepartmentId, StudentStatus } from "@/lib/students";
+import type { DepartmentId, SectionId, StudentStatus } from "@/lib/students";
 
 export interface Teacher {
   id: string;
@@ -15,6 +15,7 @@ export interface Teacher {
   cnic: string | null;
   qualification: string | null;
   department: DepartmentId;
+  section: SectionId;
   position: string | null;
   joining_date: string;
   address: string | null;

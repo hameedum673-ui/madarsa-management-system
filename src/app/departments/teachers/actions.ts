@@ -10,8 +10,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_IDS,
+  SECTION_IDS,
   getMyMadrasa,
   type DepartmentId,
+  type SectionId,
   type StudentStatus,
 } from "@/lib/students";
 
@@ -49,6 +51,7 @@ interface TeacherFields {
   cnic: string;
   qualification: string;
   department: DepartmentId;
+  section: SectionId;
   position: string;
   joiningDate: string;
   address: string;
@@ -64,6 +67,7 @@ function validateFields(
   const cnic = clean(formData.get("cnic"), 15);
   const qualification = clean(formData.get("qualification"), 200);
   const department = clean(formData.get("department"), 20);
+  const section = clean(formData.get("section"), 20);
   const position = clean(formData.get("position"), 100);
   const joiningDate = clean(formData.get("joining_date"), 10);
   const address = clean(formData.get("address"), 500);
@@ -72,6 +76,8 @@ function validateFields(
   if (!fatherName) return { error: "والد کا نام ضروری ہے۔" };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
     return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+  if (!SECTION_IDS.includes(section as SectionId))
+    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
   if (!validDate(joiningDate))
     return { error: "تقرری کی تاریخ درست نہیں ہے۔" };
   if (!notFuture(joiningDate))
@@ -88,6 +94,7 @@ function validateFields(
       cnic,
       qualification,
       department: department as DepartmentId,
+      section: section as SectionId,
       position,
       joiningDate,
       address,
@@ -135,6 +142,7 @@ export async function addTeacher(formData: FormData): Promise<ActionResult> {
       cnic: f.cnic || null,
       qualification: f.qualification || null,
       department: f.department,
+      section: f.section,
       position: f.position || null,
       joining_date: f.joiningDate,
       address: f.address || null,
@@ -184,6 +192,7 @@ export async function updateTeacher(
       cnic: f.cnic || null,
       qualification: f.qualification || null,
       department: f.department,
+      section: f.section,
       position: f.position || null,
       joining_date: f.joiningDate,
       address: f.address || null,

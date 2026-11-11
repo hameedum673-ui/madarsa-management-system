@@ -10,8 +10,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_IDS,
+  SECTION_IDS,
   getMyMadrasa,
   type DepartmentId,
+  type SectionId,
   type StudentStatus,
 } from "@/lib/students";
 
@@ -46,6 +48,7 @@ interface StudentFields {
   whatsappNumber: string;
   dateOfBirth: string;
   department: DepartmentId;
+  section: SectionId;
   className: string;
   admissionDate: string;
   address: string;
@@ -62,6 +65,7 @@ function validateFields(
   const whatsappNumber = clean(formData.get("whatsapp_number"), 20);
   const dateOfBirth = clean(formData.get("date_of_birth"), 10);
   const department = clean(formData.get("department"), 20);
+  const section = clean(formData.get("section"), 20);
   const className = clean(formData.get("class_name"), 100);
   const admissionDate = clean(formData.get("admission_date"), 10);
   const address = clean(formData.get("address"), 500);
@@ -70,6 +74,8 @@ function validateFields(
   if (!fatherName) return { error: "والد کا نام ضروری ہے۔" };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
     return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+  if (!SECTION_IDS.includes(section as SectionId))
+    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
   if (!validDate(admissionDate))
     return { error: "داخلہ کی تاریخ درست نہیں ہے۔" };
   if (!notFuture(admissionDate))
@@ -92,6 +98,7 @@ function validateFields(
       whatsappNumber,
       dateOfBirth,
       department: department as DepartmentId,
+      section: section as SectionId,
       className,
       admissionDate,
       address,
@@ -148,6 +155,7 @@ export async function addStudent(formData: FormData): Promise<ActionResult> {
       whatsapp_number: f.whatsappNumber || null,
       date_of_birth: f.dateOfBirth || null,
       department: f.department,
+      section: f.section,
       class_name: f.className || null,
       admission_date: f.admissionDate,
       address: f.address || null,
@@ -202,6 +210,7 @@ export async function updateStudent(
       whatsapp_number: f.whatsappNumber || null,
       date_of_birth: f.dateOfBirth || null,
       department: f.department,
+      section: f.section,
       class_name: f.className || null,
       admission_date: f.admissionDate,
       address: f.address || null,

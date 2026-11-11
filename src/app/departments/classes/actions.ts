@@ -9,8 +9,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_IDS,
+  SECTION_IDS,
   getMyMadrasa,
   type DepartmentId,
+  type SectionId,
 } from "@/lib/students";
 import type { ClassStatus } from "@/lib/classes";
 
@@ -23,6 +25,7 @@ function clean(value: FormDataEntryValue | null, max = 200): string {
 interface ClassFields {
   name: string;
   department: DepartmentId;
+  section: SectionId;
   sortOrder: number;
 }
 
@@ -32,12 +35,15 @@ function validateFields(
 ): { fields: ClassFields } | { error: string } {
   const name = clean(formData.get("name"), 100);
   const department = clean(formData.get("department"), 20);
+  const section = clean(formData.get("section"), 20);
   const sortOrderRaw = clean(formData.get("sort_order"), 10);
   const sortOrder = Number(sortOrderRaw);
 
   if (!name) return { error: "جماعت کا نام ضروری ہے۔" };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
     return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+  if (!SECTION_IDS.includes(section as SectionId))
+    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
   if (!Number.isInteger(sortOrder) || sortOrder < 1 || sortOrder > 999)
     return { error: "ترتیب نمبر 1 سے 999 کے درمیان ہونا چاہیے۔" };
 
@@ -45,6 +51,7 @@ function validateFields(
     fields: {
       name,
       department: department as DepartmentId,
+      section: section as SectionId,
       sortOrder,
     },
   };
@@ -86,6 +93,7 @@ export async function addClass(formData: FormData): Promise<ActionResult> {
       madrasa_id: mine.madrasaId,
       name: f.name,
       department: f.department,
+      section: f.section,
       sort_order: f.sortOrder,
       status: "active",
     })
@@ -129,6 +137,7 @@ export async function updateClass(
     .update({
       name: f.name,
       department: f.department,
+      section: f.section,
       sort_order: f.sortOrder,
       status: status as ClassStatus,
       updated_at: new Date().toISOString(),

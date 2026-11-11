@@ -5,7 +5,11 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DEPARTMENT_LABELS, STUDENT_STATUS_LABELS } from "@/lib/students";
+import {
+  DEPARTMENT_LABELS,
+  SECTION_LABELS,
+  STUDENT_STATUS_LABELS,
+} from "@/lib/students";
 import type { Teacher } from "@/lib/teachers";
 import TeacherForm from "@/app/departments/teachers/TeacherForm";
 import { updateTeacher } from "@/app/departments/teachers/actions";
@@ -55,6 +59,10 @@ export default async function TeacherDetailPage({
           <div className="row">
             <span>شعبہ</span>
             <span>{DEPARTMENT_LABELS[teacher.department]}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[teacher.section]}</span>
           </div>
           <div className="row">
             <span>عہدہ</span>

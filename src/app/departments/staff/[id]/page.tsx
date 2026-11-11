@@ -5,7 +5,11 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DEPARTMENT_LABELS, STUDENT_STATUS_LABELS } from "@/lib/students";
+import {
+  DEPARTMENT_LABELS,
+  SECTION_LABELS,
+  STUDENT_STATUS_LABELS,
+} from "@/lib/students";
 import type { StaffMember } from "@/lib/staff";
 import StaffForm from "@/app/departments/staff/StaffForm";
 import { updateStaff } from "@/app/departments/staff/actions";
@@ -55,6 +59,10 @@ export default async function StaffDetailPage({
           <div className="row">
             <span>شعبہ</span>
             <span>{DEPARTMENT_LABELS[member.department]}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[member.section]}</span>
           </div>
           <div className="row">
             <span>عہدہ / کام</span>
