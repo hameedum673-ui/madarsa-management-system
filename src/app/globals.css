@@ -388,3 +388,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
   .idcard-page .page-head,.idcard-page .form-actions{display:none!important}
   .idcard{max-width:320px;margin:0 auto}
 }
+
+/* مرحلہ 45 — لوڈنگ اسکرین: ذکر + چھوٹا گھومتا ہوا گول دائرہ */
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;min-height:55vh;padding:32px 16px;text-align:center}
+.loading-dhikr{font-family:"Noto Naskh Arabic",serif;font-size:1.7rem;font-weight:700;line-height:2.2;color:var(--navy);margin:0}
+.loading-spinner{width:38px;height:38px;border-radius:50%;border:4px solid var(--gold-soft);border-top-color:var(--gold);animation:loading-spin 0.9s linear infinite}
+@keyframes loading-spin{to{transform:rotate(360deg)}}
