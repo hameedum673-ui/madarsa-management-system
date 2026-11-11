@@ -112,6 +112,24 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // مرحلہ 43 — 2FA کی جانچ: جس کا 2FA فعال ہے، اس کی تصدیق (aal2) کے
+  // بغیر کوئی صفحہ نہیں کھلتا — وہ /auth/mfa-verify پر جائے گا۔
+  // جانچ ناکام ہو تو محفوظ رخ: پرانا کام نہیں رکتا۔
+  const isMfaVerifyPage = pathname === "/auth/mfa-verify";
+  try {
+    const { data: aal } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const needsMfa =
+      !!aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2";
+    if (needsMfa && !isMfaVerifyPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/mfa-verify";
+      return NextResponse.redirect(url);
+    }
+  } catch {
+    /* 2FA کی جانچ نہ ہو تو پرانا کام ویسے ہی چلتا ہے */
+  }
+
   // منظور شدہ ہے اور لاگ اِن یا غیر مجاز صفحے پر ہے → سیدھا ڈیش بورڈ پر
   if (isLoginPage || isUnauthorizedPage) {
     const url = request.nextUrl.clone();

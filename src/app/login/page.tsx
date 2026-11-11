@@ -63,7 +63,14 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    // مرحلہ 43 — 2FA فعال ہو تو پہلے کوڈ والا صفحہ کھلے گا
+    const { data: aal } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+      router.push("/auth/mfa-verify");
+    } else {
+      router.push("/");
+    }
     router.refresh();
   }
 

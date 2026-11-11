@@ -7,6 +7,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import ChangePasswordForm from "@/app/departments/settings/ChangePasswordForm";
+import MfaSettings from "@/app/departments/settings/MfaSettings";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { isAppAdmin, ROLE_LABELS } from "@/lib/approval";
@@ -78,6 +79,16 @@ export default async function SettingsPage() {
         </div>
 
         <ChangePasswordForm email={email} />
+
+        <h3 className="form-section-title">دو مرحلوں والی تصدیق (2FA)</h3>
+        <MfaSettings />
+
+        <h3 className="form-section-title">خودکار لاگ آؤٹ</h3>
+        <p className="sub">
+          30 منٹ تک کوئی حرکت نہ ہو (نہ کلک، نہ لکھنا، نہ چھونا) تو سسٹم
+          خود لاگ آؤٹ کر دیتا ہے اور لاگ اِن والے صفحے پر لے جاتا ہے — تاکہ
+          کھلا ہوا فون یا کمپیوٹر کسی اور کے ہاتھ نہ لگے۔
+        </p>
 
         <h3 className="form-section-title">نظام کی معلومات</h3>
         <div className="form-actions">

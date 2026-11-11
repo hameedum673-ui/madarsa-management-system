@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import AutoLogout from "@/components/AutoLogout";
 
 /**
  * بنیادی ڈھانچہ — زبان اردو، سمت RTL، وہی عنوان اور وہی اردو فونٹ،
@@ -34,6 +35,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <AutoLogout />
         <div className="wrap">{children}</div>
       </body>
     </html>
