@@ -13,6 +13,9 @@ import {
   type WelfareRecord,
 } from "@/lib/welfare";
 import VoidButton from "@/app/departments/welfare/[id]/VoidButton";
+import SaveSlipImageButton, {
+  type SlipImageData,
+} from "@/components/SaveSlipImageButton";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -63,6 +66,26 @@ export default async function WelfareDetailPage({
       .single();
     if (madrasa?.name) madrasaName = madrasa.name as string;
   }
+
+  // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
+  const imageRows: [string, string][] = [
+    ["طالبہ", record.students?.name ?? "—"],
+    ["والد کا نام", record.students?.father_name ?? "—"],
+    ["رجسٹریشن نمبر", record.students?.registration_number ?? "—"],
+    ["قسم", WELFARE_KIND_LABELS[record.kind]],
+    ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
+    ["تاریخ", formatDate(record.record_date)],
+  ];
+  if (record.note) imageRows.push(["نوٹ", record.note]);
+  imageRows.push(["حالت", WELFARE_STATUS_LABELS[record.status]]);
+  const imageData: SlipImageData = {
+    madrasaName,
+    title: "فلاحی اندراج",
+    numberLabel: "ریکارڈ نمبر",
+    numberValue: record.record_number,
+    rows: imageRows,
+    filename: `record-${record.record_number}.png`,
+  };
 
   return (
     <div className="module-view open">
@@ -120,6 +143,7 @@ export default async function WelfareDetailPage({
         </div>
 
         <div className="form-actions no-print">
+          <SaveSlipImageButton data={imageData} />
           {record.status === "active" ? <VoidButton id={record.id} /> : null}
         </div>
       </div>

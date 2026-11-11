@@ -15,6 +15,9 @@ import {
   type Expense,
 } from "@/lib/expenses";
 import VoidButton from "@/app/departments/expenses/[id]/VoidButton";
+import SaveSlipImageButton, {
+  type SlipImageData,
+} from "@/components/SaveSlipImageButton";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -65,6 +68,25 @@ export default async function ExpenseDetailPage({
       .single();
     if (madrasa?.name) madrasaName = madrasa.name as string;
   }
+
+  // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
+  const imageRows: [string, string][] = [
+    ["تفصیل", expense.title],
+    ["زمرہ", EXPENSE_CATEGORY_LABELS[expense.category]],
+    ["رقم", `${expense.amount.toLocaleString("ur-PK")} روپے`],
+    ["تاریخ", formatDate(expense.expense_date)],
+    ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[expense.payment_method]],
+  ];
+  if (expense.note) imageRows.push(["نوٹ", expense.note]);
+  imageRows.push(["حالت", EXPENSE_STATUS_LABELS[expense.status]]);
+  const imageData: SlipImageData = {
+    madrasaName,
+    title: "خرچ کا واؤچر",
+    numberLabel: "واؤچر نمبر",
+    numberValue: expense.voucher_number,
+    rows: imageRows,
+    filename: `voucher-${expense.voucher_number}.png`,
+  };
 
   return (
     <div className="module-view open">
@@ -118,6 +140,7 @@ export default async function ExpenseDetailPage({
         </div>
 
         <div className="form-actions no-print">
+          <SaveSlipImageButton data={imageData} />
           {expense.status === "active" ? <VoidButton id={expense.id} /> : null}
         </div>
       </div>

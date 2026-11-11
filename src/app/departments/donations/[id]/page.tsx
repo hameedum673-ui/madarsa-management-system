@@ -14,6 +14,9 @@ import {
   type Donation,
 } from "@/lib/donations";
 import VoidButton from "@/app/departments/donations/[id]/VoidButton";
+import SaveSlipImageButton, {
+  type SlipImageData,
+} from "@/components/SaveSlipImageButton";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -64,6 +67,25 @@ export default async function DonationDetailPage({
       .single();
     if (madrasa?.name) madrasaName = madrasa.name as string;
   }
+
+  // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
+  const imageRows: [string, string][] = [
+    ["قسم", DONATION_KIND_LABELS[donation.kind]],
+    ["عطیہ دینے والا", donation.donor_name],
+    ["رقم", `${donation.amount.toLocaleString("ur-PK")} روپے`],
+    ["تاریخ", formatDate(donation.donation_date)],
+    ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[donation.payment_method]],
+  ];
+  if (donation.note) imageRows.push(["نوٹ", donation.note]);
+  imageRows.push(["حالت", DONATION_STATUS_LABELS[donation.status]]);
+  const imageData: SlipImageData = {
+    madrasaName,
+    title: "عطیہ کی رسید",
+    numberLabel: "رسید نمبر",
+    numberValue: donation.receipt_number,
+    rows: imageRows,
+    filename: `receipt-${donation.receipt_number}.png`,
+  };
 
   return (
     <div className="module-view open">
@@ -117,6 +139,7 @@ export default async function DonationDetailPage({
         </div>
 
         <div className="form-actions no-print">
+          <SaveSlipImageButton data={imageData} />
           {donation.status === "active" ? <VoidButton id={donation.id} /> : null}
         </div>
       </div>

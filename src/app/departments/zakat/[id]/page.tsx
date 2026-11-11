@@ -14,6 +14,9 @@ import {
   type ZakatRecord,
 } from "@/lib/zakat";
 import VoidButton from "@/app/departments/zakat/[id]/VoidButton";
+import SaveSlipImageButton, {
+  type SlipImageData,
+} from "@/components/SaveSlipImageButton";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -64,6 +67,25 @@ export default async function ZakatDetailPage({
       .single();
     if (madrasa?.name) madrasaName = madrasa.name as string;
   }
+
+  // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
+  const imageRows: [string, string][] = [
+    ["قسم", ZAKAT_KIND_LABELS[record.kind]],
+    ["نام", record.person_name],
+    ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
+    ["تاریخ", formatDate(record.record_date)],
+    ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[record.payment_method]],
+  ];
+  if (record.note) imageRows.push(["نوٹ", record.note]);
+  imageRows.push(["حالت", ZAKAT_STATUS_LABELS[record.status]]);
+  const imageData: SlipImageData = {
+    madrasaName,
+    title: "زکوٰۃ کا اندراج",
+    numberLabel: "رسید نمبر",
+    numberValue: record.receipt_number,
+    rows: imageRows,
+    filename: `receipt-${record.receipt_number}.png`,
+  };
 
   return (
     <div className="module-view open">
@@ -117,6 +139,7 @@ export default async function ZakatDetailPage({
         </div>
 
         <div className="form-actions no-print">
+          <SaveSlipImageButton data={imageData} />
           {record.status === "active" ? <VoidButton id={record.id} /> : null}
         </div>
       </div>
