@@ -84,8 +84,12 @@ export default async function StudentDetailPage({
             <span>{student.guardian_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>سرپرست کا فون</span>
+            <span>رابطہ نمبر</span>
             <span dir="ltr">{student.guardian_phone ?? "—"}</span>
+          </div>
+          <div className="row">
+            <span>واٹس ایپ نمبر</span>
+            <span dir="ltr">{student.whatsapp_number ?? "—"}</span>
           </div>
           <div className="row">
             <span>پتہ</span>

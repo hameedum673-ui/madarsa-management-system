@@ -127,10 +127,22 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">سرپرست کا فون</span>
+          <span className="field-label">رابطہ نمبر</span>
           <input
             className="field-input"
             name="guardian_phone"
+            type="tel"
+            dir="ltr"
+            maxLength={20}
+            placeholder="03xx-xxxxxxx"
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">واٹس ایپ نمبر</span>
+          <input
+            className="field-input"
+            name="whatsapp_number"
             type="tel"
             dir="ltr"
             maxLength={20}

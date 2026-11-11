@@ -46,6 +46,7 @@ interface AdmissionFields {
   fatherName: string;
   guardianName: string;
   guardianPhone: string;
+  whatsappNumber: string;
   dateOfBirth: string;
   department: DepartmentId;
   className: string;
@@ -62,6 +63,7 @@ function validateFields(
   const fatherName = clean(formData.get("father_name"), 100);
   const guardianName = clean(formData.get("guardian_name"), 100);
   const guardianPhone = clean(formData.get("guardian_phone"), 20);
+  const whatsappNumber = clean(formData.get("whatsapp_number"), 20);
   const dateOfBirth = clean(formData.get("date_of_birth"), 10);
   const department = clean(formData.get("department"), 20);
   const className = clean(formData.get("class_name"), 100);
@@ -82,7 +84,9 @@ function validateFields(
   if (dateOfBirth && !notFuture(dateOfBirth))
     return { error: "تاریخِ پیدائش آج سے آگے نہیں ہو سکتی۔" };
   if (!validPhone(guardianPhone))
-    return { error: "سرپرست کا فون نمبر درست نہیں ہے۔" };
+    return { error: "رابطہ نمبر درست نہیں ہے۔" };
+  if (!validPhone(whatsappNumber))
+    return { error: "واٹس ایپ نمبر درست نہیں ہے۔" };
 
   return {
     fields: {
@@ -90,6 +94,7 @@ function validateFields(
       fatherName,
       guardianName,
       guardianPhone,
+      whatsappNumber,
       dateOfBirth,
       department: department as DepartmentId,
       className,
@@ -138,6 +143,7 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
       father_name: f.fatherName,
       guardian_name: f.guardianName || null,
       guardian_phone: f.guardianPhone || null,
+      whatsapp_number: f.whatsappNumber || null,
       date_of_birth: f.dateOfBirth || null,
       department: f.department,
       class_name: f.className || null,
@@ -200,6 +206,7 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       father_name: admission.father_name as string,
       guardian_name: (admission.guardian_name as string | null) ?? null,
       guardian_phone: (admission.guardian_phone as string | null) ?? null,
+      whatsapp_number: (admission.whatsapp_number as string | null) ?? null,
       date_of_birth: (admission.date_of_birth as string | null) ?? null,
       department: admission.department as string,
       class_name: (admission.class_name as string | null) ?? null,

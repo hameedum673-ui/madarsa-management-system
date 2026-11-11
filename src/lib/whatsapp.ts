@@ -27,6 +27,19 @@ export function normalizePhoneForWhatsApp(
   return null;
 }
 
+/**
+ * مرحلہ 46 — پیغام بھیجنے والا نمبر: پہلے واٹس ایپ نمبر، نہ ہو تو
+ * رابطہ نمبر (پرانے ریکارڈ کا کام رُکے نہیں)
+ */
+export function messagePhone(
+  guardianPhone: string | null | undefined,
+  whatsappNumber: string | null | undefined,
+): string | null {
+  const preferred =
+    (whatsappNumber ?? "").trim() || (guardianPhone ?? "").trim();
+  return preferred || null;
+}
+
 /** WhatsApp کھولنے والا لنک — نمبر درست نہ ہو تو null */
 export function whatsappLink(
   phone: string | null | undefined,

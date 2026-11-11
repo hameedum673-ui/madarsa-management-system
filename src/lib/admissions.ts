@@ -27,6 +27,7 @@ export interface Admission {
   father_name: string;
   guardian_name: string | null;
   guardian_phone: string | null;
+  whatsapp_number: string | null;
   date_of_birth: string | null;
   department: DepartmentId;
   class_name: string | null;

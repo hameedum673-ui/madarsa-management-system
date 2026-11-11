@@ -147,7 +147,7 @@ export default function StudentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">سرپرست کا فون</span>
+          <span className="field-label">رابطہ نمبر</span>
           <input
             className="field-input"
             name="guardian_phone"
@@ -155,6 +155,19 @@ export default function StudentForm({
             dir="ltr"
             maxLength={20}
             defaultValue={initial?.guardian_phone ?? ""}
+            placeholder="03xx-xxxxxxx"
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">واٹس ایپ نمبر</span>
+          <input
+            className="field-input"
+            name="whatsapp_number"
+            type="tel"
+            dir="ltr"
+            maxLength={20}
+            defaultValue={initial?.whatsapp_number ?? ""}
             placeholder="03xx-xxxxxxx"
           />
         </label>

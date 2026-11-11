@@ -20,6 +20,7 @@ import {
 import {
   admissionApprovedMessage,
   getMadrasaNameForMessage,
+  messagePhone,
   whatsappLink,
 } from "@/lib/whatsapp";
 
@@ -55,7 +56,7 @@ export default async function AdmissionDetailPage({
   const approvedLink =
     admission.status === "approved"
       ? whatsappLink(
-          admission.guardian_phone,
+          messagePhone(admission.guardian_phone, admission.whatsapp_number),
           admissionApprovedMessage({
             madrasaName,
             applicantName: admission.applicant_name,
@@ -106,8 +107,12 @@ export default async function AdmissionDetailPage({
             <span>{admission.guardian_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>سرپرست کا فون</span>
+            <span>رابطہ نمبر</span>
             <span dir="ltr">{admission.guardian_phone ?? "—"}</span>
+          </div>
+          <div className="row">
+            <span>واٹس ایپ نمبر</span>
+            <span dir="ltr">{admission.whatsapp_number ?? "—"}</span>
           </div>
           <div className="row">
             <span>پچھلا مدرسہ</span>

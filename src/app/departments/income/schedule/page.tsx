@@ -31,6 +31,7 @@ import DeactivateButton from "@/app/departments/income/schedule/DeactivateButton
 import {
   feeReminderMessage,
   getMadrasaNameForMessage,
+  messagePhone,
   whatsappLink,
 } from "@/lib/whatsapp";
 
@@ -80,7 +81,7 @@ export default async function FeeSchedulePage({
   const { data: studentsData } = await supabase
     .from("students")
     .select(
-      "id, name, father_name, registration_number, department, class_name, guardian_phone",
+      "id, name, father_name, registration_number, department, class_name, guardian_phone, whatsapp_number",
     )
     .eq("status", "active")
     .order("registration_number", { ascending: true });
@@ -93,6 +94,7 @@ export default async function FeeSchedulePage({
     | "department"
     | "class_name"
     | "guardian_phone"
+    | "whatsapp_number"
   >[];
 
   const madrasaName = await getMadrasaNameForMessage(supabase);
@@ -241,7 +243,10 @@ export default async function FeeSchedulePage({
                         (r.status === "unpaid" || r.status === "partial") &&
                         r.expected !== null
                           ? whatsappLink(
-                              r.student.guardian_phone,
+                              messagePhone(
+                                r.student.guardian_phone,
+                                r.student.whatsapp_number,
+                              ),
                               feeReminderMessage({
                                 madrasaName,
                                 studentName: r.student.name,

@@ -39,6 +39,7 @@ import VoidHifzButton from "@/app/departments/academic/VoidHifzButton";
 import {
   examResultMessage,
   getMadrasaNameForMessage,
+  messagePhone,
   whatsappLink,
 } from "@/lib/whatsapp";
 
@@ -255,7 +256,10 @@ export default async function AcademicRecordPage({
                   // مرحلہ 44 — امتحان کے نتیجے کا WhatsApp پیغام
                   const resultLink = mine
                     ? whatsappLink(
-                        student.guardian_phone,
+                        messagePhone(
+                          student.guardian_phone,
+                          student.whatsapp_number,
+                        ),
                         examResultMessage({
                           madrasaName,
                           studentName: student.name,

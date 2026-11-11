@@ -43,6 +43,7 @@ interface StudentFields {
   fatherName: string;
   guardianName: string;
   guardianPhone: string;
+  whatsappNumber: string;
   dateOfBirth: string;
   department: DepartmentId;
   className: string;
@@ -58,6 +59,7 @@ function validateFields(
   const fatherName = clean(formData.get("father_name"), 100);
   const guardianName = clean(formData.get("guardian_name"), 100);
   const guardianPhone = clean(formData.get("guardian_phone"), 20);
+  const whatsappNumber = clean(formData.get("whatsapp_number"), 20);
   const dateOfBirth = clean(formData.get("date_of_birth"), 10);
   const department = clean(formData.get("department"), 20);
   const className = clean(formData.get("class_name"), 100);
@@ -77,7 +79,9 @@ function validateFields(
   if (dateOfBirth && !notFuture(dateOfBirth))
     return { error: "تاریخِ پیدائش آج سے آگے نہیں ہو سکتی۔" };
   if (!validPhone(guardianPhone))
-    return { error: "سرپرست کا فون نمبر درست نہیں ہے۔" };
+    return { error: "رابطہ نمبر درست نہیں ہے۔" };
+  if (!validPhone(whatsappNumber))
+    return { error: "واٹس ایپ نمبر درست نہیں ہے۔" };
 
   return {
     fields: {
@@ -85,6 +89,7 @@ function validateFields(
       fatherName,
       guardianName,
       guardianPhone,
+      whatsappNumber,
       dateOfBirth,
       department: department as DepartmentId,
       className,
@@ -140,6 +145,7 @@ export async function addStudent(formData: FormData): Promise<ActionResult> {
       father_name: f.fatherName,
       guardian_name: f.guardianName || null,
       guardian_phone: f.guardianPhone || null,
+      whatsapp_number: f.whatsappNumber || null,
       date_of_birth: f.dateOfBirth || null,
       department: f.department,
       class_name: f.className || null,
@@ -193,6 +199,7 @@ export async function updateStudent(
       father_name: f.fatherName,
       guardian_name: f.guardianName || null,
       guardian_phone: f.guardianPhone || null,
+      whatsapp_number: f.whatsappNumber || null,
       date_of_birth: f.dateOfBirth || null,
       department: f.department,
       class_name: f.className || null,
