@@ -17,12 +17,28 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString("ur-PK");
 }
 
-export default async function StudentsPage() {
+export default async function StudentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const sp = await searchParams;
+  // مرحلہ 34 — تلاش: نام، والد کا نام، یا رجسٹریشن نمبر سے
+  const q = (sp.q ?? "").trim();
+  // تلاش کا لفظ صاف کریں تاکہ ڈیٹا بیس کی تلاش نہ ٹوٹے (%, _ اور , ہٹا دیں)
+  const safeQ = q.replace(/[%_,\\]/g, " ").replace(/\s+/g, " ").trim();
+
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("students")
     .select("*")
     .order("created_at", { ascending: false });
+  if (safeQ) {
+    query = query.or(
+      `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
+    );
+  }
+  const { data, error } = await query;
 
   const students = (data ?? []) as Student[];
   const tableMissing =
@@ -35,13 +51,44 @@ export default async function StudentsPage() {
           <BackButton />
           <h2>طلبہ کا ریکارڈ</h2>
           <span className="page-count">
-            کل: {students.length.toLocaleString("ur-PK")}
+            {q
+              ? `تلاش کا نتیجہ: ${students.length.toLocaleString("ur-PK")}`
+              : `کل: ${students.length.toLocaleString("ur-PK")}`}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/students/new">
             + نئی طالبہ شامل کریں
           </Link>
         </div>
+
+        <form
+          method="get"
+          action="/departments/students"
+          className="att-controls"
+        >
+          <label className="field">
+            <span className="field-label">تلاش کریں</span>
+            <input
+              className="field-input"
+              type="search"
+              name="q"
+              defaultValue={q}
+              placeholder="نام، والد کا نام، یا رجسٹریشن نمبر"
+            />
+          </label>
+          <button className="btn-primary" type="submit">
+            تلاش کریں
+          </button>
+          {q ? (
+            <Link className="btn-ghost" href="/departments/students">
+              سب دکھائیں
+            </Link>
+          ) : null}
+        </form>
+        <p className="sub">
+          پہلے خانے میں نام، والد کا نام، یا رجسٹریشن نمبر لکھیں، پھر
+          &quot;تلاش کریں&quot; دبائیں۔
+        </p>
 
         {tableMissing ? (
           <p className="empty-state">
@@ -51,7 +98,9 @@ export default async function StudentsPage() {
           <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
         ) : students.length === 0 ? (
           <p className="empty-state">
-            ابھی کوئی طالبہ درج نہیں ہے۔ اوپر والے بٹن سے پہلی طالبہ شامل کریں۔
+            {q
+              ? "اس تلاش سے کوئی طالبہ نہیں ملی — لفظ بدل کر دوبارہ تلاش کریں، یا سب دکھائیں۔"
+              : "ابھی کوئی طالبہ درج نہیں ہے۔ اوپر والے بٹن سے پہلی طالبہ شامل کریں۔"}
           </p>
         ) : (
           <div className="tbl-wrap">
