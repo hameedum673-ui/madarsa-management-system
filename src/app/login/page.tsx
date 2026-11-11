@@ -21,6 +21,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // مرحلہ 33 — "پاس ورڈ بھول گئے" کا فارم
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMessage, setForgotMessage] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   async function handleGoogleLogin() {
     setGoogleError("");
@@ -60,6 +65,22 @@ export default function LoginPage() {
 
     router.push("/");
     router.refresh();
+  }
+
+  // مرحلہ 33 — پاس ورڈ بدلنے کا لنک ای میل پر بھیجیں۔
+  // حفاظت: یہ نہیں بتایا جاتا کہ ای میل رجسٹرڈ ہے یا نہیں — ہمیشہ ایک ہی پیغام۔
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotMessage("");
+    setForgotLoading(true);
+    const supabase = createClient();
+    await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset`,
+    });
+    setForgotLoading(false);
+    setForgotMessage(
+      "اگر یہ ای میل رجسٹرڈ ہے تو پاس ورڈ بدلنے کا لنک بھیج دیا گیا ہے — ان باکس (اور اسپیم فولڈر) دیکھیں۔",
+    );
   }
 
   return (
@@ -147,6 +168,50 @@ export default function LoginPage() {
 
             <button className="login11-submit" type="submit" disabled={loading}>
               {loading ? "براہِ کرم انتظار کریں…" : "لاگ اِن کریں"}
+            </button>
+          </form>
+        ) : null}
+
+        <button
+          className="login11-toggle"
+          type="button"
+          onClick={() => {
+            setShowForgot((v) => !v);
+            setForgotMessage("");
+          }}
+        >
+          {showForgot ? "پاس ورڈ بھول گئے والا فارم بند کریں" : "پاس ورڈ بھول گئے؟"}
+        </button>
+
+        {showForgot ? (
+          <form onSubmit={handleForgot}>
+            <label className="login11-field" htmlFor="forgot-email">
+              اپنی ای میل لکھیں
+            </label>
+            <input
+              id="forgot-email"
+              className="login11-input"
+              type="email"
+              dir="ltr"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+            {forgotMessage ? (
+              <p className="login11-error" style={{ color: "#1e7d46" }}>
+                {forgotMessage}
+              </p>
+            ) : null}
+            <button
+              className="login11-submit"
+              type="submit"
+              disabled={forgotLoading}
+            >
+              {forgotLoading
+                ? "براہِ کرم انتظار کریں…"
+                : "پاس ورڈ بدلنے کا لنک بھیجیں"}
             </button>
           </form>
         ) : null}
