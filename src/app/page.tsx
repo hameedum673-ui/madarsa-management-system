@@ -108,6 +108,14 @@ export default async function DashboardPage() {
   let userRole: string | null = null;
   let isAdmin = false;
   let deniedModules: string[] = [];
+  // مرحلہ 32 — گھنٹی کے لیے تازہ فعال اطلاعات (زیادہ سے زیادہ 5)
+  let recentNotices: {
+    id: string;
+    title: string;
+    kind: string;
+    notice_date: string;
+  }[] = [];
+  let activeNoticesCount = 0;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -143,6 +151,30 @@ export default async function DashboardPage() {
           (d) => d.module,
         );
       }
+      // مرحلہ 32 — گھنٹی کے لیے تازہ فعال اطلاعات (میز نہ بنی ہو تو خالی)
+      const { data: noticeRows } = await supabase
+        .from("notices")
+        .select("id, title, kind, notice_date")
+        .eq("status", "active")
+        .order("notice_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(5);
+      recentNotices = ((noticeRows ?? []) as {
+        id: string;
+        title: string;
+        kind: string;
+        notice_date: string;
+      }[]).map((n) => ({
+        id: n.id,
+        title: n.title,
+        kind: n.kind,
+        notice_date: n.notice_date,
+      }));
+      const { count: noticeCount } = await supabase
+        .from("notices")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active");
+      activeNoticesCount = noticeCount ?? 0;
     }
   } catch {
     madrasaName = null;
@@ -151,6 +183,8 @@ export default async function DashboardPage() {
     userRole = null;
     isAdmin = false;
     deniedModules = [];
+    recentNotices = [];
+    activeNoticesCount = 0;
   }
 
   return (
@@ -160,6 +194,8 @@ export default async function DashboardPage() {
         isAdmin={isAdmin}
         userName={userName}
         userRole={userRole}
+        notices={recentNotices}
+        noticesCount={activeNoticesCount}
       />
       <StatsRow
         studentsCount={totalStudents}

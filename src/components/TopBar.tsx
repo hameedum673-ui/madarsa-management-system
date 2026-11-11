@@ -6,6 +6,15 @@ import { useRouter } from "next/navigation";
 import { BELL_SVG, LOGO_SVG } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import { hijriTodayUrdu } from "@/lib/hijri";
+import { NOTICE_KIND_LABELS, type NoticeKind } from "@/lib/notices";
+
+/** مرحلہ 32 — گھنٹی میں دکھانے کے لیے اطلاع کا مختصر ریکارڈ */
+export interface TopBarNotice {
+  id: string;
+  title: string;
+  kind: string;
+  notice_date: string;
+}
 
 /**
  * اوپر کی سرخی (TopBar) — منظور شدہ ڈیزائن جوں کا توں:
@@ -27,11 +36,15 @@ export default function TopBar({
   isAdmin = true,
   userName,
   userRole,
+  notices = [],
+  noticesCount = 0,
 }: {
   madrasaName?: string | null;
   isAdmin?: boolean;
   userName?: string | null;
   userRole?: string | null;
+  notices?: TopBarNotice[];
+  noticesCount?: number;
 } = {}) {
   const router = useRouter();
   const [gregorian, setGregorian] = useState("—");
@@ -119,6 +132,11 @@ export default function TopBar({
           }}
         >
           <span dangerouslySetInnerHTML={{ __html: BELL_SVG }} />
+          {noticesCount > 0 ? (
+            <span className="bell-count" aria-hidden="true">
+              {noticesCount > 9 ? "9+" : noticesCount}
+            </span>
+          ) : null}
         </button>
         <div
           className={`dropdown${bellOpen ? " open" : ""}`}
@@ -126,7 +144,33 @@ export default function TopBar({
           onClick={(ev) => ev.stopPropagation()}
         >
           <div className="dd-head">اطلاعات</div>
-          <div className="dd-empty">اس وقت کوئی نئی اطلاع موجود نہیں ہے۔</div>
+          {notices.length === 0 ? (
+            <div className="dd-empty">اس وقت کوئی نئی اطلاع موجود نہیں ہے۔</div>
+          ) : (
+            <>
+              {notices.map((n) => (
+                <Link
+                  key={n.id}
+                  className="dd-item dd-notice"
+                  href={`/departments/notices/${n.id}`}
+                  onClick={closeMenus}
+                >
+                  <span className="dd-notice-title">{n.title}</span>
+                  <span className="dd-notice-meta">
+                    {NOTICE_KIND_LABELS[n.kind as NoticeKind] ?? n.kind} —{" "}
+                    {new Date(n.notice_date).toLocaleDateString("ur-PK")}
+                  </span>
+                </Link>
+              ))}
+              <Link
+                className="dd-item"
+                href="/departments/notices"
+                onClick={closeMenus}
+              >
+                تمام اطلاعات دیکھیں
+              </Link>
+            </>
+          )}
         </div>
       </div>
       <div className="menu-wrap">

@@ -78,6 +78,15 @@
   }
   .icon-btn:hover{background:rgba(255,255,255,.18)}
   .icon-btn svg{width:20px;height:20px}
+  /* مرحلہ 32 — گھنٹی پر فعال اطلاعات کی تعداد کا نشان */
+  .bell-count{
+    position:absolute;top:-4px;inset-inline-start:-4px;min-width:18px;height:18px;
+    padding:0 4px;border-radius:999px;background:var(--gold);color:#231a02;
+    font-size:.68rem;font-weight:700;line-height:18px;text-align:center;
+  }
+  .dropdown .dd-notice{flex-direction:column;align-items:flex-start;gap:2px}
+  .dropdown .dd-notice-title{font-weight:700;font-size:.9rem}
+  .dropdown .dd-notice-meta{font-size:.75rem;color:var(--muted)}
   .userchip{
     display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);
     border:1px solid rgba(255,255,255,.25);border-radius:999px;
