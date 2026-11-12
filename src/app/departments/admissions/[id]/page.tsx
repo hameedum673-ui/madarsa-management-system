@@ -11,6 +11,7 @@ import { getMyAllowedSections } from "@/lib/permissions";
 import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
 import {
   ADMISSION_STATUS_LABELS,
+  admissionTypeLabel,
   type Admission,
 } from "@/lib/admissions";
 import AdmissionActions from "@/app/departments/admissions/[id]/AdmissionActions";
@@ -103,6 +104,10 @@ export default async function AdmissionDetailPage({
             <span>{admission.class_name ?? "—"}</span>
           </div>
           <div className="row">
+            <span>داخلے کی قسم</span>
+            <span>{admissionTypeLabel(admission.admission_type)}</span>
+          </div>
+          <div className="row">
             <span>داخلہ کی تاریخ</span>
             <span>{formatDate(admission.admission_date)}</span>
           </div>
@@ -181,8 +186,10 @@ export default async function AdmissionDetailPage({
           <>
             <h3 className="form-section-title">فیصلہ کریں</h3>
             <p className="form-note">
-              منظور کرنے پر طالبہ کا ریکارڈ خود بن جائے گا (رجسٹریشن نمبر
-              خودکار)۔ مسترد کرنے پر کوئی طالبہ نہیں بنے گی۔
+              جدید داخلہ منظور کرنے پر نیا طالبہ ریکارڈ بن جائے گا
+              (رجسٹریشن نمبر خودکار)؛ قدیم داخلہ منظور کرنے پر پرانی
+              طالبہ کا ریکارڈ بدلے گا (نیا ریکارڈ نہیں بنے گا)۔ مسترد
+              کرنے پر کوئی طالبہ نہیں بنے گی۔
             </p>
             <AdmissionActions
               id={admission.id}

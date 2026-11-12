@@ -12,6 +12,7 @@ import {
   STUDENT_STATUS_LABELS,
   type Student,
 } from "@/lib/students";
+import { admissionTypeLabel } from "@/lib/admissions";
 import StudentForm from "@/app/departments/students/StudentForm";
 import { updateStudent } from "@/app/departments/students/actions";
 import { getActiveClasses } from "@/lib/classes";
@@ -79,6 +80,10 @@ export default async function StudentDetailPage({
           <div className="row">
             <span>جماعت</span>
             <span>{student.class_name ?? "—"}</span>
+          </div>
+          <div className="row">
+            <span>داخلے کی قسم</span>
+            <span>{admissionTypeLabel(student.admission_type)}</span>
           </div>
           <div className="row">
             <span>داخلہ کی تاریخ</span>

@@ -14,10 +14,12 @@ import {
   isModuleAllowedForMe,
   MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
+import { ADMISSION_TYPE_IDS } from "@/lib/admissions";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
   getMyMadrasa,
+  type AdmissionType,
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
@@ -59,6 +61,8 @@ interface AdmissionFields {
   section: SectionId;
   className: string;
   admissionDate: string;
+  admissionType: AdmissionType;
+  studentId: string;
   previousMadrasa: string;
   note: string;
 }
@@ -77,9 +81,15 @@ function validateFields(
   const section = clean(formData.get("section"), 20);
   const className = clean(formData.get("class_name"), 100);
   const admissionDate = clean(formData.get("admission_date"), 10);
+  const admissionType = clean(formData.get("admission_type"), 20);
+  const studentId = clean(formData.get("student_id"), 50);
   const previousMadrasa = clean(formData.get("previous_madrasa"), 200);
   const note = clean(formData.get("note"), 500);
 
+  if (!ADMISSION_TYPE_IDS.includes(admissionType as AdmissionType))
+    return { error: "داخلے کی قسم درست منتخب کریں (جدید یا قدیم)۔" };
+  if (admissionType === "returning" && !studentId)
+    return { error: "قدیم داخلے کے لیے پرانی طالبہ چننا ضروری ہے۔" };
   if (!applicantName) return { error: "طالبہ کا نام ضروری ہے۔" };
   if (!fatherName) return { error: "والد کا نام ضروری ہے۔" };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
@@ -111,6 +121,8 @@ function validateFields(
       section: section as SectionId,
       className,
       admissionDate,
+      admissionType: admissionType as AdmissionType,
+      studentId,
       previousMadrasa,
       note,
     },
@@ -155,20 +167,50 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
   if (!allowedSections.has(f.section))
     return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
 
+  // مرحلہ 74 — قدیم داخلہ: نام/والد وغیرہ طالبہ کے ریکارڈ سے
+  // (فارم کی لکھی ہوئی قیمتوں پر بھروسا نہیں — ریکارڈ ہی سچ ہے)
+  let applicantName = f.applicantName;
+  let fatherName = f.fatherName;
+  let guardianName = f.guardianName;
+  let guardianPhone = f.guardianPhone;
+  let whatsappNumber = f.whatsappNumber;
+  let dateOfBirth = f.dateOfBirth;
+  if (f.admissionType === "returning") {
+    const { data: linked, error: linkedError } = await supabase
+      .from("students")
+      .select(
+        "id, name, father_name, guardian_name, guardian_phone, whatsapp_number, date_of_birth",
+      )
+      .eq("id", f.studentId)
+      .eq("madrasa_id", mine.madrasaId)
+      .single();
+    if (linkedError || !linked) {
+      return { error: "پرانی طالبہ نہیں ملی — دوبارہ چنیں۔" };
+    }
+    applicantName = linked.name as string;
+    fatherName = linked.father_name as string;
+    guardianName = (linked.guardian_name as string | null) ?? "";
+    guardianPhone = (linked.guardian_phone as string | null) ?? "";
+    whatsappNumber = (linked.whatsapp_number as string | null) ?? "";
+    dateOfBirth = (linked.date_of_birth as string | null) ?? "";
+  }
+
   const { data, error } = await supabase
     .from("admissions")
     .insert({
       madrasa_id: mine.madrasaId,
-      applicant_name: f.applicantName,
-      father_name: f.fatherName,
-      guardian_name: f.guardianName || null,
-      guardian_phone: f.guardianPhone || null,
-      whatsapp_number: f.whatsappNumber || null,
-      date_of_birth: f.dateOfBirth || null,
+      applicant_name: applicantName,
+      father_name: fatherName,
+      guardian_name: guardianName || null,
+      guardian_phone: guardianPhone || null,
+      whatsapp_number: whatsappNumber || null,
+      date_of_birth: dateOfBirth || null,
       department: f.department,
       section: f.section,
       class_name: f.className || null,
       admission_date: f.admissionDate,
+      admission_type: f.admissionType,
+      student_id: f.admissionType === "returning" ? f.studentId : null,
       previous_madrasa: f.previousMadrasa || null,
       note: f.note || null,
       status: "pending",
@@ -183,7 +225,7 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "admission_created", {
     admission_id: data.id as string,
-    name: f.applicantName,
+    name: applicantName,
   });
 
   revalidatePath("/departments/admissions");
@@ -222,6 +264,66 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
   )
     return { error: "اس شعبے کا داخلہ منظور کرنے کی اجازت نہیں ہے۔" };
 
+  // مرحلہ 74 — قدیم داخلہ: نیا ریکارڈ نہیں، پرانی طالبہ کا ریکارڈ بدلے گا
+  const admissionType = ((admission.admission_type as string) || "new") as AdmissionType;
+  if (admissionType === "returning") {
+    const returningStudentId = admission.student_id as string | null;
+    if (!returningStudentId) {
+      return { error: "اس قدیم داخلے سے کوئی طالبہ جڑی ہوئی نہیں ہے۔" };
+    }
+    const { data: linked, error: linkedError } = await supabase
+      .from("students")
+      .select("id, registration_number, name")
+      .eq("id", returningStudentId)
+      .eq("madrasa_id", mine.madrasaId)
+      .single();
+    if (linkedError || !linked) {
+      return { error: "جڑی ہوئی طالبہ نہیں ملی۔" };
+    }
+    const { error: updateError } = await supabase
+      .from("students")
+      .update({
+        department: admission.department as string,
+        section: (admission.section as string) || "banat",
+        class_name: (admission.class_name as string | null) ?? null,
+        admission_type: "returning",
+        status: "active",
+      })
+      .eq("id", returningStudentId)
+      .eq("madrasa_id", mine.madrasaId);
+    if (updateError) {
+      return { error: "طالبہ کا ریکارڈ نہیں بدلا جا سکا۔ دوبارہ کوشش کریں۔" };
+    }
+    const { error: approveError } = await supabase
+      .from("admissions")
+      .update({
+        status: "approved",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("madrasa_id", mine.madrasaId);
+    if (approveError) {
+      return { error: "داخلہ منظور نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    }
+    await writeAudit(
+      supabase,
+      mine.madrasaId,
+      mine.userId,
+      "admission_approved",
+      {
+        admission_id: id,
+        student_id: returningStudentId,
+        registration_number: linked.registration_number as string,
+        name: linked.name as string,
+      },
+    );
+    revalidatePath("/departments/admissions");
+    revalidatePath(`/departments/admissions/${id}`);
+    revalidatePath("/departments/students");
+    revalidatePath("/");
+    return { ok: true };
+  }
+
   // اگلا رجسٹریشن نمبر: اپنے مدرسے کی طالبات کی گنتی + 1
   const { count } = await supabase
     .from("students")
@@ -244,6 +346,7 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       section: (admission.section as string) || "banat",
       class_name: (admission.class_name as string | null) ?? null,
       admission_date: admission.admission_date as string,
+      admission_type: "new",
       address: null,
       status: "active",
     })

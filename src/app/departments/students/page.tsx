@@ -17,6 +17,7 @@ import {
   type SectionId,
   type Student,
 } from "@/lib/students";
+import { admissionTypeLabel } from "@/lib/admissions";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -152,6 +153,7 @@ export default async function StudentsPage({
                   <th>شعبہ</th>
                   <th>بنین / بنات</th>
                   <th>جماعت</th>
+                  <th>قسم</th>
                   <th>داخلہ</th>
                   <th>حالت</th>
                 </tr>
@@ -173,6 +175,7 @@ export default async function StudentsPage({
                     <td>{DEPARTMENT_LABELS[s.department]}</td>
                     <td>{SECTION_LABELS[s.section]}</td>
                     <td>{s.class_name ?? "—"}</td>
+                    <td>{admissionTypeLabel(s.admission_type)}</td>
                     <td>{formatDate(s.admission_date)}</td>
                     <td>
                       <span

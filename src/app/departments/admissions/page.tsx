@@ -12,9 +12,13 @@ import { getMyAllowedSections } from "@/lib/permissions";
 import {
   ADMISSION_STATUS_IDS,
   ADMISSION_STATUS_LABELS,
+  ADMISSION_TYPE_IDS,
+  ADMISSION_TYPE_LABELS,
+  admissionTypeLabel,
   type Admission,
   type AdmissionStatus,
 } from "@/lib/admissions";
+import type { AdmissionType } from "@/lib/students";
 import {
   DEPARTMENT_LABELS,
   SECTION_IDS,
@@ -30,7 +34,12 @@ function formatDate(value: string | null): string {
 export default async function AdmissionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; section?: string; page?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    section?: string;
+    admission_type?: string;
+    page?: string;
+  }>;
 }) {
   const params = await searchParams;
   const rawStatus = params.status ?? "all";
@@ -38,6 +47,14 @@ export default async function AdmissionsPage({
     ADMISSION_STATUS_IDS as string[]
   ).includes(rawStatus)
     ? (rawStatus as AdmissionStatus)
+    : "all";
+
+  // مرحلہ 74 — داخلے کی قسم کا فلٹر (پہلے سے "سب")
+  const rawAdmissionType = params.admission_type ?? "all";
+  const admissionType: AdmissionType | "all" = (
+    ADMISSION_TYPE_IDS as string[]
+  ).includes(rawAdmissionType)
+    ? (rawAdmissionType as AdmissionType)
     : "all";
 
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
@@ -61,6 +78,8 @@ export default async function AdmissionsPage({
     .order("created_at", { ascending: false });
   if (status !== "all") query = query.eq("status", status);
   if (section !== "all") query = query.eq("section", section);
+  if (admissionType !== "all")
+    query = query.eq("admission_type", admissionType);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
   query = query.range(from, to);
@@ -116,6 +135,21 @@ export default async function AdmissionsPage({
             </select>
           </label>
           <label className="att-field">
+            <span className="att-label">داخلے کی قسم</span>
+            <select
+              className="att-input"
+              name="admission_type"
+              defaultValue={admissionType}
+            >
+              <option value="all">سب</option>
+              {ADMISSION_TYPE_IDS.map((t) => (
+                <option key={t} value={t}>
+                  {ADMISSION_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="att-field">
             <span className="att-label">شعبہ (بنین / بنات)</span>
             <select
               className="att-input"
@@ -155,6 +189,7 @@ export default async function AdmissionsPage({
                   <th>شعبہ</th>
                   <th>بنین / بنات</th>
                   <th>جماعت</th>
+                  <th>قسم</th>
                   <th>درخواست کی تاریخ</th>
                   <th>حالت</th>
                 </tr>
@@ -171,6 +206,7 @@ export default async function AdmissionsPage({
                     <td>{DEPARTMENT_LABELS[a.department]}</td>
                     <td>{SECTION_LABELS[a.section]}</td>
                     <td>{a.class_name ?? "—"}</td>
+                    <td>{admissionTypeLabel(a.admission_type)}</td>
                     <td>{formatDate(a.created_at)}</td>
                     <td>
                       <span

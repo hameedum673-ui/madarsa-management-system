@@ -21,6 +21,9 @@ export const DEPARTMENT_LABELS: Record<DepartmentId, string> = {
 // مرحلہ 51 — بنین / بنات (شعبہ تعلیم سے الگ خانہ)
 export type SectionId = "banin" | "banat";
 
+/** مرحلہ 74 — داخلے کی قسم: جدید (نئی طالبہ) / قدیم (واپس آنے والی طالبہ) */
+export type AdmissionType = "new" | "returning";
+
 export const SECTION_IDS: SectionId[] = ["banin", "banat"];
 
 export const SECTION_LABELS: Record<SectionId, string> = {
@@ -49,6 +52,7 @@ export interface Student {
   section: SectionId;
   class_name: string | null;
   admission_date: string;
+  admission_type: AdmissionType;
   address: string | null;
   status: StudentStatus;
   created_at: string;
