@@ -9,12 +9,22 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import PrintButton from "@/app/departments/reports/PrintButton";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getMyAllowedSections,
+  getMySectionFilter,
+} from "@/lib/permissions";
 import { todayInKarachi } from "@/lib/attendance";
 import {
   currentMonthInKarachi,
   formatMonthUrdu,
 } from "@/lib/fees";
-import { DEPARTMENT_LABELS, type DepartmentId } from "@/lib/students";
+import {
+  DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
+  type DepartmentId,
+  type SectionId,
+} from "@/lib/students";
 
 /** "2026-11" کا اگلا مہینہ — "2026-12-01" */
 function nextMonthStart(month: string): string {
@@ -31,8 +41,18 @@ function money(value: number): string {
   return `${value.toLocaleString("ur-PK")} روپے`;
 }
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
   const supabase = await createClient();
+  // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const sp = await searchParams;
+  const section = getMySectionFilter(allowedSections, sp.section);
+  const effectiveSections =
+    section === "all" ? allowedSections : new Set<SectionId>([section]);
   const today = todayInKarachi();
   const month = currentMonthInKarachi();
   const monthStart = `${month}-01`;
@@ -41,61 +61,95 @@ export default async function ReportsPage() {
   // طلبہ — شعبہ وار + حالت
   const { data: studentsData, error: studentsError } = await supabase
     .from("students")
-    .select("department, status");
-  const students = (studentsData ?? []) as {
+    .select("department, status, section");
+  const students = ((studentsData ?? []) as {
     department: DepartmentId;
     status: string;
-  }[];
+    section: string;
+  }[]).filter((s) =>
+    effectiveSections.has((s.section ?? "banat") as SectionId),
+  );
   const studentsActive = students.filter((s) => s.status === "active");
   const studentsWithdrawn = students.filter((s) => s.status === "withdrawn");
 
   // اساتذہ اور عملہ
   const { data: teachersData, error: teachersError } = await supabase
     .from("teachers")
-    .select("status");
-  const teachers = (teachersData ?? []) as { status: string }[];
+    .select("status, section");
+  const teachers = ((teachersData ?? []) as {
+    status: string;
+    section: string;
+  }[]).filter((t) =>
+    effectiveSections.has((t.section ?? "banat") as SectionId),
+  );
   const { data: staffData, error: staffError } = await supabase
     .from("staff")
-    .select("status");
-  const staff = (staffData ?? []) as { status: string }[];
+    .select("status, section");
+  const staff = ((staffData ?? []) as {
+    status: string;
+    section: string;
+  }[]).filter((m) =>
+    effectiveSections.has((m.section ?? "banat") as SectionId),
+  );
 
   // آج کی حاضری — طلبہ + اساتذہ
   const { data: attStudentsData, error: attStudentsError } = await supabase
     .from("student_attendance")
-    .select("status")
+    .select("status, students(section)")
     .eq("date", today);
-  const attStudents = (attStudentsData ?? []) as { status: string }[];
+  const attStudents = ((attStudentsData ?? []) as unknown as {
+    status: string;
+    students: { section: string } | null;
+  }[]).filter((r) =>
+    effectiveSections.has((r.students?.section ?? "banat") as SectionId),
+  );
   const { data: attTeachersData, error: attTeachersError } = await supabase
     .from("teacher_attendance")
-    .select("status")
+    .select("status, teachers(section)")
     .eq("date", today);
-  const attTeachers = (attTeachersData ?? []) as { status: string }[];
+  const attTeachers = ((attTeachersData ?? []) as unknown as {
+    status: string;
+    teachers: { section: string } | null;
+  }[]).filter((r) =>
+    effectiveSections.has((r.teachers?.section ?? "banat") as SectionId),
+  );
 
   // امتحانات — ہر امتحان کے شرکاء
   const { data: examsData, error: examsError } = await supabase
     .from("exams")
-    .select("id, name, exam_date")
+    .select("id, name, exam_date, section")
     .order("exam_date", { ascending: false });
-  const exams = (examsData ?? []) as {
+  const exams = ((examsData ?? []) as {
     id: string;
     name: string;
     exam_date: string;
-  }[];
+    section: string;
+  }[]).filter((e) =>
+    effectiveSections.has((e.section ?? "banat") as SectionId),
+  );
   const { data: resultsData, error: resultsError } = await supabase
     .from("exam_results")
-    .select("exam_id, student_id");
-  const results = (resultsData ?? []) as {
+    .select("exam_id, student_id, students(section)");
+  const results = ((resultsData ?? []) as unknown as {
     exam_id: string;
     student_id: string;
-  }[];
+    students: { section: string } | null;
+  }[]).filter((r) =>
+    effectiveSections.has((r.students?.section ?? "banat") as SectionId),
+  );
 
   // اس مہینے کا مالی خلاصہ
   const { data: feesData, error: feesError } = await supabase
     .from("fee_payments")
-    .select("amount")
+    .select("amount, students(section)")
     .eq("fee_month", month)
     .eq("status", "active");
-  const fees = (feesData ?? []) as { amount: number }[];
+  const fees = ((feesData ?? []) as unknown as {
+    amount: number;
+    students: { section: string } | null;
+  }[]).filter((f) =>
+    effectiveSections.has((f.students?.section ?? "banat") as SectionId),
+  );
   const { data: donationsData, error: donationsError } = await supabase
     .from("donations")
     .select("amount")
@@ -180,6 +234,34 @@ export default async function ReportsPage() {
           <h2>رپورٹس</h2>
           <PrintButton />
         </div>
+
+        <form className="att-controls" method="get">
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="field-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="btn-primary" type="submit">
+            دکھائیں
+          </button>
+        </form>
+
+        <p className="sub">
+          شعبہ چنیں تو طلبہ، اساتذہ، عملہ، حاضری، امتحانات اور فیس اسی
+          شعبے کے حساب سے دکھائے جاتے ہیں۔ عطیات، اخراجات، زکوٰۃ،
+          اطلاعات اور دستاویزات کا شعبہ نہیں ہوتا — وہ پورے دکھائے
+          جاتے ہیں۔
+        </p>
 
         {tableMissing ? (
           <p className="empty-state">

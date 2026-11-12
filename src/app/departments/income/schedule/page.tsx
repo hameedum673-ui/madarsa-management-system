@@ -7,10 +7,16 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { getMyAllowedSections } from "@/lib/permissions";
+import {
+  getMyAllowedSections,
+  getMySectionFilter,
+} from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
+  SECTION_IDS,
+  SECTION_LABELS,
   type DepartmentId,
+  type SectionId,
   type Student,
 } from "@/lib/students";
 import {
@@ -50,7 +56,7 @@ function statusBadgeClass(status: FeeDueStatus): string {
 export default async function FeeSchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; section?: string }>;
 }) {
   const sp = await searchParams;
   const month =
@@ -61,6 +67,10 @@ export default async function FeeSchedulePage({
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
+  // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
+  const section = getMySectionFilter(allowedSections, sp.section);
+  const effectiveSections =
+    section === "all" ? allowedSections : new Set<SectionId>([section]);
 
   const { data: scheduleData, error: scheduleError } = await supabase
     .from("fee_schedule")
@@ -93,6 +103,10 @@ export default async function FeeSchedulePage({
       "section",
       [...allowedSections][0] ?? "__none__",
     );
+  }
+  // مرحلہ 55 — چنا ہوا شعبہ ہو تو صرف وہی شعبہ
+  if (section !== "all") {
+    scheduleStudentsQuery = scheduleStudentsQuery.eq("section", section);
   }
   const { data: studentsData } = await scheduleStudentsQuery;
   const students = (studentsData ?? []) as Pick<
@@ -209,6 +223,21 @@ export default async function FeeSchedulePage({
                   name="month"
                   defaultValue={month}
                 />
+              </label>
+              <label className="field">
+                <span className="field-label">شعبہ (بنین / بنات)</span>
+                <select
+                  className="field-input"
+                  name="section"
+                  defaultValue={section}
+                >
+                  <option value="all">سب</option>
+                  {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                    <option key={s} value={s}>
+                      {SECTION_LABELS[s]}
+                    </option>
+                  ))}
+                </select>
               </label>
               <button className="btn-primary" type="submit">
                 دکھائیں

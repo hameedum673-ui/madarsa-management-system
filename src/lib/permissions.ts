@@ -63,3 +63,20 @@ export async function getMyAllowedSections(
     return all;
   }
 }
+
+/**
+ * مرحلہ 55 — رپورٹس میں چنا ہوا شعبہ (بنین / بنات / سب)۔
+ * بند شعبہ چنا ہو تو "سب" لوٹاتا ہے (یعنی اجازت والے شعبے)۔
+ */
+export function getMySectionFilter(
+  allowedSections: Set<SectionId>,
+  rawSection: string | undefined,
+): SectionId | "all" {
+  const raw = rawSection ?? "all";
+  if (
+    (SECTION_IDS as string[]).includes(raw) &&
+    allowedSections.has(raw as SectionId)
+  )
+    return raw as SectionId;
+  return "all";
+}

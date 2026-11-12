@@ -8,7 +8,10 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { getMyAllowedSections } from "@/lib/permissions";
+import {
+  getMyAllowedSections,
+  getMySectionFilter,
+} from "@/lib/permissions";
 import {
   currentMonthInKarachi,
   formatMonthUrdu,
@@ -28,7 +31,10 @@ import {
   type DonationKind,
 } from "@/lib/donations";
 import { getBalanceBefore, isMonthClosed } from "@/lib/monthClosing";
-import { getMyMadrasa,
+import {
+  getMyMadrasa,
+  SECTION_IDS,
+  SECTION_LABELS,
   type SectionId,
 } from "@/lib/students";
 import MonthClosingControls from "@/app/departments/monthly/MonthClosingControls";
@@ -43,7 +49,7 @@ function nextMonthStart(month: string): string {
 export default async function MonthlyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; section?: string }>;
 }) {
   const params = await searchParams;
   const rawMonth = params.month ?? currentMonthInKarachi();
@@ -52,6 +58,10 @@ export default async function MonthlyPage({
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
+  // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
+  const section = getMySectionFilter(allowedSections, params.section);
+  const effectiveSections =
+    section === "all" ? allowedSections : new Set<SectionId>([section]);
 
   const { data: feesData, error: feesError } = await supabase
     .from("fee_payments")
@@ -64,7 +74,7 @@ export default async function MonthlyPage({
     payment_method: PaymentMethod;
     students: { section: string } | null;
   }[]).filter((f) =>
-    allowedSections.has((f.students?.section ?? "banat") as SectionId),
+    effectiveSections.has((f.students?.section ?? "banat") as SectionId),
   );
 
   const { data: expensesData, error: expensesError } = await supabase
@@ -123,7 +133,7 @@ export default async function MonthlyPage({
   let openingBalance = 0;
   if (mine) {
     monthClosed = await isMonthClosed(supabase, mine.madrasaId, month);
-    openingBalance = await getBalanceBefore(supabase, month, allowedSections);
+    openingBalance = await getBalanceBefore(supabase, month, effectiveSections);
   }
 
   const feesTotal = fees.reduce((sum, f) => sum + (f.amount ?? 0), 0);
@@ -180,10 +190,31 @@ export default async function MonthlyPage({
               defaultValue={month}
             />
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="field-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
         </form>
+
+        <p className="sub">
+          شعبہ چنیں تو فیس اور ابتدائی بقیہ اسی شعبے کے حساب سے دکھائے
+          جاتے ہیں۔ عطیات، زکوٰۃ، عشر اور اخراجات کا شعبہ نہیں ہوتا —
+          وہ پورے دکھائے جاتے ہیں۔
+        </p>
 
         {tableMissing ? (
           <p className="empty-state">

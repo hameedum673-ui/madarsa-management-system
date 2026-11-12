@@ -9,8 +9,11 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import type { SectionId } from "@/lib/students";
-import { getMyAllowedSections } from "@/lib/permissions";
+import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
+import {
+  getMyAllowedSections,
+  getMySectionFilter,
+} from "@/lib/permissions";
 import { todayInKarachi } from "@/lib/attendance";
 import {
   currentMonthInKarachi,
@@ -43,7 +46,7 @@ function isValidDate(value: string): boolean {
 export default async function FinReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; section?: string }>;
 }) {
   const params = await searchParams;
   const today = todayInKarachi();
@@ -56,6 +59,10 @@ export default async function FinReportsPage({
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
+  // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
+  const section = getMySectionFilter(allowedSections, params.section);
+  const effectiveSections =
+    section === "all" ? allowedSections : new Set<SectionId>([section]);
 
   const { data: feesData, error: feesError } = await supabase
     .from("fee_payments")
@@ -69,7 +76,7 @@ export default async function FinReportsPage({
     payment_method: PaymentMethod;
     students: { section: string } | null;
   }[]).filter((f) =>
-    allowedSections.has((f.students?.section ?? "banat") as SectionId),
+    effectiveSections.has((f.students?.section ?? "banat") as SectionId),
   );
 
   const { data: expensesData, error: expensesError } = await supabase
@@ -194,10 +201,31 @@ export default async function FinReportsPage({
               defaultValue={to}
             />
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select
+              className="field-input"
+              name="section"
+              defaultValue={section}
+            >
+              <option value="all">سب</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
         </form>
+
+        <p className="sub">
+          شعبہ چنیں تو فیس اسی شعبے کے حساب سے دکھائی جاتی ہے۔
+          عطیات، زکوٰۃ، عشر اور اخراجات کا شعبہ نہیں ہوتا — وہ پورے
+          دکھائے جاتے ہیں۔
+        </p>
 
         {tableMissing ? (
           <p className="empty-state">
