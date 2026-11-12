@@ -13,10 +13,12 @@ function GroupSection({
   group,
   isAdmin,
   deniedModules,
+  showReportsHub,
 }: {
   group: DepartmentGroup;
   isAdmin: boolean;
   deniedModules: string[];
+  showReportsHub: boolean;
 }) {
   // مرحلہ 25 — "صارفین اور اکاؤنٹس" بٹن صرف ایڈمن کو نظر آئے؛ عام صارف
   // کو نہ بٹن نظر آئے گا، نہ 404 ملے گا (صفحہ خود بھی ایڈمن کے لیے ہے)۔
@@ -54,16 +56,33 @@ function GroupSection({
             (m.id === "zakat" || m.id === "ushr" || m.id === "donations")
           )
             return null;
-          const href =
-            showCombined && m.id === "students"
+          // مرحلہ 56 — رپورٹس کے 4 بٹن ایک میں: حب ہو تو سالانہ اور
+          // مالیاتی رپورٹس کے بٹن چھپائیں؛ انتظامی گروپ میں
+          // "رپورٹس" کا بٹن بھی چھپائیں۔
+          if (
+            showReportsHub &&
+            ((group.id === "fin" &&
+              (m.id === "yearly" || m.id === "fin-reports")) ||
+              (group.id === "admin" && m.id === "reports"))
+          )
+            return null;
+          const isReportsHubTile =
+            showReportsHub && group.id === "fin" && m.id === "monthly";
+          const href = isReportsHubTile
+            ? "/departments/reports-hub"
+            : showCombined && m.id === "students"
               ? "/departments/admissions-students"
               : `/departments/${m.id}`;
-          const label =
-            showCombined && m.id === "students" ? "داخلے اور طلبہ" : m.label;
+          const label = isReportsHubTile
+            ? "رپورٹس"
+            : showCombined && m.id === "students"
+              ? "داخلے اور طلبہ"
+              : m.label;
+          const icon = isReportsHubTile ? "report" : m.icon;
           return (
             <Link key={m.id} href={href} className="tile">
               <span className="tic">
-                <Icon name={m.icon} />
+                <Icon name={icon} />
               </span>
               <span className="tlabel">{label}</span>
               <span className="chev">
@@ -85,16 +104,25 @@ export default function DepartmentGroups({
   deniedModules?: string[];
 } = {}) {
   const [edu, fin, admin, other] = GROUPS;
+  // مرحلہ 56 — رپورٹس کے 4 بٹن ایک میں: چاروں میں سے کم از کم 2
+  // کی اجازت ہو تو حب کا بٹن دکھائیں؛ صرف ایک کی اجازت ہو تو وہی
+  // اکیلا بٹن دکھے (حب نہیں)۔
+  const isVisible = (id: string) =>
+    (isAdmin || (id !== "users" && id !== "salaries")) &&
+    (isAdmin || !deniedModules.includes(id));
+  const showReportsHub =
+    ["monthly", "yearly", "fin-reports", "reports"].filter(isVisible)
+      .length >= 2;
   return (
     <>
-      <GroupSection group={edu} isAdmin={isAdmin} deniedModules={deniedModules} />
-      <GroupSection group={fin} isAdmin={isAdmin} deniedModules={deniedModules} />
+      <GroupSection group={edu} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
+      <GroupSection group={fin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
       <div className="split">
         <div>
-          <GroupSection group={admin} isAdmin={isAdmin} deniedModules={deniedModules} />
+          <GroupSection group={admin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
         </div>
         <div>
-          <GroupSection group={other} isAdmin={isAdmin} deniedModules={deniedModules} />
+          <GroupSection group={other} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
         </div>
       </div>
     </>

@@ -165,6 +165,37 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
+    // مرحلہ 56 — رپورٹس کا حب: ماہانہ، سالانہ، مالیاتی رپورٹس یا
+    // رپورٹس میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛ چاروں بند
+    // ہوں تو ڈیش بورڈ پر واپس۔
+    if (slug === "reports-hub") {
+      const { data: monthlyAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "monthly" },
+      );
+      const { data: yearlyAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "yearly" },
+      );
+      const { data: finReportsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "fin-reports" },
+      );
+      const { data: reportsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "reports" },
+      );
+      if (
+        monthlyAllowed === false &&
+        yearlyAllowed === false &&
+        finReportsAllowed === false &&
+        reportsAllowed === false
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    }
     // مرحلہ 48 — آمدنی کا حب: صرف /departments/income (حب) پر فیس،
     // زکوٰۃ، عشر یا عطیات میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛
     // نیچے والے صفحے (/departments/income/fees وغیرہ) پر صرف فیس
