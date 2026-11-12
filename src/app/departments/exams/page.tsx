@@ -6,6 +6,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
@@ -23,7 +25,7 @@ function formatDate(value: string | null): string {
 export default async function ExamsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ section?: string }>;
+  searchParams: Promise<{ section?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -36,16 +38,22 @@ export default async function ExamsPage({
       ? (rawSection as SectionId)
       : "all";
 
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("exams")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("exam_date", { ascending: false });
   if (section !== "all") query = query.eq("section", section);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const exams = (data ?? []) as Exam[];
+  const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
 
@@ -56,7 +64,7 @@ export default async function ExamsPage({
           <BackButton />
           <h2>امتحانات اور نتائج</h2>
           <span className="page-count">
-            کل: {exams.length.toLocaleString("ur-PK")}
+            کل: {(count ?? 0).toLocaleString("ur-PK")}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/exams/new">
@@ -127,6 +135,8 @@ export default async function ExamsPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

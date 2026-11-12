@@ -7,6 +7,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import {
   DOCUMENT_TYPES,
   DOCUMENT_TYPE_LABELS,
@@ -24,7 +26,7 @@ function formatDate(value: string | null): string {
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; page?: string }>;
 }) {
   const supabase = await createClient();
   const params = await searchParams;
@@ -33,16 +35,22 @@ export default async function DocumentsPage({
     type === "all" ||
     DOCUMENT_TYPES.includes(type as (typeof DOCUMENT_TYPES)[number]);
 
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("documents")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false });
   if (typeValid && type !== "all") {
     query = query.eq("doc_type", type);
   }
 
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
   const documents = (data ?? []) as MadrasaDocument[];
+  const pages = pageCount(count);
   const tableMissing = (error as { code?: string } | null)?.code === "42P01";
   const today = todayInKarachi();
 
@@ -146,6 +154,8 @@ export default async function DocumentsPage({
             )}
           </>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
       </div>
     </div>
   );

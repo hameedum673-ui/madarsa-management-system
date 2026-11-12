@@ -9,6 +9,8 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { isAppAdmin } from "@/lib/approval";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
@@ -38,7 +40,7 @@ interface FundRow {
 export default async function FundsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ fund?: string }>;
+  searchParams: Promise<{ fund?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawFund = params.fund ?? "all";
@@ -204,6 +206,12 @@ export default async function FundsPage({
   if (ushrAllowed) visibleFunds.push("ushr");
   if (donationsAllowed) visibleFunds.push("sadaqah", "other");
 
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ؛ کل پوری فہرست سے)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+  const pages = pageCount(rows.length);
+  const pageRows = rows.slice(from, to);
+
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -264,7 +272,7 @@ export default async function FundsPage({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {pageRows.map((r) => (
                   <tr key={`${r.fund}-${r.id}`}>
                     <td>
                       <Link href={r.detailHref}>{r.receipt_number}</Link>
@@ -295,6 +303,8 @@ export default async function FundsPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

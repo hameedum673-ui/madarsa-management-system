@@ -6,6 +6,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
@@ -24,7 +26,7 @@ function formatDate(value: string | null): string {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; section?: string }>;
+  searchParams: Promise<{ q?: string; section?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   // مرحلہ 34 — تلاش: نام، والد کا نام، یا رجسٹریشن نمبر سے
@@ -42,9 +44,13 @@ export default async function StudentsPage({
       ? (rawSection as SectionId)
       : "all";
 
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(sp.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("students")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false });
   if (safeQ) {
     query = query.or(
@@ -54,9 +60,11 @@ export default async function StudentsPage({
   if (section !== "all") query = query.eq("section", section);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const students = (data ?? []) as Student[];
+  const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
 
@@ -68,8 +76,8 @@ export default async function StudentsPage({
           <h2>طلبہ کا ریکارڈ</h2>
           <span className="page-count">
             {q
-              ? `تلاش کا نتیجہ: ${students.length.toLocaleString("ur-PK")}`
-              : `کل: ${students.length.toLocaleString("ur-PK")}`}
+              ? `تلاش کا نتیجہ: ${(count ?? 0).toLocaleString("ur-PK")}`
+              : `کل: ${(count ?? 0).toLocaleString("ur-PK")}`}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/students/new">
@@ -179,6 +187,8 @@ export default async function StudentsPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={sp} />
 
       </div>
     </div>

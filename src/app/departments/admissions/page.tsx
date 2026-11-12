@@ -6,6 +6,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   ADMISSION_STATUS_IDS,
@@ -28,7 +30,7 @@ function formatDate(value: string | null): string {
 export default async function AdmissionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; section?: string }>;
+  searchParams: Promise<{ status?: string; section?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawStatus = params.status ?? "all";
@@ -49,17 +51,23 @@ export default async function AdmissionsPage({
       ? (rawSection as SectionId)
       : "all";
 
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("admissions")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false });
   if (status !== "all") query = query.eq("status", status);
   if (section !== "all") query = query.eq("section", section);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const admissions = (data ?? []) as Admission[];
+  const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
 
@@ -177,6 +185,8 @@ export default async function AdmissionsPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

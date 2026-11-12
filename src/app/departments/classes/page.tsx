@@ -7,6 +7,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
@@ -21,7 +23,7 @@ import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
 export default async function ClassesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ department?: string; section?: string }>;
+  searchParams: Promise<{ department?: string; section?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawDepartment = params.department ?? "all";
@@ -34,9 +36,13 @@ export default async function ClassesPage({
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("classes")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("department", { ascending: true })
     .order("sort_order", { ascending: true });
   if (department !== "all") query = query.eq("department", department);
@@ -50,9 +56,11 @@ export default async function ClassesPage({
   if (section !== "all") query = query.eq("section", section);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const classes = (data ?? []) as MadrasaClass[];
+  const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
 
@@ -63,7 +71,7 @@ export default async function ClassesPage({
           <BackButton />
           <h2>درجات اور جماعتیں</h2>
           <span className="page-count">
-            کل: {classes.length.toLocaleString("ur-PK")}
+            کل: {(count ?? 0).toLocaleString("ur-PK")}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/classes/new">
@@ -153,6 +161,8 @@ export default async function ClassesPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

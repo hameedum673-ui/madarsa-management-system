@@ -6,6 +6,13 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import {
+  parsePage,
+  pageRange,
+  pageCount,
+  sanitizeSearch,
+} from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_LABELS,
@@ -24,9 +31,12 @@ function formatDate(value: string | null): string {
 export default async function StaffPage({
   searchParams,
 }: {
-  searchParams: Promise<{ section?: string }>;
+  searchParams: Promise<{ q?: string; section?: string; page?: string }>;
 }) {
   const params = await searchParams;
+  // مرحلہ 58 — تلاش: نام، والد کا نام، یا فون نمبر سے
+  const q = (params.q ?? "").trim();
+  const safeQ = sanitizeSearch(q);
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
@@ -38,16 +48,27 @@ export default async function StaffPage({
       ? (rawSection as SectionId)
       : "all";
 
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("staff")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false });
   if (section !== "all") query = query.eq("section", section);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
-  const { data, error } = await query;
+  if (safeQ) {
+    query = query.or(
+      `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,phone.ilike.%${safeQ}%`,
+    );
+  }
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const staff = (data ?? []) as StaffMember[];
+  const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
 
@@ -58,7 +79,7 @@ export default async function StaffPage({
           <BackButton />
           <h2>عملے کا ریکارڈ</h2>
           <span className="page-count">
-            کل: {staff.length.toLocaleString("ur-PK")}
+            کل: {(count ?? 0).toLocaleString("ur-PK")}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/staff/new">
@@ -67,6 +88,16 @@ export default async function StaffPage({
         </div>
 
         <form className="att-controls" method="get">
+          <label className="att-field">
+            <span className="att-label">تلاش کریں</span>
+            <input
+              className="att-input"
+              type="search"
+              name="q"
+              defaultValue={q}
+              placeholder="نام، والد کا نام، یا فون نمبر"
+            />
+          </label>
           <label className="att-field">
             <span className="att-label">شعبہ (بنین / بنات)</span>
             <select
@@ -83,8 +114,13 @@ export default async function StaffPage({
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            تلاش کریں
           </button>
+          {q ? (
+            <Link className="btn-ghost" href="/departments/staff">
+              سب دکھائیں
+            </Link>
+          ) : null}
         </form>
 
         {tableMissing ? (
@@ -139,6 +175,8 @@ export default async function StaffPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

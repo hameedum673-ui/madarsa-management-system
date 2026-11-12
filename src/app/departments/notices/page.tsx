@@ -6,6 +6,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import {
   NOTICE_KINDS,
   NOTICE_KIND_LABELS,
@@ -20,24 +22,30 @@ function formatDate(value: string): string {
 export default async function NoticesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string }>;
+  searchParams: Promise<{ kind?: string; page?: string }>;
 }) {
   const supabase = await createClient();
   const params = await searchParams;
   const kind = params.kind ?? "all";
   const kindValid = kind === "all" || NOTICE_KINDS.includes(kind as (typeof NOTICE_KINDS)[number]);
 
+  // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("notices")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("notice_date", { ascending: false })
     .order("created_at", { ascending: false });
   if (kindValid && kind !== "all") {
     query = query.eq("kind", kind);
   }
 
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
   const notices = (data ?? []) as Notice[];
+  const pages = pageCount(count);
   const tableMissing = (error as { code?: string } | null)?.code === "42P01";
 
   return (
@@ -117,6 +125,8 @@ export default async function NoticesPage({
             )}
           </>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
       </div>
     </div>
   );
