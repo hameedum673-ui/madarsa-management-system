@@ -18,6 +18,7 @@ import {
   type ExamResult,
 } from "@/lib/exams";
 import MarksForm from "@/app/departments/exams/MarksForm";
+import PrintButton from "@/components/PrintButton";
 import { saveMarks } from "@/app/departments/exams/actions";
 
 function formatDate(value: string | null): string {
@@ -43,6 +44,15 @@ export default async function ExamDetailPage({
   }
 
   const exam = examData as Exam;
+  // مرحلہ 61 — پرنٹ والی شیٹ کے سرنامے کے لیے مدرسے کا نام
+  const { data: madrasaData } = await supabase
+    .from("madrasas")
+    .select("name")
+    .eq("id", exam.madrasa_id)
+    .single();
+  const madrasaName =
+    (madrasaData as { name: string } | null)?.name ??
+    "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
   // مرحلہ 54 — بند شعبے کا امتحان نہیں کھلے گا (پرانا امتحان ہو تو
   // شعبہ خالی ہو سکتا ہے — اس صورت میں یہ جانچ نہیں لگتی)
   const allowedSections = await getMyAllowedSections(supabase);
@@ -53,7 +63,7 @@ export default async function ExamDetailPage({
   // اس امتحان کی طالبات
   let studentQuery = supabase
     .from("students")
-    .select("id, name, father_name, registration_number")
+    .select("id, name, father_name, registration_number, class_name")
     .eq("madrasa_id", exam.madrasa_id)
     .eq("department", exam.department)
     .eq("status", "active")
@@ -64,7 +74,7 @@ export default async function ExamDetailPage({
   const { data: studentData } = await studentQuery;
   const students = (studentData ?? []) as Pick<
     Student,
-    "id" | "name" | "father_name" | "registration_number"
+    "id" | "name" | "father_name" | "registration_number" | "class_name"
   >[];
 
   // درج شدہ نمبر
@@ -97,6 +107,22 @@ export default async function ExamDetailPage({
         (summaries.get(b.id)?.position ?? 999),
     );
 
+  // مرحلہ 61 — درجہ وار: امتحان کسی ایک جماعت کا ہو تو وہی جماعت؛
+  // پورے شعبے کا ہو تو ہر جماعت الگ حصے میں (پرنٹ کے لیے)
+  const groupedResults =
+    exam.class_name
+      ? [{ className: exam.class_name, students: rankedStudents }]
+      : [
+          ...new Set(
+            rankedStudents.map((s) => s.class_name || "دیگر"),
+          ),
+        ].map((className) => ({
+          className,
+          students: rankedStudents.filter(
+            (s) => (s.class_name || "دیگر") === className,
+          ),
+        }));
+
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -108,6 +134,24 @@ export default async function ExamDetailPage({
             {exam.section ? ` — ${SECTION_LABELS[exam.section]}` : ""}
             {exam.class_name ? ` — ${exam.class_name}` : ""}
           </span>
+          <span className="spacer" />
+          <span className="no-print">
+            <PrintButton />
+          </span>
+        </div>
+
+        {/* مرحلہ 61 — پرنٹ والی شیٹ کا سرنامہ (صرف پرنٹ میں دکھتا ہے) */}
+        <div className="print-only print-sheet-head">
+          <h2>{madrasaName}</h2>
+          <p>
+            {exam.name} — {DEPARTMENT_LABELS[exam.department]}
+            {exam.section ? ` — ${SECTION_LABELS[exam.section]}` : ""}
+            {exam.class_name ? ` — ${exam.class_name}` : ""}
+          </p>
+          <p>
+            تاریخ: {formatDate(exam.exam_date)} — کل نمبر:{" "}
+            {totalPossible.toLocaleString("ur-PK")}
+          </p>
         </div>
 
         <div className="detail-rows">
@@ -131,61 +175,87 @@ export default async function ExamDetailPage({
           </div>
         </div>
 
-        {students.length === 0 ? (
-          <p className="empty-state">
-            اس شعبے/جماعت میں کوئی فعال طالبہ نہیں ہے — پہلے طالبہ شامل کریں۔
-          </p>
-        ) : (
-          <>
-            <h3 className="form-section-title">نمبر درج کریں</h3>
-            <MarksForm
-              examId={exam.id}
-              students={students}
-              subjects={subjects}
-              existing={existing}
-              action={saveMarks}
-            />
-          </>
-        )}
+        {/* مرحلہ 61 — نمبر درج کرنے والا فارم پرنٹ میں نہیں دکھتا */}
+        <div className="no-print">
+          {students.length === 0 ? (
+            <p className="empty-state">
+              اس شعبے/جماعت میں کوئی فعال طالبہ نہیں ہے — پہلے طالبہ شامل کریں۔
+            </p>
+          ) : (
+            <>
+              <h3 className="form-section-title">نمبر درج کریں</h3>
+              <MarksForm
+                examId={exam.id}
+                students={students}
+                subjects={subjects}
+                existing={existing}
+                action={saveMarks}
+              />
+            </>
+          )}
+        </div>
 
         {rankedStudents.length > 0 ? (
           <>
             <h3 className="form-section-title">نتائج</h3>
-            <div className="tbl-wrap">
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>پوزیشن</th>
-                    <th>نام</th>
-                    <th>کل نمبر</th>
-                    <th>فیصد</th>
-                    <th>درجہ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rankedStudents.map((s) => {
-                    const sum = summaries.get(s.id);
-                    if (!sum) return null;
-                    return (
-                      <tr key={s.id}>
-                        <td>{sum.position?.toLocaleString("ur-PK") ?? "—"}</td>
-                        <td>
-                          {s.name}
-                          <br />
-                          <span className="sub">{s.father_name}</span>
-                        </td>
-                        <td>
-                          {sum.totalObtained.toLocaleString("ur-PK")} /{" "}
-                          {sum.totalPossible.toLocaleString("ur-PK")}
-                        </td>
-                        <td>{sum.percentage.toFixed(1)}%</td>
-                        <td>{sum.grade}</td>
+            {groupedResults.map((group) => (
+              <div key={group.className}>
+                {groupedResults.length > 1 ? (
+                  <h4 className="form-section-title">{group.className}</h4>
+                ) : null}
+                <div className="tbl-wrap">
+                  <table className="tbl exam-print">
+                    <thead>
+                      <tr>
+                        <th>پوزیشن</th>
+                        <th>نام</th>
+                        {subjects.map((s) => (
+                          <th key={s}>{s}</th>
+                        ))}
+                        <th>کل نمبر</th>
+                        <th>فیصد</th>
+                        <th>درجہ</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {group.students.map((s) => {
+                        const sum = summaries.get(s.id);
+                        if (!sum) return null;
+                        return (
+                          <tr key={s.id}>
+                            <td>
+                              {sum.position?.toLocaleString("ur-PK") ?? "—"}
+                            </td>
+                            <td>
+                              {s.name}
+                              <br />
+                              <span className="sub">{s.father_name}</span>
+                            </td>
+                            {subjects.map((_, idx) => {
+                              const m = existing[s.id]?.[idx];
+                              return (
+                                <td key={idx}>
+                                  {m === undefined
+                                    ? "—"
+                                    : m.toLocaleString("ur-PK")}
+                                </td>
+                              );
+                            })}
+                            <td>
+                              {sum.totalObtained.toLocaleString("ur-PK")}
+                              /{" "}
+                              {sum.totalPossible.toLocaleString("ur-PK")}
+                            </td>
+                            <td>{sum.percentage.toFixed(1)}%</td>
+                            <td>{sum.grade}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
           </>
         ) : null}
       </div>

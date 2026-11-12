@@ -399,3 +399,13 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .pagination{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:16px}
 .pagination .page-count{margin-inline-end:6px}
 .pagination .btn-primary,.pagination .btn-ghost{padding:8px 14px}
+
+/* مرحلہ 61 — پرنٹ والی شیٹ: سرنامہ صرف پرنٹ میں، امتحان کی فہرست چھوٹی */
+.print-only{display:none}
+@media print{
+  .print-only{display:block}
+  .print-sheet-head{text-align:center;margin-bottom:12px}
+  .print-sheet-head h2{font-size:1.3rem;margin:0 0 4px}
+  .print-sheet-head p{margin:2px 0}
+  .exam-print th,.exam-print td{padding:4px 6px;font-size:12px}
+}

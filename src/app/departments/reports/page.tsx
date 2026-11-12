@@ -7,7 +7,7 @@
  */
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
-import PrintButton from "@/app/departments/reports/PrintButton";
+import PrintButton from "@/components/PrintButton";
 import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
