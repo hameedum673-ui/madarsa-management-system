@@ -1,8 +1,9 @@
 /**
  * مرحلہ 64 — ایک طالبہ/طالب کا انفرادی نتیجہ کارڈ
- * ہر کتاب کے نمبر + کل + فیصد + درجہ + پوزیشن — ایک چکور ڈبے
- * (رسید والی سلپ) میں۔ تصویر محفوظ کی جا سکتی ہے یا پرنٹ ہو سکتا
- * ہے تاکہ سرپرست کو بھیجا جا سکے۔
+ * مرحلہ 65 — کارڈ کی نئی شکل: رسمی کارڈ (وفاق کے انفرادی نتیجے
+ * کی ترتیب سے متاثر — وفاق کا نام/لوگو نہیں، ہمارا اپنا مدرسے کا
+ * نام اور ہماری اپنی کتاب والی علامت)۔ ڈبل ڈبہ، خانے، نمبروں کی
+ * جدول، کل/فیصد/مجموعہ کی پٹی، تقدیر، دستخط مہتمم اور جاری کردہ۔
  * نمبر اور پوزیشن وہی ہیں جو امتحان کی تفصیل والی جدول میں ہیں۔
  */
 import BackButton from "@/components/BackButton";
@@ -20,14 +21,28 @@ import {
   type Exam,
   type ExamResult,
 } from "@/lib/exams";
+import { gregorianToHijri } from "@/lib/hijri";
+import { LOGO_SVG } from "@/components/icons";
 import PrintButton from "@/components/PrintButton";
-import SaveSlipImageButton, {
-  type SlipImageData,
-} from "@/components/SaveSlipImageButton";
+import ResultCardImageButton, {
+  type ResultCardImageData,
+} from "@/components/ResultCardImageButton";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("ur-PK");
+}
+
+/** امتحان کی تاریخ سے ہجری سال — "YYYY-MM-DD" سے سیدھا حصے لے کر */
+function hijriYearOf(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return null;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  if (!y || !m || !d) return null;
+  return gregorianToHijri(y, m, d).year;
 }
 
 export default async function ExamResultPage({
@@ -55,7 +70,7 @@ export default async function ExamResultPage({
   const { data: studentData, error: studentError } = await supabase
     .from("students")
     .select(
-      "id, name, father_name, registration_number, class_name, department, section",
+      "id, name, father_name, registration_number, class_name, department, section, date_of_birth",
     )
     .eq("id", studentId)
     .eq("madrasa_id", exam.madrasa_id)
@@ -72,6 +87,7 @@ export default async function ExamResultPage({
     | "class_name"
     | "department"
     | "section"
+    | "date_of_birth"
   >;
   // مرحلہ 64 — بند شعبے کی طالبہ کا نتیجہ نہیں کھلے گا
   if (!allowedSections.has((student.section ?? "banat") as SectionId)) {
@@ -146,76 +162,150 @@ export default async function ExamResultPage({
     marksBySubject[idx] = r.marks_obtained;
   }
 
-  // کارڈ کی قطاریں — اسکرین پر اور تصویر میں وہی قطاریں
-  // (رجسٹریشن نمبر تصویر کی پٹی میں ہے، اس لیے قطاروں میں نہیں)
-  const cardRows: [string, string][] = [
-    ["نام", student.name],
-    ["والد کا نام", student.father_name],
-    ["امتحان", exam.name],
-    ["تاریخ", formatDate(exam.exam_date)],
-    [
-      "شعبہ",
-      `${DEPARTMENT_LABELS[exam.department]} — ${SECTION_LABELS[(exam.section ?? "banat") as SectionId]}`,
-    ],
-    ["جماعت", exam.class_name ?? "پورا شعبہ"],
-    ...subjects.map(
-      (s, idx) =>
-        [
-          s,
-          marksBySubject[idx] === undefined
-            ? "—"
-            : `${marksBySubject[idx].toLocaleString("ur-PK")} / 100`,
-        ] as [string, string],
-    ),
-    [
-      "کل نمبر",
-      `${mine.totalObtained.toLocaleString("ur-PK")} / ${mine.totalPossible.toLocaleString("ur-PK")}`,
-    ],
-    ["فیصد", `${mine.percentage.toFixed(1)}%`],
-    ["درجہ", mine.grade],
-    [
-      "پوزیشن",
-      mine.position === null ? "—" : mine.position.toLocaleString("ur-PK"),
-    ],
-  ];
-  const imageData: SlipImageData = {
+  const sectionLabel =
+    SECTION_LABELS[(exam.section ?? "banat") as SectionId];
+  const hijriYear = hijriYearOf(exam.exam_date);
+  const gregorianYear = exam.exam_date
+    ? Number(exam.exam_date.split("-")[0])
+    : null;
+  const yearLine =
+    hijriYear && gregorianYear
+      ? `سال ${hijriYear.toLocaleString("ur-PK")}ھ بمطابق ${gregorianYear.toLocaleString("ur-PK")}ء`
+      : gregorianYear
+        ? `سال ${gregorianYear.toLocaleString("ur-PK")}ء`
+        : "—";
+  const dobText = student.date_of_birth
+    ? formatDate(student.date_of_birth)
+    : "—";
+  const classLabel = exam.class_name ?? "پورا شعبہ";
+
+  const subjectRows = subjects.map((s, idx) => ({
+    serial: (idx + 1).toLocaleString("ur-PK"),
+    name: s,
+    marks:
+      marksBySubject[idx] === undefined
+        ? "—"
+        : marksBySubject[idx].toLocaleString("ur-PK"),
+  }));
+
+  const imageData: ResultCardImageData = {
     madrasaName,
-    title: "امتحان کا نتیجہ",
-    numberLabel: "رجسٹریشن نمبر",
-    numberValue: student.registration_number,
-    rows: cardRows,
+    examName: exam.name,
+    sectionLabel,
+    yearLine,
+    registrationNumber: student.registration_number,
+    studentName: student.name,
+    fatherName: student.father_name,
+    dateOfBirth: dobText,
+    classLabel,
+    departmentLabel: DEPARTMENT_LABELS[exam.department],
+    examDate: formatDate(exam.exam_date),
+    subjects: subjectRows.map(
+      (r) => [r.name, r.marks] as [string, string],
+    ),
+    totalPossible: totalPossible.toLocaleString("ur-PK"),
+    percentage: `${mine.percentage.toFixed(1)}%`,
+    obtained: mine.totalObtained.toLocaleString("ur-PK"),
+    grade: mine.grade,
     filename: `result-${student.registration_number}.png`,
   };
 
   return (
     <div className="module-view open">
-      <div className="page-card receipt receipt-slip">
+      <div className="page-card result-card-page">
         <div className="page-head">
           <BackButton href={`/departments/exams/${exam.id}`} />
           <h2>امتحان کا نتیجہ</h2>
           <span className="page-count">{student.registration_number}</span>
         </div>
 
-        <div className="receipt-head">
-          <strong>{madrasaName}</strong>
-          <span>شادی لارج، ضلع بدین، سندھ</span>
-        </div>
-
-        <div className="detail-rows">
-          <div className="row">
-            <span>رجسٹریشن نمبر</span>
-            <span>{student.registration_number}</span>
-          </div>
-          {cardRows.map(([label, value]) => (
-            <div className="row" key={label}>
-              <span>{label}</span>
-              <span>{value}</span>
+        <div className="result-card">
+          <div className="result-card-inner">
+            <div className="result-emblem" aria-hidden="true">
+              <span dangerouslySetInnerHTML={{ __html: LOGO_SVG }} />
             </div>
-          ))}
+            <div className="result-head-box">{madrasaName}</div>
+            <p className="result-exam">
+              امتحان — {exam.name} ({sectionLabel})
+            </p>
+            <p className="result-year">{yearLine}</p>
+
+            <div className="result-fields">
+              <div className="result-field full">
+                <span className="fl">نام</span>
+                <span className="fv">{student.name}</span>
+              </div>
+              <div className="result-field full">
+                <span className="fl">ولدیت</span>
+                <span className="fv">{student.father_name}</span>
+              </div>
+              <div className="result-field">
+                <span className="fl">رجسٹریشن نمبر</span>
+                <span className="fv">{student.registration_number}</span>
+              </div>
+              <div className="result-field">
+                <span className="fl">جماعت</span>
+                <span className="fv">{classLabel}</span>
+              </div>
+              <div className="result-field">
+                <span className="fl">تاریخ پیدائش</span>
+                <span className="fv">{dobText}</span>
+              </div>
+              <div className="result-field">
+                <span className="fl">تاریخ امتحان</span>
+                <span className="fv">{formatDate(exam.exam_date)}</span>
+              </div>
+              <div className="result-field full">
+                <span className="fl">شعبہ</span>
+                <span className="fv">
+                  {DEPARTMENT_LABELS[exam.department]} — {sectionLabel}
+                </span>
+              </div>
+            </div>
+
+            <h3 className="result-title">حاصل کردہ نمبرات کی تفصیل</h3>
+            <table className="result-marks">
+              <thead>
+                <tr>
+                  <th>رقم مسلسل</th>
+                  <th>کتاب</th>
+                  <th>نمبر</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subjectRows.map((r) => (
+                  <tr key={r.serial}>
+                    <td>{r.serial}</td>
+                    <td>{r.name}</td>
+                    <td>{r.marks}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="result-totals">
+              <span>کل نمبر {totalPossible.toLocaleString("ur-PK")}</span>
+              <span>فیصد نمبر {mine.percentage.toFixed(1)}%</span>
+              <span>
+                مجموعہ نمبرات {mine.totalObtained.toLocaleString("ur-PK")}
+              </span>
+            </div>
+            <p className="result-grade">تقدیر — {mine.grade}</p>
+
+            <div className="result-signs">
+              <div className="result-sign">
+                <div className="line" />
+                <span>دستخط مہتمم</span>
+              </div>
+              <div className="result-sign">
+                <div className="line" />
+                <span>جاری کردہ</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="form-actions no-print">
-          <SaveSlipImageButton data={imageData} />
+          <ResultCardImageButton data={imageData} />
           <PrintButton />
         </div>
       </div>

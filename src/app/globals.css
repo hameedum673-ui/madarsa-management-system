@@ -409,3 +409,32 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
   .print-sheet-head p{margin:2px 0}
   .exam-print th,.exam-print td{padding:4px 6px;font-size:12px}
 }
+
+/* مرحلہ 65 — رسمی نتیجہ کارڈ (وفاق کے انفرادی نتیجے کی ترتیب سے
+   متاثر — ہمارا اپنا نام اور اپنی علامت) */
+.result-card{max-width:760px;margin:4px auto 0;background:#fff;border:2px solid var(--navy);padding:8px}
+.result-card-inner{border:1px dotted var(--navy);padding:18px 20px 22px}
+.result-emblem{text-align:center;color:var(--navy);margin-bottom:8px}
+.result-emblem svg{width:44px;height:44px;stroke:var(--navy)}
+.result-head-box{display:block;width:fit-content;margin:0 auto;border:2px solid var(--navy);box-shadow:3px 3px 0 var(--gold-soft);padding:8px 22px;font-size:1.35rem;font-weight:700;color:var(--navy);text-align:center}
+.result-exam{text-align:center;font-size:1.15rem;font-weight:700;color:var(--navy);margin:14px 0 2px}
+.result-year{text-align:center;color:var(--muted);margin:0 0 14px}
+.result-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;margin:0 0 16px}
+.result-field{display:flex;gap:8px;align-items:baseline}
+.result-field.full{grid-column:1 / -1}
+.result-field .fl{font-weight:700;color:var(--navy);white-space:nowrap}
+.result-field .fv{flex:1;border-bottom:1px dotted #9aa8ba;min-width:0;padding-bottom:2px}
+.result-title{text-align:center;font-size:1.2rem;font-weight:700;color:var(--navy);margin:6px 0 10px}
+.result-marks{width:100%;border-collapse:collapse}
+.result-marks th,.result-marks td{border:1.5px solid var(--navy);padding:8px 10px;text-align:center}
+.result-marks th{background:var(--gold-soft);color:var(--navy)}
+.result-totals{display:flex;justify-content:space-between;gap:8px;border:2px solid var(--navy);border-top:none;padding:10px 14px;font-weight:700;color:var(--navy)}
+.result-grade{text-align:right;font-weight:700;color:var(--navy);margin:12px 2px 0}
+.result-signs{display:flex;justify-content:space-between;margin-top:56px;padding:0 10px}
+.result-sign{text-align:center;min-width:200px}
+.result-sign .line{border-top:1px dotted var(--navy);margin-bottom:6px}
+@media print{
+  .result-card-page{border:none!important;box-shadow:none!important;padding:0}
+  .result-card-page .page-head{display:none!important}
+  .result-card{max-width:100%}
+}
