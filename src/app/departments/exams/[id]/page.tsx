@@ -140,6 +140,14 @@ export default async function ExamDetailPage({
           </span>
           <span className="spacer" />
           <span className="no-print">
+            <Link
+              className="btn-primary"
+              href={`/departments/exams/${exam.id}/edit`}
+            >
+              ترمیم کریں
+            </Link>
+          </span>
+          <span className="no-print">
             <PrintButton />
           </span>
         </div>

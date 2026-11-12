@@ -138,6 +138,94 @@ export async function addExam(formData: FormData): Promise<AddResult> {
   return { ok: true, id: data.id as string };
 }
 
+/** مرحلہ 71 — موجودہ امتحان میں ترمیم — صرف نام، تاریخ، قسم، مضامین */
+export async function updateExam(
+  examId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const name = clean(formData.get("name"), 200);
+  const examDate = clean(formData.get("exam_date"), 10);
+  const examType = clean(formData.get("exam_type"), 20);
+  const subjects = parseSubjects(clean(formData.get("subjects"), 1000));
+
+  if (!name) return { error: "امتحان کا نام ضروری ہے۔" };
+  if (!EXAM_TYPE_IDS.includes(examType as ExamType))
+    return {
+      error: "امتحان کی قسم درست منتخب کریں (سہ ماہی، شش ماہی، سالانہ یا دیگر)۔",
+    };
+  if (!validDate(examDate)) return { error: "امتحان کی تاریخ درست نہیں ہے۔" };
+  if (!notFuture(examDate))
+    return { error: "امتحان کی تاریخ آج سے آگے نہیں ہو سکتی۔" };
+  if (subjects.length === 0)
+    return { error: "کم از کم ایک مضمون لکھیں (کوما سے الگ کریں)۔" };
+  if (subjects.length > 10)
+    return { error: "زیادہ سے زیادہ 10 مضامین ہو سکتے ہیں۔" };
+
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "exams"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
+
+  // صرف اپنے مدرسے کا امتحان
+  const { data: exam, error: examError } = await supabase
+    .from("exams")
+    .select("id, subjects, section")
+    .eq("id", examId)
+    .eq("madrasa_id", mine.madrasaId)
+    .single();
+  if (examError || !exam) {
+    return { error: "امتحان نہیں ملا۔" };
+  }
+  // مرحلہ 54 — بند شعبے کا امتحان نہیں بدلا جا سکتا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (exam.section && !allowedSections.has(exam.section as SectionId))
+    return { error: "اس شعبے کے امتحان میں ترمیم کی اجازت نہیں ہے۔" };
+
+  // ہٹائے جانے والے مضامین — جن کے نمبر درج ہوں، وہ نہیں ہٹ سکتے
+  const oldSubjects = (exam.subjects as string[]) ?? [];
+  const removed = oldSubjects.filter((s) => !subjects.includes(s));
+  if (removed.length > 0) {
+    const { data: marked } = await supabase
+      .from("exam_results")
+      .select("subject")
+      .eq("madrasa_id", mine.madrasaId)
+      .eq("exam_id", examId)
+      .in("subject", removed)
+      .limit(1);
+    const blocked = (marked ?? [])[0]?.subject as string | undefined;
+    if (blocked) {
+      return {
+        error: `مضمون "${blocked}" کے نمبر درج ہیں — اسے ہٹایا نہیں جا سکتا۔`,
+      };
+    }
+  }
+
+  const { error } = await supabase
+    .from("exams")
+    .update({
+      name,
+      exam_date: examDate,
+      exam_type: examType as ExamType,
+      subjects,
+    })
+    .eq("id", examId)
+    .eq("madrasa_id", mine.madrasaId);
+  if (error) {
+    return { error: "امتحان میں ترمیم نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+  }
+
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "exam_updated", {
+    exam_id: examId,
+    name,
+  });
+
+  revalidatePath(`/departments/exams/${examId}`);
+  revalidatePath("/departments/exams");
+  return { ok: true };
+}
+
 /**
  * نمبر درج کریں — فارم میں ہر خانے کا نام marks_<طالبہ کا id>_<مضمون کا نمبر>
  * خالی خانہ چھوڑا جائے تو اس مضمون کا نمبر نہیں بدلتا؛ 0 سے 100 تک عدد درست ہے۔
