@@ -301,3 +301,37 @@ export async function closeGuest(formData: FormData): Promise<ActionResult> {
   revalidatePath("/departments/users");
   return { ok: true };
 }
+
+/** ختم شدہ مہمان کا ڈیٹا مٹائیں — مستقل ہے، واپسی نہیں (صرف ایڈمن) */
+export async function deleteGuest(id: string): Promise<ActionResult> {
+  if (!id || typeof id !== "string") return { error: "مہمان نہیں ملا۔" };
+
+  const checked = await requireAdmin();
+  if ("error" in checked) return { error: checked.error };
+  const { supabase, madrasaId, userId } = checked;
+
+  const { data: guest } = await supabase
+    .from("profiles")
+    .select("id, name")
+    .eq("id", id.slice(0, 100))
+    .not("guest_expires_at", "is", null)
+    .single();
+  if (!guest) return { error: "مہمان نہیں ملا۔" };
+
+  const { data, error } = await supabase.rpc("delete_guest_data", {
+    p_guest_id: id.slice(0, 100),
+  });
+  if (error) {
+    return { error: "مہمان مٹایا نہیں جا سکا — پہلے مرحلہ 68 کی SQL چلائیں۔" };
+  }
+  if (data !== true) {
+    return { error: "مہمان مٹایا نہیں جا سکا — پہلے اسے بند کریں۔" };
+  }
+
+  await writeAudit(supabase, madrasaId, userId, "guest_deleted", {
+    guest_id: guest.id as string,
+    guest_name: (guest.name as string) ?? "",
+  });
+  revalidatePath("/departments/users");
+  return { ok: true };
+}

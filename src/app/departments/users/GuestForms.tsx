@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   closeGuest,
+  deleteGuest,
   saveGuestSettings,
 } from "@/app/departments/users/actions";
 
@@ -97,5 +98,47 @@ export function CloseGuestForm({ id }: { id: string }) {
       </button>
       {error ? <p className="login11-error">{error}</p> : null}
     </form>
+  );
+}
+
+export function DeleteGuestForm({ id }: { id: string }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
+    setError("");
+    setLoading(true);
+    const res = await deleteGuest(id);
+    setLoading(false);
+    if ("error" in res) {
+      setError(res.error);
+      setConfirming(false);
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <span>
+      <button
+        type="button"
+        className="btn-ghost"
+        onClick={handleClick}
+        disabled={loading}
+      >
+        {loading
+          ? "براہِ کرم انتظار کریں…"
+          : confirming
+            ? "پکا مٹائیں؟"
+            : "ڈیٹا مٹائیں"}
+      </button>
+      {error ? <p className="login11-error">{error}</p> : null}
+    </span>
   );
 }

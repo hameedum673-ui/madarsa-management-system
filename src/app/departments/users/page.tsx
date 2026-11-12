@@ -21,6 +21,7 @@ import {
 } from "@/app/departments/users/UserForms";
 import {
   CloseGuestForm,
+  DeleteGuestForm,
   GuestSettingsForm,
 } from "@/app/departments/users/GuestForms";
 
@@ -218,7 +219,7 @@ export default async function UsersPage() {
                               </td>
                               <td>
                                 {expired ? (
-                                  "—"
+                                  <DeleteGuestForm id={g.id} />
                                 ) : (
                                   <CloseGuestForm id={g.id} />
                                 )}
