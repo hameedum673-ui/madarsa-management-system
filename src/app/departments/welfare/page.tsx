@@ -55,7 +55,7 @@ export default async function WelfarePage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/welfare-expenses" />
           <h2>فلاحی کام</h2>
           <span className="page-count">
             کل معاونت: {totalAid.toLocaleString("ur-PK")} روپے

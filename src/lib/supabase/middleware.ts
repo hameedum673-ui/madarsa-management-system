@@ -206,6 +206,24 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
+    // مرحلہ 72 — وظائف + طلبہ کے اخراجات کا حب: دونوں میں سے ایک
+    // کی بھی اجازت ہو تو کھلتا ہے؛ دونوں بند ہوں تو ڈیش بورڈ پر
+    // واپس۔
+    if (slug === "welfare-expenses") {
+      const { data: welfareAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "welfare" },
+      );
+      const { data: studentExpAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "student-exp" },
+      );
+      if (welfareAllowed === false && studentExpAllowed === false) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    }
     // مرحلہ 56 — رپورٹس کا حب: ماہانہ، سالانہ، مالیاتی رپورٹس یا
     // رپورٹس میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛ چاروں بند
     // ہوں تو ڈیش بورڈ پر واپس۔

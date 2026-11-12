@@ -111,7 +111,7 @@ export default async function StudentExpPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/welfare-expenses" />
           <h2>طلبہ کے اخراجات</h2>
           <span className="page-count">
             کل اخراجات: {totalSpent.toLocaleString("ur-PK")} روپے

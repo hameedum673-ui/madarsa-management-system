@@ -45,6 +45,13 @@ function GroupSection({
     group.id === "edu" &&
     visibleIds.has("att-students") &&
     visibleIds.has("att-teachers");
+  // مرحلہ 72 — "وظائف" اور "طلبہ کے اخراجات" ایک بٹن میں:
+  // دونوں نظر آئیں تو ایک بٹن "وظائف اور طلبہ کے اخراجات" دکھائیں؛
+  // صرف ایک نظر آئے تو وہی اکیلا بٹن دکھائیں۔
+  const showWelfareHub =
+    group.id === "fin" &&
+    visibleIds.has("welfare") &&
+    visibleIds.has("student-exp");
   return (
     <section className="group" aria-label={group.title}>
       <div className="g-head">
@@ -57,6 +64,7 @@ function GroupSection({
         {modules.map((m) => {
           if (showCombined && m.id === "admissions") return null;
           if (showAttendanceHub && m.id === "att-teachers") return null;
+          if (showWelfareHub && m.id === "student-exp") return null;
           // مرحلہ 48 — زکوٰۃ، عشر اور صدقات کے بٹن ڈیش بورڈ پر نہیں
           // دکھائے جاتے — وہ "آمدنی کا ریکارڈ" حب کے اندر ہیں۔
           if (
@@ -78,20 +86,26 @@ function GroupSection({
             showReportsHub && group.id === "fin" && m.id === "monthly";
           const isAttendanceHubTile =
             showAttendanceHub && group.id === "edu" && m.id === "att-students";
+          const isWelfareHubTile =
+            showWelfareHub && group.id === "fin" && m.id === "welfare";
           const href = isReportsHubTile
             ? "/departments/reports-hub"
             : isAttendanceHubTile
               ? "/departments/attendance"
-              : showCombined && m.id === "students"
-                ? "/departments/admissions-students"
-                : `/departments/${m.id}`;
+              : isWelfareHubTile
+                ? "/departments/welfare-expenses"
+                : showCombined && m.id === "students"
+                  ? "/departments/admissions-students"
+                  : `/departments/${m.id}`;
           const label = isReportsHubTile
             ? "رپورٹس"
             : isAttendanceHubTile
               ? "حاضری"
-              : showCombined && m.id === "students"
-                ? "داخلے اور طلبہ"
-                : m.label;
+              : isWelfareHubTile
+                ? "وظائف اور طلبہ کے اخراجات"
+                : showCombined && m.id === "students"
+                  ? "داخلے اور طلبہ"
+                  : m.label;
           const icon = isReportsHubTile ? "report" : m.icon;
           return (
             <Link key={m.id} href={href} className="tile">
