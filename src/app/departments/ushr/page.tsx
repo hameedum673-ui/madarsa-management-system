@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
   USHR_STATUS_LABELS,
@@ -20,23 +22,38 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString("ur-PK");
 }
 
-export default async function UshrPage() {
+export default async function UshrPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const params = await searchParams;
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+  const { data, error, count } = await supabase
     .from("ushr_records")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("record_date", { ascending: false })
-    .order("receipt_number", { ascending: false });
+    .order("receipt_number", { ascending: false })
+    .range(from, to);
 
   const records = (data ?? []) as UshrRecord[];
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
-  const active = records.filter((r) => r.status === "active");
-  // مرحلہ 49 — تقسیم ختم: صرف "وصولی" والے اندراج گنے جاتے ہیں —
-  // پرانے تقسیم والے اندراج (اگر کوئی ہوں) یہاں نہیں گنے جاتے
-  const totalReceived = active
-    .filter((r) => r.kind === "received")
-    .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+  const pages = pageCount(count);
+  // مرحلہ 59 — کل وصول شدہ — پوری فہرست سے (صرف اس صفحے سے نہیں)
+  // مرحلہ 49 — تقسیم ختم: صرف "وصولی" والے اندراج گنے جاتے ہیں
+  const { data: totalData } = await supabase
+    .from("ushr_records")
+    .select("amount")
+    .eq("status", "active")
+    .eq("kind", "received");
+  const totalReceived = (totalData ?? []).reduce(
+    (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
+    0,
+  );
 
   return (
     <div className="module-view open">
@@ -110,6 +127,8 @@ export default async function UshrPage() {
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   SECTION_IDS,
@@ -30,7 +32,7 @@ function formatDate(value: string | null): string {
 export default async function StudentExpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ student?: string; section?: string }>;
+  searchParams: Promise<{ student?: string; section?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const selectedStudent = params.student ?? "all";
@@ -45,6 +47,10 @@ export default async function StudentExpPage({
       ? (rawSection as SectionId)
       : "all";
 
+
+  // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
 
   let studentsQuery = supabase
     .from("students")
@@ -62,33 +68,42 @@ export default async function StudentExpPage({
 
   let query = supabase
     .from("student_expenses")
-    .select("*, students(name, father_name, registration_number, section)")
+    .select("*, students(name, father_name, registration_number, section)", { count: "exact" })
     .order("expense_date", { ascending: false })
     .order("record_number", { ascending: false });
   if (selectedStudent !== "all") {
     query = query.eq("student_id", selectedStudent);
   }
-  const { data, error } = await query;
+  // مرحلہ 59 — شعبہ اب ڈیٹا بیس میں ہی فلٹر ہوتا ہے (ورنہ صفحہ غلط ہوتا)
+  const sectionEq =
+    section !== "all" && selectedStudent === "all"
+      ? section
+      : allowedSections.size < 2
+        ? ([...allowedSections][0] ?? "__none__")
+        : null;
+  if (sectionEq) query = query.eq("students.section", sectionEq);
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
-  // مرحلہ 52 — شعبہ چنا ہو (اور کوئی ایک طالبہ نہ چنی ہو) تو صرف
-  // اسی شعبے کے ریکارڈ دکھائیں
-  const allRecords = (data ?? []) as StudentExpense[];
-  // مرحلہ 54 — صرف اجازت والے شعبے کے ریکارڈ (اور شعبہ چنا ہو تو
-  // صرف وہی شعبہ — مگر کوئی ایک طالبہ چنی ہو تو وہی طالبہ)
-  const records = allRecords
-    .filter((r) =>
-      allowedSections.has((r.students?.section ?? "banat") as SectionId),
-    )
-    .filter((r) =>
-      section !== "all" && selectedStudent === "all"
-        ? r.students?.section === section
-        : true,
-    );
+  // مرحلہ 59 — شعبہ اب اوپر ڈیٹا بیس میں ہی فلٹر ہوتا ہے
+  const records = (data ?? []) as StudentExpense[];
+  const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
-  const totalSpent = records
-    .filter((r) => r.status === "active")
-    .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+  // مرحلہ 59 — کل اخراجات — پوری فلٹر شدہ فہرست سے (صرف اس صفحے سے نہیں)
+  let totalQuery = supabase
+    .from("student_expenses")
+    .select("amount, students(section)")
+    .eq("status", "active");
+  if (selectedStudent !== "all") {
+    totalQuery = totalQuery.eq("student_id", selectedStudent);
+  }
+  if (sectionEq) totalQuery = totalQuery.eq("students.section", sectionEq);
+  const { data: totalData } = await totalQuery;
+  const totalSpent = (totalData ?? []).reduce(
+    (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
+    0,
+  );
   const selectedStudentName =
     students.find((s) => s.id === selectedStudent)?.name ?? "";
 
@@ -203,6 +218,8 @@ export default async function StudentExpPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import {
   currentMonthInKarachi,
   formatMonthUrdu,
@@ -36,7 +38,7 @@ function nextMonthStart(month: string): string {
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawMonth = params.month ?? currentMonthInKarachi();
@@ -44,9 +46,13 @@ export default async function ExpensesPage({
     rawMonth === "all" ? "all" : isValidMonth(rawMonth) ? rawMonth : currentMonthInKarachi();
 
   const supabase = await createClient();
+  // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("expenses")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("expense_date", { ascending: false })
     .order("voucher_number", { ascending: false });
   if (month !== "all") {
@@ -54,14 +60,28 @@ export default async function ExpensesPage({
       .gte("expense_date", `${month}-01`)
       .lt("expense_date", nextMonthStart(month));
   }
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const expenses = (data ?? []) as Expense[];
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
-  const totalSpent = expenses
-    .filter((e) => e.status === "active")
-    .reduce((sum, e) => sum + (e.amount ?? 0), 0);
+  const pages = pageCount(count);
+  // مرحلہ 59 — کل خرچ — پوری فلٹر شدہ فہرست سے (صرف اس صفحے سے نہیں)
+  let totalQuery = supabase
+    .from("expenses")
+    .select("amount")
+    .eq("status", "active");
+  if (month !== "all") {
+    totalQuery = totalQuery
+      .gte("expense_date", `${month}-01`)
+      .lt("expense_date", nextMonthStart(month));
+  }
+  const { data: totalData } = await totalQuery;
+  const totalSpent = (totalData ?? []).reduce(
+    (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
+    0,
+  );
 
   return (
     <div className="module-view open">
@@ -156,6 +176,8 @@ export default async function ExpensesPage({
             دکھایا گیا مہینہ: {formatMonthUrdu(month)}
           </p>
         ) : null}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

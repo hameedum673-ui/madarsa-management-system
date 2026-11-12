@@ -7,6 +7,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
   DONATION_KINDS,
@@ -24,7 +26,7 @@ function formatDate(value: string | null): string {
 export default async function DonationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string }>;
+  searchParams: Promise<{ kind?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawKind = params.kind ?? "all";
@@ -35,20 +37,34 @@ export default async function DonationsPage({
     : "all";
 
   const supabase = await createClient();
+  // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+
   let query = supabase
     .from("donations")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("donation_date", { ascending: false })
     .order("receipt_number", { ascending: false });
   if (kind !== "all") query = query.eq("kind", kind);
-  const { data, error } = await query;
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const donations = (data ?? []) as Donation[];
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
-  const totalDonations = donations
-    .filter((d) => d.status === "active")
-    .reduce((sum, d) => sum + (d.amount ?? 0), 0);
+  const pages = pageCount(count);
+  // مرحلہ 59 — کل — پوری فلٹر شدہ فہرست سے (صرف اس صفحے سے نہیں)
+  let totalQuery = supabase
+    .from("donations")
+    .select("amount")
+    .eq("status", "active");
+  if (kind !== "all") totalQuery = totalQuery.eq("kind", kind);
+  const { data: totalData } = await totalQuery;
+  const totalDonations = (totalData ?? []).reduce(
+    (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
+    0,
+  );
 
   return (
     <div className="module-view open">
@@ -134,6 +150,8 @@ export default async function DonationsPage({
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>

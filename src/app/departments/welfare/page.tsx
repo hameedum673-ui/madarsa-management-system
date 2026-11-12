@@ -7,6 +7,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { parsePage, pageRange, pageCount } from "@/lib/pagination";
+import Pagination from "@/components/Pagination";
 import {
   WELFARE_KIND_LABELS,
   WELFARE_STATUS_LABELS,
@@ -18,20 +20,36 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString("ur-PK");
 }
 
-export default async function WelfarePage() {
+export default async function WelfarePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
+  const params = await searchParams;
+  const page = parsePage(params.page);
+  const { from, to } = pageRange(page);
+  const { data, error, count } = await supabase
     .from("welfare_records")
-    .select("*, students(name, father_name, registration_number)")
+    .select("*, students(name, father_name, registration_number)", { count: "exact" })
     .order("record_date", { ascending: false })
-    .order("record_number", { ascending: false });
+    .order("record_number", { ascending: false })
+    .range(from, to);
 
   const records = (data ?? []) as WelfareRecord[];
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
-  const totalAid = records
-    .filter((r) => r.status === "active")
-    .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+  const pages = pageCount(count);
+  // مرحلہ 59 — کل معاونت — پوری فہرست سے (صرف اس صفحے سے نہیں)
+  const { data: totalData } = await supabase
+    .from("welfare_records")
+    .select("amount")
+    .eq("status", "active");
+  const totalAid = (totalData ?? []).reduce(
+    (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
+    0,
+  );
 
   return (
     <div className="module-view open">
@@ -98,6 +116,8 @@ export default async function WelfarePage() {
             </table>
           </div>
         )}
+
+        <Pagination page={page} totalPages={pages} params={params} />
 
       </div>
     </div>
