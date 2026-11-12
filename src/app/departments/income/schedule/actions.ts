@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
   getMyMadrasa,
@@ -79,6 +80,9 @@ export async function saveFeeSchedule(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "income"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // جماعت دی ہو تو وہ اس شعبے کی فعال جماعت ہونی چاہیے
   if (f.className !== "") {
@@ -134,6 +138,9 @@ export async function deactivateFeeSchedule(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "income"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("fee_schedule")

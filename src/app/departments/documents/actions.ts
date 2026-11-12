@@ -8,6 +8,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
   DOCUMENT_TYPES,
@@ -99,6 +100,9 @@ export async function addDocument(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "documents"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("documents")
@@ -147,6 +151,9 @@ export async function updateDocument(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "documents"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // RLS خود یقین دلاتی ہے کہ یہ دستاویز اسی مدرسے کی ہے
   const { data, error } = await supabase
@@ -215,6 +222,9 @@ export async function uploadDocumentFile(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "documents"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // دستاویز اپنے مدرسے کی ہونی چاہیے
   const { data: doc } = await supabase
@@ -286,6 +296,9 @@ export async function voidDocumentFile(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "documents"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("document_files")
@@ -322,6 +335,9 @@ export async function archiveDocument(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "documents"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("documents")

@@ -7,7 +7,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyAllowedSections } from "@/lib/permissions";
+import {
+  getMyAllowedSections,
+  isModuleAllowedForMe,
+  MODULE_DENIED_ERROR,
+} from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -90,6 +94,9 @@ export async function addExam(formData: FormData): Promise<AddResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "exams"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 54 — بند شعبے میں امتحان نہیں بن سکتا
   const allowedSections = await getMyAllowedSections(supabase);
@@ -135,6 +142,9 @@ export async function saveMarks(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "exams"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // صرف اپنے مدرسے کا امتحان
   const { data: exam, error: examError } = await supabase

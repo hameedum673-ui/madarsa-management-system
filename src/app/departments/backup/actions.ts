@@ -9,6 +9,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
 import {
@@ -54,6 +55,9 @@ export async function restoreBackup(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "backup"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // فائل کسی اور مدرسے کی ہو تو پورا کام رک جاتا ہے
   if (

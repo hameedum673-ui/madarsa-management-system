@@ -80,3 +80,27 @@ export function getMySectionFilter(
     return raw as SectionId;
   return "all";
 }
+
+/**
+ * مرحلہ 60 — سرور ایکشن کے شروع میں شعبے کی اجازت کی جانچ۔
+ * ایڈمن → ہمیشہ اجازت؛ ورنہ my_module_allowed() کی RPC — بند شعبہ
+ * ہو تو false۔ غلطی پر کھلا (middleware والا ہی اصول)۔
+ */
+export const MODULE_DENIED_ERROR =
+  "اس شعبے میں کام کرنے کی اجازت نہیں ہے۔";
+
+export async function isModuleAllowedForMe(
+  supabase: ServerClient,
+  moduleId: string,
+): Promise<boolean> {
+  try {
+    if (await isAppAdmin(supabase)) return true;
+    const { data, error } = await supabase.rpc("my_module_allowed", {
+      p_module: moduleId,
+    });
+    if (error) return true;
+    return data !== false;
+  } catch {
+    return true;
+  }
+}

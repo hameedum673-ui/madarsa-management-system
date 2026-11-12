@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
   CLOSED_MONTH_ERROR,
@@ -97,6 +98,9 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "expenses"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کا خرچ درج نہیں ہو سکتا
   if (
@@ -153,6 +157,9 @@ export async function voidExpense(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "expenses"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کا خرچ منسوخ نہیں ہو سکتا
   const { data: row } = await supabase

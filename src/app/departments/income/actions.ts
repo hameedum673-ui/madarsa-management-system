@@ -8,7 +8,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyAllowedSections } from "@/lib/permissions";
+import {
+  getMyAllowedSections,
+  isModuleAllowedForMe,
+  MODULE_DENIED_ERROR,
+} from "@/lib/permissions";
 import { getMyMadrasa,
   type SectionId,
 } from "@/lib/students";
@@ -85,6 +89,9 @@ export async function addFeePayment(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "income"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کی فیس درج نہیں ہو سکتی
   if (await isMonthClosed(supabase, mine.madrasaId, feeMonth)) {
@@ -160,6 +167,9 @@ export async function voidFeePayment(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "income"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کی رسید منسوخ نہیں ہو سکتی
   const { data: row } = await supabase

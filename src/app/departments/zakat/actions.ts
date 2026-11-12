@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
   CLOSED_MONTH_ERROR,
@@ -98,6 +99,9 @@ export async function addZakatRecord(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "zakat"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کی زکوٰۃ درج نہیں ہو سکتی
   if (
@@ -154,6 +158,9 @@ export async function voidZakatRecord(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "zakat"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کی زکوٰۃ منسوخ نہیں ہو سکتی
   const { data: row } = await supabase

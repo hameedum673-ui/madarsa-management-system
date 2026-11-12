@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import { upsertClosing } from "@/lib/monthClosing";
 
@@ -30,6 +31,9 @@ export async function closeYear(year: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "yearly"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   for (const m of MONTHS) {
     const saved = await upsertClosing(

@@ -8,6 +8,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
   NOTICE_KINDS,
@@ -87,6 +88,9 @@ export async function addNotice(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "notices"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("notices")
@@ -132,6 +136,9 @@ export async function updateNotice(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "notices"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // RLS خود یقین دلاتی ہے کہ یہ اطلاع اسی مدرسے کی ہے
   const { data, error } = await supabase
@@ -169,6 +176,9 @@ export async function archiveNotice(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "notices"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("notices")

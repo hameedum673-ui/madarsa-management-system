@@ -7,6 +7,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
   CLOSED_MONTH_ERROR,
@@ -93,6 +94,9 @@ export async function addWelfare(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "welfare"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کی امداد درج نہیں ہو سکتی
   if (
@@ -158,6 +162,9 @@ export async function voidWelfare(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "welfare"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 39 — بند مہینے کی امداد منسوخ نہیں ہو سکتی
   const { data: row } = await supabase

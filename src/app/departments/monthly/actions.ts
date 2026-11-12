@@ -6,6 +6,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import { isValidMonth } from "@/lib/fees";
 import { upsertClosing } from "@/lib/monthClosing";
@@ -39,6 +40,9 @@ async function setClosed(month: string, closed: boolean): Promise<ActionResult> 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "monthly"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const saved = await upsertClosing(
     supabase,

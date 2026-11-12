@@ -8,6 +8,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 
 type ActionResult = { ok: true } | { error: string };
@@ -50,6 +51,9 @@ export async function updateMadrasaProfile(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "general"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // 1) نام — madrasas میز میں (صرف اپنا مدرسہ — RLS پالیسی)
   const { error: nameError } = await supabase

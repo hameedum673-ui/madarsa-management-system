@@ -74,8 +74,11 @@ export default function PermissionsForm({
       </div>
 
       {GROUPS.map((group) => {
+        // مرحلہ 60 — "تنخواہیں" بھی صرف ایڈمن کی ہے، اس کا خانہ
+        // کچھ نہیں کرتا تھا (بے کار خانہ ہٹا دیا گیا)
         const modules = group.modules.filter(
-          (m) => m.id !== "users" && m.id !== "permissions",
+          (m) =>
+            m.id !== "users" && m.id !== "permissions" && m.id !== "salaries",
         );
         if (modules.length === 0) return null;
         return (

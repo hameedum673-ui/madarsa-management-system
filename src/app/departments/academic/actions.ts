@@ -7,7 +7,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyAllowedSections } from "@/lib/permissions";
+import {
+  getMyAllowedSections,
+  isModuleAllowedForMe,
+  MODULE_DENIED_ERROR,
+} from "@/lib/permissions";
 import { getMyMadrasa,
   type SectionId,
 } from "@/lib/students";
@@ -108,6 +112,9 @@ export async function addHifzProgress(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "academic"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // طالبہ اپنے مدرسے کی فعال اور حفظ شعبے کی ہونی چاہیے
   const { data: student } = await supabase
@@ -190,6 +197,9 @@ export async function voidHifzProgress(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "academic"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   const { data, error } = await supabase
     .from("hifz_progress")

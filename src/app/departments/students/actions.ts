@@ -8,7 +8,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyAllowedSections } from "@/lib/permissions";
+import {
+  getMyAllowedSections,
+  isModuleAllowedForMe,
+  MODULE_DENIED_ERROR,
+} from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -136,6 +140,9 @@ export async function addStudent(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "students"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
@@ -204,6 +211,9 @@ export async function updateStudent(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "students"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
 
   // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
