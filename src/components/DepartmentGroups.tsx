@@ -23,10 +23,16 @@ function GroupSection({
   // مرحلہ 25 — "صارفین اور اکاؤنٹس" بٹن صرف ایڈمن کو نظر آئے؛ عام صارف
   // کو نہ بٹن نظر آئے گا، نہ 404 ملے گا (صفحہ خود بھی ایڈمن کے لیے ہے)۔
   // مرحلہ 50 — "تنخواہیں" بٹن بھی صرف ایڈمن کو نظر آئے (تنخواہ خفیہ ہے)۔
+  // مرحلہ 73 — "اختیارات اور اجازتیں" بٹن بھی صرف ایڈمن کو نظر آئے
+  // (پہلے غیر ایڈمن کو یہ بٹن نظر آتا تھا، حالانکہ دبانے پر وہ ڈیش
+  // بورڈ پر واپس جاتا تھا — بے کار بٹن)۔
   // مرحلہ 26 — بند شعبے کا بٹن بھی نظر نہیں آتا (middleware لنک بھی روکتا ہے)۔
   const modules = group.modules.filter(
     (m) =>
-      (isAdmin || (m.id !== "users" && m.id !== "salaries")) &&
+      (isAdmin ||
+        (m.id !== "users" &&
+          m.id !== "permissions" &&
+          m.id !== "salaries")) &&
       (isAdmin || !deniedModules.includes(m.id)),
   );
   // مرحلہ 47 — "طلبہ کا ریکارڈ" اور "نئے داخلے" ایک بٹن میں:
@@ -52,6 +58,14 @@ function GroupSection({
     group.id === "fin" &&
     visibleIds.has("welfare") &&
     visibleIds.has("student-exp");
+  // مرحلہ 73 — "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" ایک بٹن میں:
+  // دونوں نظر آئیں تو ایک بٹن "صارفین اور اختیارات" دکھائیں؛
+  // صرف ایک نظر آئے تو وہی اکیلا بٹن دکھائیں۔ (دونوں ایڈمن کے لیے ہیں،
+  // اس لیے غیر ایڈمن کو یہ بٹن کبھی نہیں دکھے گا۔)
+  const showUsersHub =
+    group.id === "admin" &&
+    visibleIds.has("users") &&
+    visibleIds.has("permissions");
   return (
     <section className="group" aria-label={group.title}>
       <div className="g-head">
@@ -65,6 +79,7 @@ function GroupSection({
           if (showCombined && m.id === "admissions") return null;
           if (showAttendanceHub && m.id === "att-teachers") return null;
           if (showWelfareHub && m.id === "student-exp") return null;
+          if (showUsersHub && m.id === "permissions") return null;
           // مرحلہ 48 — زکوٰۃ، عشر اور صدقات کے بٹن ڈیش بورڈ پر نہیں
           // دکھائے جاتے — وہ "آمدنی کا ریکارڈ" حب کے اندر ہیں۔
           if (
@@ -88,24 +103,30 @@ function GroupSection({
             showAttendanceHub && group.id === "edu" && m.id === "att-students";
           const isWelfareHubTile =
             showWelfareHub && group.id === "fin" && m.id === "welfare";
+          const isUsersHubTile =
+            showUsersHub && group.id === "admin" && m.id === "users";
           const href = isReportsHubTile
             ? "/departments/reports-hub"
             : isAttendanceHubTile
               ? "/departments/attendance"
               : isWelfareHubTile
                 ? "/departments/welfare-expenses"
-                : showCombined && m.id === "students"
-                  ? "/departments/admissions-students"
-                  : `/departments/${m.id}`;
+                : isUsersHubTile
+                  ? "/departments/users-permissions"
+                  : showCombined && m.id === "students"
+                    ? "/departments/admissions-students"
+                    : `/departments/${m.id}`;
           const label = isReportsHubTile
             ? "رپورٹس"
             : isAttendanceHubTile
               ? "حاضری"
               : isWelfareHubTile
                 ? "وظائف اور طلبہ کے اخراجات"
-                : showCombined && m.id === "students"
-                  ? "داخلے اور طلبہ"
-                  : m.label;
+                : isUsersHubTile
+                  ? "صارفین اور اختیارات"
+                  : showCombined && m.id === "students"
+                    ? "داخلے اور طلبہ"
+                    : m.label;
           const icon = isReportsHubTile ? "report" : m.icon;
           return (
             <Link key={m.id} href={href} className="tile">

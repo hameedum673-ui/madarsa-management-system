@@ -84,7 +84,7 @@ export default async function PermissionsPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/users-permissions" />
           <h2>اختیارات اور اجازتیں</h2>
         </div>
 

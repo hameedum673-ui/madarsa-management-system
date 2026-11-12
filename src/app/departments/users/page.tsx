@@ -86,7 +86,7 @@ export default async function UsersPage() {
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/users-permissions" />
           <h2>صارفین اور اکاؤنٹس</h2>
           <span className="page-count">
             کل: {users.length.toLocaleString("ur-PK")} — زیرِ منظوری:{" "}
