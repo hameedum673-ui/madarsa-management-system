@@ -253,6 +253,7 @@ export default async function AcademicRecordPage({
                   <th>درجہ</th>
                   <th>پوزیشن</th>
                   <th>پیغام</th>
+                  <th>نتیجہ</th>
                 </tr>
               </thead>
               <tbody>
@@ -313,6 +314,17 @@ export default async function AcademicRecordPage({
                           ) : (
                             "فون نمبر درج نہیں ہے"
                           )
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        {mine ? (
+                          <Link
+                            href={`/departments/exams/${exam.id}/result/${id}`}
+                          >
+                            دیکھیں
+                          </Link>
                         ) : (
                           "—"
                         )}

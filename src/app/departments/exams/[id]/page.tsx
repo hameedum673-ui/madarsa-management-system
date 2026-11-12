@@ -4,6 +4,7 @@
  * طالبات اسی شعبے کی فعال طالبات ہیں (جماعت لکھی ہو تو وہی جماعت)۔
  */
 import BackButton from "@/components/BackButton";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
@@ -215,6 +216,7 @@ export default async function ExamDetailPage({
                         <th>کل نمبر</th>
                         <th>فیصد</th>
                         <th>درجہ</th>
+                        <th className="no-print">نتیجہ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -248,6 +250,13 @@ export default async function ExamDetailPage({
                             </td>
                             <td>{sum.percentage.toFixed(1)}%</td>
                             <td>{sum.grade}</td>
+                            <td className="no-print">
+                              <Link
+                                href={`/departments/exams/${exam.id}/result/${s.id}`}
+                              >
+                                دیکھیں
+                              </Link>
+                            </td>
                           </tr>
                         );
                       })}
