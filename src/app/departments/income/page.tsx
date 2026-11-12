@@ -12,6 +12,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { type SectionId } from "@/lib/students";
 import { isAppAdmin } from "@/lib/approval";
 
 export default async function IncomeHubPage() {
@@ -54,6 +56,9 @@ export default async function IncomeHubPage() {
 
   const fundsAllowed = zakatAllowed || ushrAllowed || donationsAllowed;
 
+  // مرحلہ 62 — اجازت والے شعبے (بنین / بنات) — رقم صرف انہی کی
+  const allowedSections = await getMyAllowedSections(supabase);
+
   let feesTotal: number | null = null;
   let feesCount: number | null = null;
   let zakatTotal: number | null = null;
@@ -63,18 +68,31 @@ export default async function IncomeHubPage() {
   if (incomeAllowed) {
     const { data } = await supabase
       .from("fee_payments")
-      .select("amount")
+      .select("amount, students(section)")
       .eq("status", "active");
-    const rows = (data ?? []) as { amount: number }[];
+    // مرحلہ 62 — فیس بھی صرف اجازت والے شعبے کی
+    const rows = ((data ?? []) as unknown as {
+      amount: number;
+      students: { section: string } | null;
+    }[]).filter((r) =>
+      allowedSections.has((r.students?.section ?? "banat") as SectionId),
+    );
     feesTotal = rows.reduce((sum, r) => sum + (r.amount ?? 0), 0);
     feesCount = rows.length;
   }
   if (zakatAllowed) {
     const { data } = await supabase
       .from("zakat_records")
-      .select("kind, amount")
+      .select("kind, amount, section")
       .eq("status", "active");
-    const rows = (data ?? []) as { kind: string; amount: number }[];
+    // مرحلہ 62 — زکوٰۃ بھی صرف اجازت والے شعبے کی
+    const rows = ((data ?? []) as {
+      kind: string;
+      amount: number;
+      section: string | null;
+    }[]).filter((r) =>
+      allowedSections.has((r.section ?? "banat") as SectionId),
+    );
     // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
     zakatTotal = rows
       .filter((r) => r.kind === "received")
@@ -84,10 +102,17 @@ export default async function IncomeHubPage() {
     try {
       const { data, error } = await supabase
         .from("ushr_records")
-        .select("kind, amount")
+        .select("kind, amount, section")
         .eq("status", "active");
       if (!error) {
-        const rows = (data ?? []) as { kind: string; amount: number }[];
+        // مرحلہ 62 — عشر بھی صرف اجازت والے شعبے کا
+        const rows = ((data ?? []) as {
+          kind: string;
+          amount: number;
+          section: string | null;
+        }[]).filter((r) =>
+          allowedSections.has((r.section ?? "banat") as SectionId),
+        );
         ushrTotal = rows
           .filter((r) => r.kind === "received")
           .reduce((sum, r) => sum + (r.amount ?? 0), 0);
@@ -99,9 +124,15 @@ export default async function IncomeHubPage() {
   if (donationsAllowed) {
     const { data } = await supabase
       .from("donations")
-      .select("amount")
+      .select("amount, section")
       .eq("status", "active");
-    const rows = (data ?? []) as { amount: number }[];
+    // مرحلہ 62 — عطیات بھی صرف اجازت والے شعبے کے
+    const rows = ((data ?? []) as {
+      amount: number;
+      section: string | null;
+    }[]).filter((d) =>
+      allowedSections.has((d.section ?? "banat") as SectionId),
+    );
     donationsTotal = rows.reduce((sum, r) => sum + (r.amount ?? 0), 0);
   }
 

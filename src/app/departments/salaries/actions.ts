@@ -63,16 +63,16 @@ async function getPerson(
   madrasaId: string,
   personType: SalaryPersonType,
   personId: string,
-): Promise<{ name: string } | null> {
+): Promise<{ name: string; section: string | null } | null> {
   const table = personType === "teacher" ? "teachers" : "staff";
   const { data } = await supabase
     .from(table)
-    .select("name")
+    .select("name, section")
     .eq("id", personId)
     .eq("madrasa_id", madrasaId)
     .eq("status", "active")
     .maybeSingle();
-  return (data as { name: string } | null) ?? null;
+  return (data as { name: string; section: string | null } | null) ?? null;
 }
 
 /** مقررہ تنخواہ طے کریں — خالی رقم کا مطلب ہے مقررہ تنخواہ ختم */
@@ -244,6 +244,8 @@ export async function addSalaryPayment(
       voucher_number: voucherNumber,
       title: expenseTitle,
       category: "salary",
+      // مرحلہ 62 — تنخواہ کا واؤچر اس شخص کے شعبے کا ہوتا ہے
+      section: person.section ?? "banat",
       amount: f.amount,
       expense_date: f.paymentDate,
       payment_method: f.paymentMethod,

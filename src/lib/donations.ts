@@ -7,6 +7,7 @@
  * ہوتا ہے۔
  */
 import type { PaymentMethod } from "@/lib/fees";
+import type { SectionId } from "@/lib/students";
 
 export type DonationKind = "sadaqah" | "donation" | "other";
 
@@ -40,6 +41,7 @@ export interface Donation {
   payment_method: PaymentMethod;
   note: string | null;
   status: DonationStatus;
+  section: SectionId;
   created_by: string | null;
   created_at: string;
   updated_at: string;

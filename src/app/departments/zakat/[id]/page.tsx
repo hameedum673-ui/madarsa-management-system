@@ -6,6 +6,8 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { SECTION_LABELS, type SectionId } from "@/lib/students";
 import { getMyMadrasa } from "@/lib/students";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
@@ -56,6 +58,11 @@ export default async function ZakatDetailPage({
   }
 
   const record = data as ZakatRecord;
+  // مرحلہ 62 — شعبہ بند ہو تو تفصیل نہیں کھلتی
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has((record.section ?? "banat") as SectionId)) {
+    notFound();
+  }
   const mine = await getMyMadrasa(supabase);
   let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
   if (mine) {
@@ -70,6 +77,7 @@ export default async function ZakatDetailPage({
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
     ["نام", record.person_name],
+    ["شعبہ (بنین / بنات)", SECTION_LABELS[(record.section ?? "banat") as SectionId]],
     ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
     ["تاریخ", formatDate(record.record_date)],
     ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[record.payment_method]],
@@ -107,6 +115,10 @@ export default async function ZakatDetailPage({
           <div className="row">
             <span>نام</span>
             <span>{record.person_name}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[(record.section ?? "banat") as SectionId]}</span>
           </div>
           <div className="row">
             <span>رقم</span>

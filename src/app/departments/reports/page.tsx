@@ -152,25 +152,44 @@ export default async function ReportsPage({
   );
   const { data: donationsData, error: donationsError } = await supabase
     .from("donations")
-    .select("amount")
+    .select("amount, section")
     .gte("donation_date", monthStart)
     .lt("donation_date", monthEnd)
     .eq("status", "active");
-  const donations = (donationsData ?? []) as { amount: number }[];
+  // مرحلہ 62 — عطیات بھی چنے ہوئے شعبے کے
+  const donations = ((donationsData ?? []) as {
+    amount: number;
+    section: string;
+  }[]).filter((d) =>
+    effectiveSections.has((d.section ?? "banat") as SectionId),
+  );
   const { data: expensesData, error: expensesError } = await supabase
     .from("expenses")
-    .select("amount")
+    .select("amount, section")
     .gte("expense_date", monthStart)
     .lt("expense_date", monthEnd)
     .eq("status", "active");
-  const expenses = (expensesData ?? []) as { amount: number }[];
+  // مرحلہ 62 — اخراجات بھی چنے ہوئے شعبے کے
+  const expenses = ((expensesData ?? []) as {
+    amount: number;
+    section: string;
+  }[]).filter((e) =>
+    effectiveSections.has((e.section ?? "banat") as SectionId),
+  );
   const { data: zakatData, error: zakatError } = await supabase
     .from("zakat_records")
-    .select("kind, amount")
+    .select("kind, amount, section")
     .gte("record_date", monthStart)
     .lt("record_date", monthEnd)
     .eq("status", "active");
-  const zakat = (zakatData ?? []) as { kind: string; amount: number }[];
+  // مرحلہ 62 — زکوٰۃ بھی چنے ہوئے شعبے کی
+  const zakat = ((zakatData ?? []) as {
+    kind: string;
+    amount: number;
+    section: string;
+  }[]).filter((r) =>
+    effectiveSections.has((r.section ?? "banat") as SectionId),
+  );
 
   // اطلاعات اور دستاویزات
   const { data: noticesData, error: noticesError } = await supabase

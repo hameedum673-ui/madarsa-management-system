@@ -4,6 +4,7 @@
  * غلط خرچ حذف نہیں ہوتا — صرف منسوخ ہوتا ہے۔
  */
 import type { PaymentMethod } from "@/lib/fees";
+import type { SectionId } from "@/lib/students";
 
 export type ExpenseCategory =
   | "salary"
@@ -58,6 +59,7 @@ export interface Expense {
   payment_method: PaymentMethod;
   note: string | null;
   status: ExpenseStatus;
+  section: SectionId;
   created_by: string | null;
   created_at: string;
   updated_at: string;

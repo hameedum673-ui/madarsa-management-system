@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
+import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import {
@@ -38,7 +40,7 @@ function nextMonthStart(month: string): string {
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; page?: string }>;
+  searchParams: Promise<{ month?: string; section?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawMonth = params.month ?? currentMonthInKarachi();
@@ -46,6 +48,15 @@ export default async function ExpensesPage({
     rawMonth === "all" ? "all" : isValidMonth(rawMonth) ? rawMonth : currentMonthInKarachi();
 
   const supabase = await createClient();
+  // مرحلہ 62 — اجازت والے شعبے + چنا ہوا شعبہ (بنین / بنات / سب)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const section = getMySectionFilter(allowedSections, params.section);
+  const sectionEq =
+    section !== "all"
+      ? section
+      : allowedSections.size < 2
+        ? ([...allowedSections][0] ?? "__none__")
+        : null;
   // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
   const { from, to } = pageRange(page);
@@ -60,6 +71,7 @@ export default async function ExpensesPage({
       .gte("expense_date", `${month}-01`)
       .lt("expense_date", nextMonthStart(month));
   }
+  if (sectionEq) query = query.eq("section", sectionEq);
   query = query.range(from, to);
   const { data, error, count } = await query;
 
@@ -77,6 +89,7 @@ export default async function ExpensesPage({
       .gte("expense_date", `${month}-01`)
       .lt("expense_date", nextMonthStart(month));
   }
+  if (sectionEq) totalQuery = totalQuery.eq("section", sectionEq);
   const { data: totalData } = await totalQuery;
   const totalSpent = (totalData ?? []).reduce(
     (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
@@ -108,6 +121,17 @@ export default async function ExpensesPage({
               defaultValue={month === "all" ? "" : month}
             />
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select className="field-input" name="section" defaultValue={section}>
+              <option value="all">سب</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
@@ -134,6 +158,7 @@ export default async function ExpensesPage({
                   <th>واؤچر نمبر</th>
                   <th>تفصیل</th>
                   <th>زمرہ</th>
+                  <th>بنین / بنات</th>
                   <th>رقم</th>
                   <th>تاریخ</th>
                   <th>طریقہ</th>
@@ -154,6 +179,7 @@ export default async function ExpensesPage({
                       </Link>
                     </td>
                     <td>{EXPENSE_CATEGORY_LABELS[e.category]}</td>
+                    <td>{SECTION_LABELS[(e.section ?? "banat") as SectionId]}</td>
                     <td>{e.amount.toLocaleString("ur-PK")}</td>
                     <td>{formatDate(e.expense_date)}</td>
                     <td>{PAYMENT_METHOD_LABELS[e.payment_method]}</td>

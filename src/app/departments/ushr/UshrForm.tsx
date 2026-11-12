@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/lib/fees";
+import { SECTION_IDS, SECTION_LABELS } from "@/lib/students";
 /* مرحلہ 49 — "قسم" والا ڈبہ ختم: ہر نیا اندراج خودکار طور پر "وصولی" ہے */
 
 type FormAction = (
@@ -90,6 +91,17 @@ export default function UshrForm({ action }: { action: FormAction }) {
           </select>
         </label>
       </div>
+
+      <label className="field">
+        <span className="field-label">شعبہ (بنین / بنات) *</span>
+        <select className="field-input" name="section" required defaultValue="banat">
+          {SECTION_IDS.map((s) => (
+            <option key={s} value={s}>
+              {SECTION_LABELS[s]}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <label className="field">
         <span className="field-label">نوٹ (اگر کوئی ہو)</span>

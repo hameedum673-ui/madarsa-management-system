@@ -162,24 +162,52 @@ export default async function DashboardPage() {
     );
     const { data: given } = await supabase
       .from("donations")
-      .select("amount")
+      .select("amount, section")
       .eq("status", "active");
-    const donationRows = (given ?? []) as { amount: number }[];
+    // مرحلہ 62 — عطیات بھی صرف اجازت والے شعبے کے
+    const donationRows = (
+      (given ?? []) as { amount: number; section: string | null }[]
+    ).filter((d) =>
+      allowedSections.has((d.section ?? "banat") as SectionId),
+    );
     const { data: spent } = await supabase
       .from("expenses")
-      .select("amount")
+      .select("amount, section")
       .eq("status", "active");
-    const expenseRows = (spent ?? []) as { amount: number }[];
+    // مرحلہ 62 — اخراجات بھی صرف اجازت والے شعبے کے
+    const expenseRows = (
+      (spent ?? []) as { amount: number; section: string | null }[]
+    ).filter((e) =>
+      allowedSections.has((e.section ?? "banat") as SectionId),
+    );
     const { data: zakatData } = await supabase
       .from("zakat_records")
-      .select("kind, amount")
+      .select("kind, amount, section")
       .eq("status", "active");
-    const zakatRows = (zakatData ?? []) as { kind: string; amount: number }[];
+    // مرحلہ 62 — زکوٰۃ بھی صرف اجازت والے شعبے کی
+    const zakatRows = (
+      (zakatData ?? []) as {
+        kind: string;
+        amount: number;
+        section: string | null;
+      }[]
+    ).filter((r) =>
+      allowedSections.has((r.section ?? "banat") as SectionId),
+    );
     const { data: ushrData } = await supabase
       .from("ushr_records")
-      .select("kind, amount")
+      .select("kind, amount, section")
       .eq("status", "active");
-    const ushrRows = (ushrData ?? []) as { kind: string; amount: number }[];
+    // مرحلہ 62 — عشر بھی صرف اجازت والے شعبے کا
+    const ushrRows = (
+      (ushrData ?? []) as {
+        kind: string;
+        amount: number;
+        section: string | null;
+      }[]
+    ).filter((r) =>
+      allowedSections.has((r.section ?? "banat") as SectionId),
+    );
     const feesTotal = feeRows.reduce((sum, p) => sum + (p.amount ?? 0), 0);
     const donationsTotal = donationRows.reduce(
       (sum, d) => sum + (d.amount ?? 0),

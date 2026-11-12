@@ -7,6 +7,8 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { SECTION_LABELS, type SectionId } from "@/lib/students";
 import { getMyMadrasa } from "@/lib/students";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
@@ -58,6 +60,11 @@ export default async function ExpenseDetailPage({
   }
 
   const expense = data as Expense;
+  // مرحلہ 62 — شعبہ بند ہو تو تفصیل نہیں کھلتی
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has((expense.section ?? "banat") as SectionId)) {
+    notFound();
+  }
   const mine = await getMyMadrasa(supabase);
   let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
   if (mine) {
@@ -73,6 +80,7 @@ export default async function ExpenseDetailPage({
   const imageRows: [string, string][] = [
     ["تفصیل", expense.title],
     ["زمرہ", EXPENSE_CATEGORY_LABELS[expense.category]],
+    ["شعبہ (بنین / بنات)", SECTION_LABELS[(expense.section ?? "banat") as SectionId]],
     ["رقم", `${expense.amount.toLocaleString("ur-PK")} روپے`],
     ["تاریخ", formatDate(expense.expense_date)],
     ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[expense.payment_method]],
@@ -114,6 +122,10 @@ export default async function ExpenseDetailPage({
           <div className="row">
             <span>زمرہ</span>
             <span>{EXPENSE_CATEGORY_LABELS[expense.category]}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[(expense.section ?? "banat") as SectionId]}</span>
           </div>
           <div className="row">
             <span>رقم</span>

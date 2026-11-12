@@ -7,6 +7,7 @@
  * غلط اندراج حذف نہیں ہوتا — صرف منسوخ ہوتا ہے۔
  */
 import type { PaymentMethod } from "@/lib/fees";
+import type { SectionId } from "@/lib/students";
 
 export type UshrKind = "received" | "distributed";
 
@@ -35,6 +36,7 @@ export interface UshrRecord {
   payment_method: PaymentMethod;
   note: string | null;
   status: UshrStatus;
+  section: SectionId;
   created_by: string | null;
   created_at: string;
   updated_at: string;

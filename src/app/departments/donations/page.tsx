@@ -7,6 +7,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
+import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
@@ -26,7 +28,7 @@ function formatDate(value: string | null): string {
 export default async function DonationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; page?: string }>;
+  searchParams: Promise<{ kind?: string; section?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawKind = params.kind ?? "all";
@@ -37,6 +39,15 @@ export default async function DonationsPage({
     : "all";
 
   const supabase = await createClient();
+  // مرحلہ 62 — اجازت والے شعبے + چنا ہوا شعبہ (بنین / بنات / سب)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const section = getMySectionFilter(allowedSections, params.section);
+  const sectionEq =
+    section !== "all"
+      ? section
+      : allowedSections.size < 2
+        ? ([...allowedSections][0] ?? "__none__")
+        : null;
   // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
   const { from, to } = pageRange(page);
@@ -47,6 +58,7 @@ export default async function DonationsPage({
     .order("donation_date", { ascending: false })
     .order("receipt_number", { ascending: false });
   if (kind !== "all") query = query.eq("kind", kind);
+  if (sectionEq) query = query.eq("section", sectionEq);
   query = query.range(from, to);
   const { data, error, count } = await query;
 
@@ -60,6 +72,7 @@ export default async function DonationsPage({
     .select("amount")
     .eq("status", "active");
   if (kind !== "all") totalQuery = totalQuery.eq("kind", kind);
+  if (sectionEq) totalQuery = totalQuery.eq("section", sectionEq);
   const { data: totalData } = await totalQuery;
   const totalDonations = (totalData ?? []).reduce(
     (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
@@ -93,6 +106,17 @@ export default async function DonationsPage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select className="field-input" name="section" defaultValue={section}>
+              <option value="all">سب</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
@@ -114,6 +138,7 @@ export default async function DonationsPage({
                   <th>رسید نمبر</th>
                   <th>قسم</th>
                   <th>عطیہ دینے والا</th>
+                  <th>بنین / بنات</th>
                   <th>رقم</th>
                   <th>تاریخ</th>
                   <th>طریقہ</th>
@@ -134,6 +159,7 @@ export default async function DonationsPage({
                         {d.donor_name}
                       </Link>
                     </td>
+                    <td>{SECTION_LABELS[(d.section ?? "banat") as SectionId]}</td>
                     <td>{d.amount.toLocaleString("ur-PK")}</td>
                     <td>{formatDate(d.donation_date)}</td>
                     <td>{PAYMENT_METHOD_LABELS[d.payment_method]}</td>

@@ -6,6 +6,8 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections } from "@/lib/permissions";
+import { SECTION_LABELS, type SectionId } from "@/lib/students";
 import { getMyMadrasa } from "@/lib/students";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
@@ -57,6 +59,11 @@ export default async function DonationDetailPage({
   }
 
   const donation = data as Donation;
+  // مرحلہ 62 — شعبہ بند ہو تو تفصیل نہیں کھلتی
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has((donation.section ?? "banat") as SectionId)) {
+    notFound();
+  }
   const mine = await getMyMadrasa(supabase);
   let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
   if (mine) {
@@ -72,6 +79,7 @@ export default async function DonationDetailPage({
   const imageRows: [string, string][] = [
     ["قسم", DONATION_KIND_LABELS[donation.kind]],
     ["عطیہ دینے والا", donation.donor_name],
+    ["شعبہ (بنین / بنات)", SECTION_LABELS[(donation.section ?? "banat") as SectionId]],
     ["رقم", `${donation.amount.toLocaleString("ur-PK")} روپے`],
     ["تاریخ", formatDate(donation.donation_date)],
     ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[donation.payment_method]],
@@ -109,6 +117,10 @@ export default async function DonationDetailPage({
           <div className="row">
             <span>قسم</span>
             <span>{DONATION_KIND_LABELS[donation.kind]}</span>
+          </div>
+          <div className="row">
+            <span>شعبہ (بنین / بنات)</span>
+            <span>{SECTION_LABELS[(donation.section ?? "banat") as SectionId]}</span>
           </div>
           <div className="row">
             <span>عطیہ دینے والا</span>

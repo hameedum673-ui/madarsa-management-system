@@ -79,43 +79,65 @@ export default async function MonthlyPage({
 
   const { data: expensesData, error: expensesError } = await supabase
     .from("expenses")
-    .select("amount, category")
+    .select("amount, category, section")
     .gte("expense_date", `${month}-01`)
     .lt("expense_date", nextMonthStart(month))
     .eq("status", "active");
-  const expenses = (expensesData ?? []) as {
+  // مرحلہ 62 — اخراجات بھی چنے ہوئے شعبے کے
+  const expenses = ((expensesData ?? []) as {
     amount: number;
     category: ExpenseCategory;
-  }[];
+    section: string;
+  }[]).filter((e) =>
+    effectiveSections.has((e.section ?? "banat") as SectionId),
+  );
 
   // مرحلہ 20 — عطیات بھی آمدنی ہیں (فیس کے ساتھ)
   const { data: donationsData, error: donationsError } = await supabase
     .from("donations")
-    .select("amount, kind")
+    .select("amount, kind, section")
     .gte("donation_date", `${month}-01`)
     .lt("donation_date", nextMonthStart(month))
     .eq("status", "active");
-  const donations = (donationsData ?? []) as {
+  // مرحلہ 62 — عطیات بھی چنے ہوئے شعبے کے
+  const donations = ((donationsData ?? []) as {
     amount: number;
     kind: DonationKind;
-  }[];
+    section: string;
+  }[]).filter((d) =>
+    effectiveSections.has((d.section ?? "banat") as SectionId),
+  );
 
   // مرحلہ 48 — وکالت کا اصول: زکوٰۃ اور عشر بھی آمدنی ہیں
   // (وصولی مائنس تقسیم)۔ میز نہ ہو تو خالی مانا جاتا ہے۔
   const { data: zakatData } = await supabase
     .from("zakat_records")
-    .select("kind, amount")
+    .select("kind, amount, section")
     .gte("record_date", `${month}-01`)
     .lt("record_date", nextMonthStart(month))
     .eq("status", "active");
-  const zakatRows = (zakatData ?? []) as { kind: string; amount: number }[];
+  // مرحلہ 62 — زکوٰۃ بھی چنے ہوئے شعبے کی
+  const zakatRows = ((zakatData ?? []) as {
+    kind: string;
+    amount: number;
+    section: string;
+  }[]).filter((r) =>
+    effectiveSections.has((r.section ?? "banat") as SectionId),
+  );
   const { data: ushrData } = await supabase
     .from("ushr_records")
-    .select("kind, amount")
+    .select("kind, amount, section")
     .gte("record_date", `${month}-01`)
     .lt("record_date", nextMonthStart(month))
     .eq("status", "active");
-  const ushrRows = (ushrData ?? []) as { kind: string; amount: number }[];
+  // مرحلہ 62 — عشر بھی چنے ہوئے شعبے کا
+  const ushrRows = ((ushrData ?? []) as {
+    kind: string;
+    amount: number;
+    section: string;
+  }[]).filter((r) =>
+    effectiveSections.has((r.section ?? "banat") as SectionId),
+  );
   // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
   const netOf = (rows: { kind: string; amount: number }[]) =>
     rows

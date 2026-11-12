@@ -81,48 +81,64 @@ export default async function FinReportsPage({
 
   const { data: expensesData, error: expensesError } = await supabase
     .from("expenses")
-    .select("amount, category")
+    .select("amount, category, section")
     .gte("expense_date", from)
     .lte("expense_date", to)
     .eq("status", "active");
-  const expenses = (expensesData ?? []) as {
+  // مرحلہ 62 — اخراجات بھی چنے ہوئے شعبے کے
+  const expenses = ((expensesData ?? []) as {
     amount: number;
     category: ExpenseCategory;
-  }[];
+    section: string;
+  }[]).filter((e) =>
+    effectiveSections.has((e.section ?? "banat") as SectionId),
+  );
 
   const { data: donationsData, error: donationsError } = await supabase
     .from("donations")
-    .select("amount, kind")
+    .select("amount, kind, section")
     .gte("donation_date", from)
     .lte("donation_date", to)
     .eq("status", "active");
-  const donations = (donationsData ?? []) as {
+  // مرحلہ 62 — عطیات بھی چنے ہوئے شعبے کے
+  const donations = ((donationsData ?? []) as {
     amount: number;
     kind: DonationKind;
-  }[];
+    section: string;
+  }[]).filter((d) =>
+    effectiveSections.has((d.section ?? "banat") as SectionId),
+  );
 
   // مرحلہ 48 — وکالت کا اصول: زکوٰۃ اور عشر آمدنی میں شامل ہیں
   // (وصولی مائنس تقسیم)۔ عشر کی میز نہ ہو تو خالی مانا جاتا ہے۔
   const { data: zakatData, error: zakatError } = await supabase
     .from("zakat_records")
-    .select("amount, kind")
+    .select("amount, kind, section")
     .gte("record_date", from)
     .lte("record_date", to)
     .eq("status", "active");
-  const zakat = (zakatData ?? []) as {
+  // مرحلہ 62 — زکوٰۃ بھی چنے ہوئے شعبے کی
+  const zakat = ((zakatData ?? []) as {
     amount: number;
     kind: "received" | "distributed";
-  }[];
+    section: string;
+  }[]).filter((r) =>
+    effectiveSections.has((r.section ?? "banat") as SectionId),
+  );
   const { data: ushrData } = await supabase
     .from("ushr_records")
-    .select("amount, kind")
+    .select("amount, kind, section")
     .gte("record_date", from)
     .lte("record_date", to)
     .eq("status", "active");
-  const ushr = (ushrData ?? []) as {
+  // مرحلہ 62 — عشر بھی چنے ہوئے شعبے کا
+  const ushr = ((ushrData ?? []) as {
     amount: number;
     kind: "received" | "distributed";
-  }[];
+    section: string;
+  }[]).filter((r) =>
+    effectiveSections.has((r.section ?? "banat") as SectionId),
+  );
 
   const tableMissing =
     (feesError as { code?: string } | null)?.code === "42P01" ||

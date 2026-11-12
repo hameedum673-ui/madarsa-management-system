@@ -9,6 +9,8 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
+import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { isAppAdmin } from "@/lib/approval";
@@ -34,13 +36,14 @@ interface FundRow {
   date: string;
   payment_method: string;
   status: string;
+  section: string;
   detailHref: string;
 }
 
 export default async function FundsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ fund?: string; page?: string }>;
+  searchParams: Promise<{ fund?: string; section?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const rawFund = params.fund ?? "all";
@@ -52,6 +55,15 @@ export default async function FundsPage({
 
   const supabase = await createClient();
   const admin = await isAppAdmin(supabase);
+  // مرحلہ 62 — اجازت والے شعبے + چنا ہوا شعبہ (بنین / بنات / سب)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const section = getMySectionFilter(allowedSections, params.section);
+  const sectionEq =
+    section !== "all"
+      ? section
+      : allowedSections.size < 2
+        ? ([...allowedSections][0] ?? "__none__")
+        : null;
 
   let zakatAllowed = true;
   let ushrAllowed = true;
@@ -82,7 +94,7 @@ export default async function FundsPage({
   if (zakatAllowed && (fund === "all" || fund === "zakat")) {
     const { data, error } = await supabase
       .from("zakat_records")
-      .select("id, receipt_number, kind, person_name, amount, record_date, payment_method, status")
+      .select("id, receipt_number, kind, person_name, amount, record_date, payment_method, section, status")
       .order("record_date", { ascending: false })
       .order("receipt_number", { ascending: false });
     if ((error as { code?: string } | null)?.code === "42P01")
@@ -96,7 +108,9 @@ export default async function FundsPage({
       record_date: string;
       payment_method: string;
       status: string;
+      section: string;
     }[]) {
+      if (sectionEq && (r.section ?? "banat") !== sectionEq) continue;
       rows.push({
         id: r.id,
         receipt_number: r.receipt_number,
@@ -107,6 +121,7 @@ export default async function FundsPage({
         date: r.record_date,
         payment_method: r.payment_method,
         status: r.status,
+        section: r.section ?? "banat",
         detailHref: `/departments/zakat/${r.id}`,
       });
     }
@@ -114,7 +129,7 @@ export default async function FundsPage({
   if (ushrAllowed && (fund === "all" || fund === "ushr")) {
     const { data, error } = await supabase
       .from("ushr_records")
-      .select("id, receipt_number, kind, person_name, amount, record_date, payment_method, status")
+      .select("id, receipt_number, kind, person_name, amount, record_date, payment_method, section, status")
       .order("record_date", { ascending: false })
       .order("receipt_number", { ascending: false });
     if ((error as { code?: string } | null)?.code === "42P01")
@@ -128,7 +143,9 @@ export default async function FundsPage({
       record_date: string;
       payment_method: string;
       status: string;
+      section: string;
     }[]) {
+      if (sectionEq && (r.section ?? "banat") !== sectionEq) continue;
       rows.push({
         id: r.id,
         receipt_number: r.receipt_number,
@@ -139,6 +156,7 @@ export default async function FundsPage({
         date: r.record_date,
         payment_method: r.payment_method,
         status: r.status,
+        section: r.section ?? "banat",
         detailHref: `/departments/ushr/${r.id}`,
       });
     }
@@ -146,7 +164,7 @@ export default async function FundsPage({
   if (donationsAllowed && (fund === "all" || fund === "sadaqah" || fund === "other")) {
     const { data, error } = await supabase
       .from("donations")
-      .select("id, receipt_number, kind, donor_name, amount, donation_date, payment_method, status")
+      .select("id, receipt_number, kind, donor_name, amount, donation_date, payment_method, section, status")
       .order("donation_date", { ascending: false })
       .order("receipt_number", { ascending: false });
     if ((error as { code?: string } | null)?.code === "42P01")
@@ -160,10 +178,12 @@ export default async function FundsPage({
       donation_date: string;
       payment_method: string;
       status: string;
+      section: string;
     }[]) {
       const rowFund: FundCategory =
         r.kind === "other" ? "other" : "sadaqah";
       if (fund !== "all" && fund !== rowFund) continue;
+      if (sectionEq && (r.section ?? "banat") !== sectionEq) continue;
       rows.push({
         id: r.id,
         receipt_number: r.receipt_number,
@@ -173,6 +193,7 @@ export default async function FundsPage({
         date: r.donation_date,
         payment_method: r.payment_method,
         status: r.status,
+        section: r.section ?? "banat",
         detailHref: `/departments/donations/${r.id}`,
       });
     }
@@ -245,6 +266,17 @@ export default async function FundsPage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select className="field-input" name="section" defaultValue={section}>
+              <option value="all">سب</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
@@ -264,6 +296,7 @@ export default async function FundsPage({
                 <tr>
                   <th>رسید نمبر</th>
                   <th>مد</th>
+                  <th>بنین / بنات</th>
                   <th>نام</th>
                   <th>رقم</th>
                   <th>تاریخ</th>
@@ -278,6 +311,7 @@ export default async function FundsPage({
                       <Link href={r.detailHref}>{r.receipt_number}</Link>
                     </td>
                     <td>{FUND_CATEGORY_LABELS[r.fund]}</td>
+                    <td>{SECTION_LABELS[(r.section ?? "banat") as SectionId]}</td>
                     <td>
                       <Link href={r.detailHref}>{r.name}</Link>
                     </td>

@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
+import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
@@ -25,19 +27,30 @@ function formatDate(value: string | null): string {
 export default async function UshrPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ section?: string; page?: string }>;
 }) {
   const supabase = await createClient();
   // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const params = await searchParams;
+  // مرحلہ 62 — اجازت والے شعبے + چنا ہوا شعبہ (بنین / بنات / سب)
+  const allowedSections = await getMyAllowedSections(supabase);
+  const section = getMySectionFilter(allowedSections, params.section);
+  const sectionEq =
+    section !== "all"
+      ? section
+      : allowedSections.size < 2
+        ? ([...allowedSections][0] ?? "__none__")
+        : null;
   const page = parsePage(params.page);
   const { from, to } = pageRange(page);
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("ushr_records")
     .select("*", { count: "exact" })
     .order("record_date", { ascending: false })
-    .order("receipt_number", { ascending: false })
-    .range(from, to);
+    .order("receipt_number", { ascending: false });
+  if (sectionEq) query = query.eq("section", sectionEq);
+  query = query.range(from, to);
+  const { data, error, count } = await query;
 
   const records = (data ?? []) as UshrRecord[];
   const tableMissing =
@@ -45,11 +58,13 @@ export default async function UshrPage({
   const pages = pageCount(count);
   // مرحلہ 59 — کل وصول شدہ — پوری فہرست سے (صرف اس صفحے سے نہیں)
   // مرحلہ 49 — تقسیم ختم: صرف "وصولی" والے اندراج گنے جاتے ہیں
-  const { data: totalData } = await supabase
+  let totalQuery = supabase
     .from("ushr_records")
     .select("amount")
     .eq("status", "active")
     .eq("kind", "received");
+  if (sectionEq) totalQuery = totalQuery.eq("section", sectionEq);
+  const { data: totalData } = await totalQuery;
   const totalReceived = (totalData ?? []).reduce(
     (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
     0,
@@ -77,6 +92,23 @@ export default async function UshrPage({
           </div>
         </div>
 
+        <form className="att-controls" method="get">
+          <label className="field">
+            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <select className="field-input" name="section" defaultValue={section}>
+              <option value="all">سب</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {SECTION_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="btn-primary" type="submit">
+            دکھائیں
+          </button>
+        </form>
+
         {tableMissing ? (
           <p className="empty-state">
             عشر کی میز ابھی نہیں بنی — پہلے مرحلہ 48 کی SQL چلائیں۔
@@ -92,6 +124,7 @@ export default async function UshrPage({
                 <tr>
                   <th>رسید نمبر</th>
                   <th>نام</th>
+                  <th>بنین / بنات</th>
                   <th>رقم</th>
                   <th>تاریخ</th>
                   <th>طریقہ</th>
@@ -111,6 +144,7 @@ export default async function UshrPage({
                         {r.person_name}
                       </Link>
                     </td>
+                    <td>{SECTION_LABELS[(r.section ?? "banat") as SectionId]}</td>
                     <td>{r.amount.toLocaleString("ur-PK")}</td>
                     <td>{formatDate(r.record_date)}</td>
                     <td>{PAYMENT_METHOD_LABELS[r.payment_method]}</td>

@@ -9,7 +9,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getMyMadrasa } from "@/lib/students";
+import { SECTION_IDS, getMyMadrasa, type SectionId } from "@/lib/students";
+import { getMyAllowedSections } from "@/lib/permissions";
 import { isAppAdmin } from "@/lib/approval";
 import {
   CLOSED_MONTH_ERROR,
@@ -33,6 +34,7 @@ function clean(value: FormDataEntryValue | null, max = 200): string {
 }
 
 interface FundFields {
+  section: SectionId;
   fund: FundCategory;
   personName: string;
   amount: number;
@@ -52,6 +54,7 @@ function validateFields(
   const recordDate = clean(formData.get("record_date"), 10);
   const paymentMethod = clean(formData.get("payment_method"), 20);
   const note = clean(formData.get("note"), 500);
+  const section = clean(formData.get("section"), 20);
 
   if (!FUND_CATEGORIES.includes(fund as FundCategory))
     return { error: "مد درست منتخب کریں۔" };
@@ -64,6 +67,8 @@ function validateFields(
     return { error: "تاریخ آج سے آگے نہیں ہو سکتی۔" };
   if (!PAYMENT_METHODS.includes(paymentMethod as PaymentMethod))
     return { error: "ادائیگی کا طریقہ درست منتخب کریں۔" };
+  if (!SECTION_IDS.includes(section as SectionId))
+    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
 
   return {
     fields: {
@@ -72,6 +77,7 @@ function validateFields(
       amount,
       recordDate,
       paymentMethod: paymentMethod as PaymentMethod,
+      section: section as SectionId,
       note,
     },
   };
@@ -118,6 +124,11 @@ export async function addFundRecord(
     if (allowed === false) {
       return { error: "اس مد کی اجازت نہیں ہے۔" };
     }
+  }
+  // مرحلہ 62 — شعبہ بند ہو تو اس شعبے میں اندراج نہیں ہو سکتا
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(f.section)) {
+    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
   }
 
   // مرحلہ 39 — بند مہینے میں اندراج نہیں ہو سکتا
@@ -169,6 +180,7 @@ export async function addFundRecord(
         donation_date: f.recordDate,
         payment_method: f.paymentMethod,
         note: f.note || null,
+        section: f.section,
         status: "active",
         created_by: mine.userId,
       })
@@ -188,6 +200,7 @@ export async function addFundRecord(
         record_date: f.recordDate,
         payment_method: f.paymentMethod,
         note: f.note || null,
+        section: f.section,
         status: "active",
         created_by: mine.userId,
       })

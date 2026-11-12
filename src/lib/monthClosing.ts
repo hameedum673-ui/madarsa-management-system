@@ -81,22 +81,22 @@ export async function getBalanceBefore(
       .eq("status", "active");
     const { data: donationsData } = await supabase
       .from("donations")
-      .select("amount")
+      .select("amount, section")
       .lt("donation_date", `${month}-01`)
       .eq("status", "active");
     const { data: expensesData } = await supabase
       .from("expenses")
-      .select("amount")
+      .select("amount, section")
       .lt("expense_date", `${month}-01`)
       .eq("status", "active");
     const { data: zakatData } = await supabase
       .from("zakat_records")
-      .select("kind, amount")
+      .select("kind, amount, section")
       .lt("record_date", `${month}-01`)
       .eq("status", "active");
     const { data: ushrData } = await supabase
       .from("ushr_records")
-      .select("kind, amount")
+      .select("kind, amount, section")
       .lt("record_date", `${month}-01`)
       .eq("status", "active");
     const fees = (
@@ -111,23 +111,55 @@ export async function getBalanceBefore(
           allowedSections.has((f.students?.section ?? "banat") as SectionId),
       )
       .reduce((sum, f) => sum + (f.amount ?? 0), 0);
-    const donations = ((donationsData ?? []) as { amount: number }[]).reduce(
-      (sum, d) => sum + (d.amount ?? 0),
-      0,
-    );
-    const expenses = ((expensesData ?? []) as { amount: number }[]).reduce(
-      (sum, e) => sum + (e.amount ?? 0),
-      0,
-    );
+    // مرحلہ 62 — دی جائے تو عطیات بھی صرف انہی شعبوں کے
+    const donations = (
+      (donationsData ?? []) as { amount: number; section: string | null }[]
+    )
+      .filter(
+        (d) =>
+          !allowedSections ||
+          allowedSections.has((d.section ?? "banat") as SectionId),
+      )
+      .reduce((sum, d) => sum + (d.amount ?? 0), 0);
+    // مرحلہ 62 — دی جائے تو اخراجات بھی صرف انہی شعبوں کے
+    const expenses = (
+      (expensesData ?? []) as { amount: number; section: string | null }[]
+    )
+      .filter(
+        (e) =>
+          !allowedSections ||
+          allowedSections.has((e.section ?? "banat") as SectionId),
+      )
+      .reduce((sum, e) => sum + (e.amount ?? 0), 0);
     // مرحلہ 49 — تقسیم ختم: صرف "وصولی" گنی جاتی ہے
     const netOf = (rows: { kind: string; amount: number }[] | null) =>
       (rows ?? [])
         .filter((r) => r.kind === "received")
         .reduce((sum, r) => sum + (r.amount ?? 0), 0);
+    // مرحلہ 62 — دی جائے تو زکوٰۃ بھی صرف انہی شعبوں کی
     const zakatNet = netOf(
-      zakatData as { kind: string; amount: number }[] | null,
+      ((zakatData ?? []) as {
+        kind: string;
+        amount: number;
+        section: string | null;
+      }[]).filter(
+        (r) =>
+          !allowedSections ||
+          allowedSections.has((r.section ?? "banat") as SectionId),
+      ),
     );
-    const ushrNet = netOf(ushrData as { kind: string; amount: number }[] | null);
+    // مرحلہ 62 — دی جائے تو عشر بھی صرف انہی شعبوں کا
+    const ushrNet = netOf(
+      ((ushrData ?? []) as {
+        kind: string;
+        amount: number;
+        section: string | null;
+      }[]).filter(
+        (r) =>
+          !allowedSections ||
+          allowedSections.has((r.section ?? "banat") as SectionId),
+      ),
+    );
     return fees + donations + zakatNet + ushrNet - expenses;
   } catch {
     return 0;
