@@ -71,7 +71,7 @@ export default async function ExamResultPage({
   const { data: studentData, error: studentError } = await supabase
     .from("students")
     .select(
-      "id, name, father_name, registration_number, class_name, department, section, date_of_birth",
+      "id, name, father_name, registration_number, class_name, department, section, date_of_birth, district",
     )
     .eq("id", studentId)
     .eq("madrasa_id", exam.madrasa_id)
@@ -89,6 +89,7 @@ export default async function ExamResultPage({
     | "department"
     | "section"
     | "date_of_birth"
+    | "district"
   >;
   // مرحلہ 64 — بند شعبے کی طالبہ کا نتیجہ نہیں کھلے گا
   if (!allowedSections.has((student.section ?? "banat") as SectionId)) {
@@ -201,6 +202,7 @@ export default async function ExamResultPage({
     dateOfBirth: dobText,
     classLabel,
     departmentLabel: DEPARTMENT_LABELS[exam.department],
+    district: student.district ?? "—",
     examDate: formatDate(exam.exam_date),
     subjects: subjectRows.map(
       (r) => [r.name, r.marks] as [string, string],
@@ -263,6 +265,10 @@ export default async function ExamResultPage({
                 <span className="fv">
                   {DEPARTMENT_LABELS[exam.department]} — {sectionLabel}
                 </span>
+              </div>
+              <div className="result-field full">
+                <span className="fl">ضلع</span>
+                <span className="fv">{student.district ?? "—"}</span>
               </div>
             </div>
 

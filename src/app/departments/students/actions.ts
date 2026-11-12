@@ -57,6 +57,7 @@ interface StudentFields {
   className: string;
   admissionDate: string;
   address: string;
+  district: string;
 }
 
 /** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
@@ -74,6 +75,7 @@ function validateFields(
   const className = clean(formData.get("class_name"), 100);
   const admissionDate = clean(formData.get("admission_date"), 10);
   const address = clean(formData.get("address"), 500);
+  const district = clean(formData.get("district"), 100);
 
   if (!name) return { error: "طالبہ کا نام ضروری ہے۔" };
   if (!fatherName) return { error: "والد کا نام ضروری ہے۔" };
@@ -107,6 +109,7 @@ function validateFields(
       className,
       admissionDate,
       address,
+      district,
     },
   };
 }
@@ -172,6 +175,7 @@ export async function addStudent(formData: FormData): Promise<ActionResult> {
       class_name: f.className || null,
       admission_date: f.admissionDate,
       address: f.address || null,
+      district: f.district || null,
       status: "active",
     })
     .select("id")
@@ -235,6 +239,7 @@ export async function updateStudent(
       class_name: f.className || null,
       admission_date: f.admissionDate,
       address: f.address || null,
+      district: f.district || null,
       status: status as StudentStatus,
       updated_at: new Date().toISOString(),
     })

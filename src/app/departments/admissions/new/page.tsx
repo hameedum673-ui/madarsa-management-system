@@ -20,7 +20,7 @@ export default async function NewAdmissionPage() {
   const { data } = await supabase
     .from("students")
     .select(
-      "id, name, father_name, registration_number, class_name, department, section, date_of_birth, guardian_name, guardian_phone, whatsapp_number, status",
+      "id, name, father_name, registration_number, class_name, department, section, date_of_birth, guardian_name, guardian_phone, whatsapp_number, district, status",
     )
     .order("name", { ascending: true });
   const students = ((data ?? []) as AdmissionStudent[]).filter((s) =>

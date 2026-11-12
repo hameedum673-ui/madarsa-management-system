@@ -42,6 +42,7 @@ export interface AdmissionStudent {
   guardian_name: string | null;
   guardian_phone: string | null;
   whatsapp_number: string | null;
+  district: string | null;
   status: string;
 }
 
@@ -70,6 +71,7 @@ export default function AdmissionForm({
   const [guardianName, setGuardianName] = useState("");
   const [guardianPhone, setGuardianPhone] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [district, setDistrict] = useState("");
 
   const selectedStudent =
     students.find((s) => s.id === studentId) ?? null;
@@ -87,6 +89,7 @@ export default function AdmissionForm({
     setGuardianName("");
     setGuardianPhone("");
     setWhatsappNumber("");
+    setDistrict("");
   }
 
   function handleStudentChange(id: string) {
@@ -99,6 +102,7 @@ export default function AdmissionForm({
       setGuardianName("");
       setGuardianPhone("");
       setWhatsappNumber("");
+      setDistrict("");
       return;
     }
     setApplicantName(student.name);
@@ -107,6 +111,7 @@ export default function AdmissionForm({
     setGuardianName(student.guardian_name ?? "");
     setGuardianPhone(student.guardian_phone ?? "");
     setWhatsappNumber(student.whatsapp_number ?? "");
+    setDistrict(student.district ?? "");
     setDepartment(student.department);
     setSection(student.section);
   }
@@ -312,6 +317,19 @@ export default function AdmissionForm({
             value={whatsappNumber}
             onChange={(e) => setWhatsappNumber(e.target.value)}
             readOnly={readOnlyDetails}
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">ضلع</span>
+          <input
+            className="field-input"
+            name="district"
+            type="text"
+            maxLength={100}
+            placeholder="مثلاً بدین"
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
           />
         </label>
 

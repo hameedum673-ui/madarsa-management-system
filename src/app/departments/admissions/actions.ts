@@ -63,6 +63,7 @@ interface AdmissionFields {
   admissionDate: string;
   admissionType: AdmissionType;
   studentId: string;
+  district: string;
   previousMadrasa: string;
   note: string;
 }
@@ -83,6 +84,7 @@ function validateFields(
   const admissionDate = clean(formData.get("admission_date"), 10);
   const admissionType = clean(formData.get("admission_type"), 20);
   const studentId = clean(formData.get("student_id"), 50);
+  const district = clean(formData.get("district"), 100);
   const previousMadrasa = clean(formData.get("previous_madrasa"), 200);
   const note = clean(formData.get("note"), 500);
 
@@ -123,6 +125,7 @@ function validateFields(
       admissionDate,
       admissionType: admissionType as AdmissionType,
       studentId,
+      district,
       previousMadrasa,
       note,
     },
@@ -211,6 +214,7 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
       admission_date: f.admissionDate,
       admission_type: f.admissionType,
       student_id: f.admissionType === "returning" ? f.studentId : null,
+      district: f.district || null,
       previous_madrasa: f.previousMadrasa || null,
       note: f.note || null,
       status: "pending",
@@ -280,15 +284,21 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
     if (linkedError || !linked) {
       return { error: "جڑی ہوئی طالبہ نہیں ملی۔" };
     }
+    // مرحلہ 75 — ضلع صرف تب بدلے جب داخلے میں لکھا ہو (خالی ہو تو
+    // پرانی طالبہ کا ضلع ویسا ہی رہے — مٹے نہیں)
+    const returningUpdate: Record<string, unknown> = {
+      department: admission.department as string,
+      section: (admission.section as string) || "banat",
+      class_name: (admission.class_name as string | null) ?? null,
+      admission_type: "returning",
+      status: "active",
+    };
+    if ((admission.district as string | null) ?? null) {
+      returningUpdate.district = admission.district as string;
+    }
     const { error: updateError } = await supabase
       .from("students")
-      .update({
-        department: admission.department as string,
-        section: (admission.section as string) || "banat",
-        class_name: (admission.class_name as string | null) ?? null,
-        admission_type: "returning",
-        status: "active",
-      })
+      .update(returningUpdate)
       .eq("id", returningStudentId)
       .eq("madrasa_id", mine.madrasaId);
     if (updateError) {
@@ -348,6 +358,7 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       admission_date: admission.admission_date as string,
       admission_type: "new",
       address: null,
+      district: (admission.district as string | null) ?? null,
       status: "active",
     })
     .select("id")

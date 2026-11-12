@@ -209,6 +209,18 @@ export default function StudentForm({
         />
       </label>
 
+      <label className="field">
+        <span className="field-label">ضلع</span>
+        <input
+          className="field-input"
+          name="district"
+          type="text"
+          maxLength={100}
+          defaultValue={initial?.district ?? ""}
+          placeholder="مثلاً بدین"
+        />
+      </label>
+
       {showStatus ? (
         <label className="field">
           <span className="field-label">حالت</span>

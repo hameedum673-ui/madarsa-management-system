@@ -54,6 +54,7 @@ export interface Student {
   admission_date: string;
   admission_type: AdmissionType;
   address: string | null;
+  district: string | null;
   status: StudentStatus;
   created_at: string;
   updated_at: string;

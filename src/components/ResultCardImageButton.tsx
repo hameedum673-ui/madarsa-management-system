@@ -26,6 +26,8 @@ export interface ResultCardImageData {
   dateOfBirth: string;
   classLabel: string;
   departmentLabel: string;
+  /** "—" اگر درج نہیں */
+  district: string;
   examDate: string;
   /** [کتاب، نمبر] — نمبر "85" یا "—" */
   subjects: [string, string][];
@@ -91,7 +93,7 @@ export default function ResultCardImageButton({
         30 + // امتحان کی سطر
         28 + // شعبہ + سال کی سطر
         14 +
-        5 * 38 + // خانے (5 سطریں)
+        6 * 38 + // خانے (6 سطریں)
         8 +
         34 + // عنوان
         10 +
@@ -207,6 +209,8 @@ export default function ResultCardImageButton({
         rightEdge,
         W - 200,
       );
+      y += 38;
+      field(ctx, "ضلع", data.district, rightEdge, W - 200);
       y += 38 + 8;
 
       // عنوان

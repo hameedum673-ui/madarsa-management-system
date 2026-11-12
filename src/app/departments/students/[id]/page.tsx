@@ -109,6 +109,10 @@ export default async function StudentDetailPage({
             <span>پتہ</span>
             <span>{student.address ?? "—"}</span>
           </div>
+          <div className="row">
+            <span>ضلع</span>
+            <span>{student.district ?? "—"}</span>
+          </div>
         </div>
 
         <h3 className="form-section-title">ریکارڈ تبدیل کریں</h3>
