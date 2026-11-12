@@ -16,6 +16,11 @@ import {
   SECTION_LABELS,
   type SectionId,
 } from "@/lib/students";
+import {
+  EXAM_TYPE_IDS,
+  EXAM_TYPE_LABELS,
+  type ExamType,
+} from "@/lib/exams";
 
 type FormAction = (
   formData: FormData,
@@ -35,6 +40,8 @@ export default function ExamForm({
   const [department, setDepartment] = useState("hifz");
   // مرحلہ 52 — بنین / بنات (موجودہ مدرسہ للبنات ہے، اس لیے پہلے سے "بنات")
   const [section, setSection] = useState<SectionId>("banat");
+  // مرحلہ 70 — امتحان کی قسم (سب سے عام: سہ ماہی)
+  const [examType, setExamType] = useState<ExamType>("quarterly");
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -64,8 +71,25 @@ export default function ExamForm({
             type="text"
             required
             maxLength={200}
-            placeholder="مثلاً پہلا سہ ماہی امتحان"
+            placeholder="مثلاً پہلا امتحان"
           />
+        </label>
+
+        <label className="field">
+          <span className="field-label">امتحان کی قسم *</span>
+          <select
+            className="field-input"
+            name="exam_type"
+            required
+            value={examType}
+            onChange={(e) => setExamType(e.target.value as ExamType)}
+          >
+            {EXAM_TYPE_IDS.map((t) => (
+              <option key={t} value={t}>
+                {EXAM_TYPE_LABELS[t]}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="field">

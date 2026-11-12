@@ -14,6 +14,8 @@ import {
   type Student,
 } from "@/lib/students";
 import {
+  examTypeLabel,
+  examTypeSectionLabel,
   summarizeExamResults,
   type Exam,
   type ExamResult,
@@ -132,6 +134,7 @@ export default async function ExamDetailPage({
           <h2>{exam.name}</h2>
           <span className="page-count">
             {DEPARTMENT_LABELS[exam.department]}
+            {exam.exam_type ? ` — ${examTypeLabel(exam.exam_type)}` : ""}
             {exam.section ? ` — ${SECTION_LABELS[exam.section]}` : ""}
             {exam.class_name ? ` — ${exam.class_name}` : ""}
           </span>
@@ -146,6 +149,7 @@ export default async function ExamDetailPage({
           <h2>{madrasaName}</h2>
           <p>
             {exam.name} — {DEPARTMENT_LABELS[exam.department]}
+            {exam.exam_type ? ` — ${examTypeLabel(exam.exam_type)}` : ""}
             {exam.section ? ` — ${SECTION_LABELS[exam.section]}` : ""}
             {exam.class_name ? ` — ${exam.class_name}` : ""}
           </p>
@@ -159,6 +163,15 @@ export default async function ExamDetailPage({
           <div className="row">
             <span>امتحان کی تاریخ</span>
             <span>{formatDate(exam.exam_date)}</span>
+          </div>
+          <div className="row">
+            <span>امتحان کی قسم</span>
+            <span>
+              {examTypeSectionLabel(
+                exam.exam_type,
+                exam.section ? SECTION_LABELS[exam.section] : "—",
+              )}
+            </span>
           </div>
           <div className="row">
             <span>مضامین</span>

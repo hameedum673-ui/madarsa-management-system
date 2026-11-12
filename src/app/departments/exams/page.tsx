@@ -15,7 +15,13 @@ import {
   SECTION_LABELS,
   type SectionId,
 } from "@/lib/students";
-import type { Exam } from "@/lib/exams";
+import {
+  examTypeLabel,
+  EXAM_TYPE_IDS,
+  EXAM_TYPE_LABELS,
+  type Exam,
+  type ExamType,
+} from "@/lib/exams";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -25,7 +31,11 @@ function formatDate(value: string | null): string {
 export default async function ExamsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ section?: string; page?: string }>;
+  searchParams: Promise<{
+    section?: string;
+    exam_type?: string;
+    page?: string;
+  }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -37,6 +47,13 @@ export default async function ExamsPage({
     allowedSections.has(rawSection as SectionId)
       ? (rawSection as SectionId)
       : "all";
+  // مرحلہ 70 — امتحان کی قسم
+  const rawType = params.exam_type ?? "all";
+  const examType: ExamType | "all" = (EXAM_TYPE_IDS as string[]).includes(
+    rawType,
+  )
+    ? (rawType as ExamType)
+    : "all";
 
   // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
@@ -47,6 +64,7 @@ export default async function ExamsPage({
     .select("*", { count: "exact" })
     .order("exam_date", { ascending: false });
   if (section !== "all") query = query.eq("section", section);
+  if (examType !== "all") query = query.eq("exam_type", examType);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
   query = query.range(from, to);
@@ -88,6 +106,21 @@ export default async function ExamsPage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">امتحان کی قسم</span>
+            <select
+              className="field-input"
+              name="exam_type"
+              defaultValue={examType}
+            >
+              <option value="all">سب</option>
+              {EXAM_TYPE_IDS.map((t) => (
+                <option key={t} value={t}>
+                  {EXAM_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             دکھائیں
           </button>
@@ -110,6 +143,7 @@ export default async function ExamsPage({
                 <tr>
                   <th>امتحان</th>
                   <th>تاریخ</th>
+                  <th>قسم</th>
                   <th>شعبہ</th>
                   <th>بنین / بنات</th>
                   <th>جماعت</th>
@@ -125,6 +159,7 @@ export default async function ExamsPage({
                       </Link>
                     </td>
                     <td>{formatDate(ex.exam_date)}</td>
+                    <td>{examTypeLabel(ex.exam_type)}</td>
                     <td>{DEPARTMENT_LABELS[ex.department]}</td>
                     <td>{ex.section ? SECTION_LABELS[ex.section] : "—"}</td>
                     <td>{ex.class_name ?? "—"}</td>

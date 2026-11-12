@@ -26,6 +26,7 @@ import {
   summarizeExamResults,
   type Exam,
   type ExamResult,
+  examTypeLabel,
 } from "@/lib/exams";
 import {
   HIFZ_KIND_LABELS,
@@ -95,7 +96,7 @@ export default async function AcademicRecordPage({
   // اس امتحان میں شریک تمام طلبہ کے نمبر
   const { data: examsData } = await supabase
     .from("exams")
-    .select("id, name, exam_date, department, class_name, subjects")
+    .select("id, name, exam_date, department, class_name, subjects, exam_type")
     .order("exam_date", { ascending: false });
   const exams = (examsData ?? []) as Exam[];
   const { data: allStudentsData } = await supabase
@@ -282,6 +283,9 @@ export default async function AcademicRecordPage({
                         <Link href={`/departments/exams/${exam.id}`}>
                           {exam.name}
                         </Link>
+                        {exam.exam_type
+                          ? ` (${examTypeLabel(exam.exam_type)})`
+                          : ""}
                       </td>
                       <td>{formatDate(exam.exam_date)}</td>
                       <td>

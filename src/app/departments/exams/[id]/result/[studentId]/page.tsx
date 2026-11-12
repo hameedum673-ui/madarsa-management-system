@@ -17,6 +17,7 @@ import {
   type Student,
 } from "@/lib/students";
 import {
+  examTypeSectionLabel,
   summarizeExamResults,
   type Exam,
   type ExamResult,
@@ -192,6 +193,7 @@ export default async function ExamResultPage({
     madrasaName,
     examName: exam.name,
     sectionLabel,
+    typeSectionLabel: examTypeSectionLabel(exam.exam_type, sectionLabel),
     yearLine,
     registrationNumber: student.registration_number,
     studentName: student.name,
@@ -226,7 +228,8 @@ export default async function ExamResultPage({
             </div>
             <div className="result-head-box">{madrasaName}</div>
             <p className="result-exam">
-              امتحان — {exam.name} ({sectionLabel})
+              امتحان — {exam.name} (
+              {examTypeSectionLabel(exam.exam_type, sectionLabel)})
             </p>
             <p className="result-year">{yearLine}</p>
 

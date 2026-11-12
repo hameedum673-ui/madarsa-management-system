@@ -15,6 +15,8 @@ export interface ResultCardImageData {
   examName: string;
   /** بنین / بنات */
   sectionLabel: string;
+  /** مثلاً "سہ ماہی — بنین" */
+  typeSectionLabel: string;
   /** مثلاً "سال 1447ھ بمطابق 2026ء" */
   yearLine: string;
   registrationNumber: string;
@@ -148,7 +150,11 @@ export default function ResultCardImageButton({
       // شعبہ + سال کی سطر
       ctx.font = `20px ${FONT}`;
       ctx.fillStyle = MUTED;
-      ctx.fillText(`${data.sectionLabel} — ${data.yearLine}`, W / 2, y + 20);
+      ctx.fillText(
+        `${data.typeSectionLabel} — ${data.yearLine}`,
+        W / 2,
+        y + 20,
+      );
       y += 28 + 14;
 
       // خانے — لیبل دائیں (موٹا)، قیمت اس کے بائیں، قیمت کے نیچے

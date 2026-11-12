@@ -19,6 +19,7 @@ import {
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
+import { EXAM_TYPE_IDS, type ExamType } from "@/lib/exams";
 
 type ActionResult = { ok: true } | { error: string };
 type AddResult = { ok: true; id: string } | { error: string };
@@ -75,6 +76,7 @@ export async function addExam(formData: FormData): Promise<AddResult> {
   const examDate = clean(formData.get("exam_date"), 10);
   const department = clean(formData.get("department"), 20);
   const section = clean(formData.get("section"), 20);
+  const examType = clean(formData.get("exam_type"), 20);
   const className = clean(formData.get("class_name"), 100);
   const subjects = parseSubjects(clean(formData.get("subjects"), 1000));
 
@@ -83,6 +85,10 @@ export async function addExam(formData: FormData): Promise<AddResult> {
     return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
   if (!SECTION_IDS.includes(section as SectionId))
     return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
+  if (!EXAM_TYPE_IDS.includes(examType as ExamType))
+    return {
+      error: "امتحان کی قسم درست منتخب کریں (سہ ماہی، شش ماہی، سالانہ یا دیگر)۔",
+    };
   if (!validDate(examDate)) return { error: "امتحان کی تاریخ درست نہیں ہے۔" };
   if (!notFuture(examDate))
     return { error: "امتحان کی تاریخ آج سے آگے نہیں ہو سکتی۔" };
@@ -111,6 +117,7 @@ export async function addExam(formData: FormData): Promise<AddResult> {
       exam_date: examDate,
       department: department as DepartmentId,
       section: section as SectionId,
+      exam_type: examType as ExamType,
       class_name: className || null,
       subjects,
       created_by: mine.userId,

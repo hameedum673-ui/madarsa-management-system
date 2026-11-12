@@ -12,6 +12,7 @@ export interface Exam {
   exam_date: string;
   department: DepartmentId;
   section: SectionId;
+  exam_type: string | null;
   class_name: string | null;
   subjects: string[];
   created_by: string | null;
@@ -28,6 +29,34 @@ export interface ExamResult {
   marks_obtained: number;
   created_at: string;
   updated_at: string;
+}
+
+/** مرحلہ 70 — امتحان کی قسم */
+export type ExamType = "quarterly" | "half_yearly" | "annual" | "other";
+export const EXAM_TYPE_IDS: ExamType[] = [
+  "quarterly",
+  "half_yearly",
+  "annual",
+  "other",
+];
+export const EXAM_TYPE_LABELS: Record<ExamType, string> = {
+  quarterly: "سہ ماہی",
+  half_yearly: "شش ماہی",
+  annual: "سالانہ",
+  other: "دیگر",
+};
+/** قسم کا لیبل — خالی ہو تو "—" */
+export function examTypeLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  return (EXAM_TYPE_LABELS as Record<string, string>)[value] ?? "—";
+}
+/** قسم + شعبہ — مثلاً "سہ ماہی — بنین" */
+export function examTypeSectionLabel(
+  examType: string | null | undefined,
+  sectionLabel: string,
+): string {
+  const t = examTypeLabel(examType);
+  return t === "—" ? sectionLabel : `${t} — ${sectionLabel}`;
 }
 
 /** فیصد سے درجہ — مدرسے کا نظام (مرحلہ 63) */
