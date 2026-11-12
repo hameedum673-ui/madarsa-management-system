@@ -38,6 +38,13 @@ function GroupSection({
     group.id === "edu" &&
     visibleIds.has("students") &&
     visibleIds.has("admissions");
+  // مرحلہ 57 — "طلبہ کی حاضری" اور "اساتذہ کی حاضری" ایک بٹن میں:
+  // دونوں نظر آئیں تو ایک بٹن "حاضری" دکھائیں؛ صرف ایک نظر آئے
+  // تو وہی اکیلا بٹن دکھائیں۔
+  const showAttendanceHub =
+    group.id === "edu" &&
+    visibleIds.has("att-students") &&
+    visibleIds.has("att-teachers");
   return (
     <section className="group" aria-label={group.title}>
       <div className="g-head">
@@ -49,6 +56,7 @@ function GroupSection({
       <div className={`tiles ${group.layout}`}>
         {modules.map((m) => {
           if (showCombined && m.id === "admissions") return null;
+          if (showAttendanceHub && m.id === "att-teachers") return null;
           // مرحلہ 48 — زکوٰۃ، عشر اور صدقات کے بٹن ڈیش بورڈ پر نہیں
           // دکھائے جاتے — وہ "آمدنی کا ریکارڈ" حب کے اندر ہیں۔
           if (
@@ -68,16 +76,22 @@ function GroupSection({
             return null;
           const isReportsHubTile =
             showReportsHub && group.id === "fin" && m.id === "monthly";
+          const isAttendanceHubTile =
+            showAttendanceHub && group.id === "edu" && m.id === "att-students";
           const href = isReportsHubTile
             ? "/departments/reports-hub"
-            : showCombined && m.id === "students"
-              ? "/departments/admissions-students"
-              : `/departments/${m.id}`;
+            : isAttendanceHubTile
+              ? "/departments/attendance"
+              : showCombined && m.id === "students"
+                ? "/departments/admissions-students"
+                : `/departments/${m.id}`;
           const label = isReportsHubTile
             ? "رپورٹس"
-            : showCombined && m.id === "students"
-              ? "داخلے اور طلبہ"
-              : m.label;
+            : isAttendanceHubTile
+              ? "حاضری"
+              : showCombined && m.id === "students"
+                ? "داخلے اور طلبہ"
+                : m.label;
           const icon = isReportsHubTile ? "report" : m.icon;
           return (
             <Link key={m.id} href={href} className="tile">

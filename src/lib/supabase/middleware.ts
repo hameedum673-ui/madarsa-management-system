@@ -165,6 +165,24 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
+    // مرحلہ 57 — حاضری کا حب: طلبہ یا اساتذہ کی حاضری میں سے ایک
+    // کی بھی اجازت ہو تو کھلتا ہے؛ دونوں بند ہوں تو ڈیش بورڈ پر
+    // واپس۔
+    if (slug === "attendance") {
+      const { data: attStudentsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "att-students" },
+      );
+      const { data: attTeachersAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "att-teachers" },
+      );
+      if (attStudentsAllowed === false && attTeachersAllowed === false) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    }
     // مرحلہ 56 — رپورٹس کا حب: ماہانہ، سالانہ، مالیاتی رپورٹس یا
     // رپورٹس میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛ چاروں بند
     // ہوں تو ڈیش بورڈ پر واپس۔
