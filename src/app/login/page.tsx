@@ -7,7 +7,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { WHATSAPP_URL } from "@/lib/approval";
@@ -26,6 +26,70 @@ export default function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMessage, setForgotMessage] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
+  // مرحلہ 67 — مہمان (ڈیمو) رسائی
+  const [guestAllowed, setGuestAllowed] = useState(false);
+  const [guestHours, setGuestHours] = useState(2);
+  const [guestLoading, setGuestLoading] = useState(false);
+  const [guestError, setGuestError] = useState("");
+  const [guestNotice, setGuestNotice] = useState("");
+
+  // مہمان رسائی آن ہے یا نہیں — اور وقت ختم/بند ہونے کا پیغام
+  useEffect(() => {
+    const supabase = createClient();
+    const params = new URLSearchParams(window.location.search);
+    const guestParam = params.get("guest");
+    if (guestParam === "expired" || guestParam === "off") {
+      // پرانا مہمان سیشن ختم کریں تاکہ نیا ڈیمو صاف شروع ہو
+      supabase.auth.signOut();
+      setGuestNotice(
+        guestParam === "expired"
+          ? "ڈیمو کا وقت ختم ہو گیا — دوبارہ ڈیمو دیکھنے کے لیے بٹن دبائیں۔"
+          : "ڈیمو ابھی بند ہے۔",
+      );
+      window.history.replaceState({}, "", "/login");
+    }
+    supabase
+      .from("guest_settings")
+      .select("allow_guests, guest_hours")
+      .eq("id", 1)
+      .single()
+      .then(
+        ({ data }) => {
+          if (data && (data as { allow_guests?: boolean }).allow_guests) {
+            setGuestAllowed(true);
+            const h = (data as { guest_hours?: number }).guest_hours;
+            if (typeof h === "number" && h > 0) setGuestHours(h);
+          }
+        },
+        () => {
+          /* ترتیب نہ ملی تو بٹن چھپا رہے گا (محفوظ رخ) */
+        },
+      );
+  }, []);
+
+  async function handleGuestLogin() {
+    setGuestError("");
+    setGuestLoading(true);
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session) {
+      router.push("/");
+      router.refresh();
+      return;
+    }
+    const { error } = await supabase.auth.signInAnonymously();
+    setGuestLoading(false);
+    if (error) {
+      setGuestError(
+        "ڈیمو ابھی ترتیب نہیں ہوا ہے — براہِ کرم منتظم سے رابطہ کریں۔",
+      );
+      return;
+    }
+    router.push("/");
+    router.refresh();
+  }
 
   async function handleGoogleLogin() {
     setGoogleError("");
@@ -111,6 +175,34 @@ export default function LoginPage() {
         </button>
 
         {googleError ? <p className="login11-error">{googleError}</p> : null}
+
+        {guestNotice ? (
+          <p className="login11-error" style={{ color: "#f3e9cd" }}>
+            {guestNotice}
+          </p>
+        ) : null}
+
+        {guestAllowed ? (
+          <>
+            <button
+              className="login11-guest"
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={guestLoading}
+            >
+              {guestLoading
+                ? "براہِ کرم انتظار کریں…"
+                : "ڈیمو دیکھیں — بغیر لاگ ان کے"}
+            </button>
+            <p className="login11-note">
+              ڈیمو {guestHours.toLocaleString("ur-PK")} گھنٹے کے لیے ہے — آپ
+              کا ڈیٹا صرف آپ کو نظر آئے گا۔
+            </p>
+            {guestError ? (
+              <p className="login11-error">{guestError}</p>
+            ) : null}
+          </>
+        ) : null}
 
         <a
           className="login11-whatsapp"

@@ -73,34 +73,57 @@ export async function updateSession(request: NextRequest) {
   // لاگ اِن ہے اور auth callback پر ہے → کوڈ بدلنے دیں، جانچ اگلے صفحے پر ہوگی
   if (isAuthCallback) return supabaseResponse;
 
-  // منظوری کی جانچ — پہلے ایڈمن کا کردار (اس کے لیے نئے فنکشن کی ضرورت نہیں)
+  // مرحلہ 67 — مہمان (گمنام صارف): پہلے profile بنائیں، پھر حالت جانچیں۔
+  // مہمان کو منظوری کی ضرورت نہیں — اس کی جگہ وقت کی حد ہے۔
   let approved = false;
   let isAdmin = false;
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if ((profile as { role?: string } | null)?.role === "super_admin") {
-    approved = true;
-    isAdmin = true;
-  } else {
-    const { data: status, error } = await supabase.rpc("my_approval_status");
-    if (!error && status === "approved") {
+  if (user.is_anonymous) {
+    await supabase.rpc("ensure_my_guest_profile");
+    const { data: guestStatus } = await supabase.rpc("my_guest_status");
+    if (guestStatus === "active") {
       approved = true;
-      // منظور شدہ صارف کا profile نہ ہو تو خود بنا لیں (غلطی ہو تو نظر انداز)
-      await supabase.rpc("ensure_my_profile");
-      // مرحلہ 25 — اگر صارف کا مدرسہ کسی اور سے جڑا ہوا ہے تو اسے اپنا
-      // الگ مدرسہ مل جائے (غلطی ہو تو نظر انداز — پرانا کام نہیں رکتا)
-      await supabase.rpc("ensure_my_workspace");
-    } else if (!error && status === "none") {
-      // پہلی بار آیا ہے — "زیرِ منظوری" درج کر دیں تاکہ ایڈمن دیکھ سکے
-      await supabase.rpc("request_access");
-      approved = false;
     } else {
-      // 'pending' / 'disabled' — یا فنکشن نہ چلا (migration ابھی نہیں چلی)
-      // دونوں صورتوں میں غیر ایڈمن صارف بند رہے گا (محفوظ رخ)
-      approved = false;
+      // وقت ختم یا ڈیمو بند — لاگ ان والے صفحے پر ہی رہیں تاکہ
+      // صفحہ خود لاگ آؤٹ کر دے اور پیغام دکھائے
+      if (isLoginPage) return supabaseResponse;
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set(
+        "guest",
+        guestStatus === "expired" ? "expired" : "off",
+      );
+      return NextResponse.redirect(url);
+    }
+  } else {
+    // منظوری کی جانچ — پہلے ایڈمن کا کردار (اس کے لیے نئے فنکشن کی ضرورت نہیں)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    if ((profile as { role?: string } | null)?.role === "super_admin") {
+      approved = true;
+      isAdmin = true;
+    } else {
+      const { data: status, error } = await supabase.rpc(
+        "my_approval_status",
+      );
+      if (!error && status === "approved") {
+        approved = true;
+        // منظور شدہ صارف کا profile نہ ہو تو خود بنا لیں (غلطی ہو تو نظر انداز)
+        await supabase.rpc("ensure_my_profile");
+        // مرحلہ 25 — اگر صارف کا مدرسہ کسی اور سے جڑا ہوا ہے تو اسے اپنا
+        // الگ مدرسہ مل جائے (غلطی ہو تو نظر انداز — پرانا کام نہیں رکتا)
+        await supabase.rpc("ensure_my_workspace");
+      } else if (!error && status === "none") {
+        // پہلی بار آیا ہے — "زیرِ منظوری" درج کر دیں تاکہ ایڈمن دیکھ سکے
+        await supabase.rpc("request_access");
+        approved = false;
+      } else {
+        // 'pending' / 'disabled' — یا فنکشن نہ چلا (migration ابھی نہیں چلی)
+        // دونوں صورتوں میں غیر ایڈمن صارف بند رہے گا (محفوظ رخ)
+        approved = false;
+      }
     }
   }
 

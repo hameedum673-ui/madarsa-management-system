@@ -255,6 +255,8 @@ export default async function DashboardPage() {
     notice_date: string;
   }[] = [];
   let activeNoticesCount = 0;
+  // مرحلہ 67 — مہمان ہو تو باقی وقت (نہ ہو تو خالی)
+  let guestRemainingText: string | null = null;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -272,10 +274,25 @@ export default async function DashboardPage() {
       if (profile?.address) madrasaAddress = profile.address as string;
       const { data: myProfile } = await supabase
         .from("profiles")
-        .select("name, role")
+        .select("name, role, guest_expires_at")
         .eq("id", mine.userId)
         .single();
       if (myProfile?.name) userName = myProfile.name as string;
+      // مرحلہ 67 — مہمان کا باقی وقت (گھنٹے + منٹ)
+      if (myProfile?.guest_expires_at) {
+        const ms =
+          new Date(myProfile.guest_expires_at as string).getTime() -
+          Date.now();
+        if (ms > 0) {
+          const mins = Math.floor(ms / 60000);
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          guestRemainingText =
+            h > 0
+              ? `${h.toLocaleString("ur-PK")} گھنٹہ ${m.toLocaleString("ur-PK")} منٹ`
+              : `${m.toLocaleString("ur-PK")} منٹ`;
+        }
+      }
       if (myProfile?.role) {
         userRole = ROLE_LABELS[myProfile.role as MadrasaRole] ?? null;
         isAdmin = myProfile.role === "super_admin";
@@ -336,6 +353,12 @@ export default async function DashboardPage() {
         notices={recentNotices}
         noticesCount={activeNoticesCount}
       />
+      {guestRemainingText ? (
+        <p className="guest-banner">
+          ڈیمو — باقی وقت: {guestRemainingText} — وقت ختم ہونے پر ڈیمو
+          خودبخود بند ہو جائے گا۔
+        </p>
+      ) : null}
       <StatsRow
         studentsCount={totalStudents}
         teachersCount={totalTeachers}

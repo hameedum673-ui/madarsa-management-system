@@ -19,6 +19,30 @@ import {
   ApproveForm,
   StatusForm,
 } from "@/app/departments/users/UserForms";
+import {
+  CloseGuestForm,
+  GuestSettingsForm,
+} from "@/app/departments/users/GuestForms";
+
+type GuestRow = {
+  id: string;
+  name: string;
+  created_at: string;
+  guest_expires_at: string;
+};
+
+function formatDateTime(value: string | null): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("ur-PK", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 export default async function UsersPage() {
   const supabase = await createClient();
@@ -37,6 +61,25 @@ export default async function UsersPage() {
     (error as { code?: string } | null)?.code === "42P01";
 
   const pending = users.filter((u) => u.status === "pending");
+
+  // مرحلہ 67 — مہمان رسائی کی ترتیب + مہمانوں کی فہرست
+  const { data: settingsData, error: settingsError } = await supabase
+    .from("guest_settings")
+    .select("allow_guests, guest_hours")
+    .eq("id", 1)
+    .single();
+  const guestTableMissing =
+    (settingsError as { code?: string } | null)?.code === "42P01";
+  const guestSettings = (settingsData as {
+    allow_guests?: boolean;
+    guest_hours?: number;
+  } | null) ?? null;
+  const { data: guestData } = await supabase
+    .from("profiles")
+    .select("id, name, created_at, guest_expires_at")
+    .not("guest_expires_at", "is", null)
+    .order("created_at", { ascending: false });
+  const guests = (guestData ?? []) as GuestRow[];
 
   return (
     <div className="module-view open">
@@ -129,6 +172,71 @@ export default async function UsersPage() {
               منظور شدہ صارف کا profile اگلے لاگ اِن پر خود بن جائے گا۔ صارف کا
               ریکارڈ کبھی حذف نہیں ہوتا — رسائی بند کرنی ہو تو «غیر فعال» کریں۔
             </p>
+
+            <h3 className="form-section-title">مہمان رسائی (ڈیمو)</h3>
+            {guestTableMissing ? (
+              <p className="empty-state">
+                مہمان کی میز ابھی نہیں بنی — پہلے مرحلہ 67 کی SQL چلائیں۔
+              </p>
+            ) : (
+              <>
+                <GuestSettingsForm
+                  allowGuests={guestSettings?.allow_guests ?? false}
+                  guestHours={guestSettings?.guest_hours ?? 2}
+                />
+
+                {guests.length === 0 ? (
+                  <p className="empty-state">ابھی کوئی مہمان نہیں آیا۔</p>
+                ) : (
+                  <div className="tbl-wrap">
+                    <table className="tbl">
+                      <thead>
+                        <tr>
+                          <th>نام</th>
+                          <th>بنا</th>
+                          <th>ختم ہوگا</th>
+                          <th>حالت</th>
+                          <th>کارروائی</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {guests.map((g) => {
+                          const expired =
+                            new Date(g.guest_expires_at).getTime() <=
+                            Date.now();
+                          return (
+                            <tr key={g.id}>
+                              <td>{g.name}</td>
+                              <td>{formatDateTime(g.created_at)}</td>
+                              <td>{formatDateTime(g.guest_expires_at)}</td>
+                              <td>
+                                <span
+                                  className={`badge${expired ? " badge-withdrawn" : ""}`}
+                                >
+                                  {expired ? "ختم" : "فعال"}
+                                </span>
+                              </td>
+                              <td>
+                                {expired ? (
+                                  "—"
+                                ) : (
+                                  <CloseGuestForm id={g.id} />
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <p className="form-note">
+                  بند کرنا = رسائی بند؛ مہمان کا ڈیٹا رہتا ہے — صفائی الگ
+                  کام ہے۔
+                </p>
+              </>
+            )}
           </>
         )}
       </div>

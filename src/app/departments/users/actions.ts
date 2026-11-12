@@ -235,3 +235,69 @@ export async function addApprovedUser(
   revalidatePath("/departments/users");
   return { ok: true };
 }
+
+/** مہمان رسائی کی ترتیب بدلیں — سوئچ + گھنٹے (صرف ایڈمن) */
+export async function saveGuestSettings(
+  formData: FormData,
+): Promise<ActionResult> {
+  const allowGuests = formData.get("allow_guests") === "on";
+  const hoursRaw = clean(formData.get("guest_hours"), 10);
+  const hours = Number(hoursRaw);
+  if (!Number.isInteger(hours) || hours < 1 || hours > 24)
+    return { error: "گھنٹے 1 سے 24 کے درمیان لکھیں۔" };
+
+  const checked = await requireAdmin();
+  if ("error" in checked) return { error: checked.error };
+  const { supabase, madrasaId, userId } = checked;
+
+  const { error } = await supabase
+    .from("guest_settings")
+    .update({
+      allow_guests: allowGuests,
+      guest_hours: hours,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+  if (error) {
+    if ((error as { code?: string } | null)?.code === "42P01")
+      return { error: "میز نہیں بنی — پہلے مرحلہ 67 کی SQL چلائیں۔" };
+    return { error: "ترتیب نہیں بدلی جا سکی۔ دوبارہ کوشش کریں۔" };
+  }
+
+  await writeAudit(supabase, madrasaId, userId, "guest_settings_updated", {
+    allow_guests: allowGuests ? "on" : "off",
+    guest_hours: String(hours),
+  });
+  revalidatePath("/departments/users");
+  return { ok: true };
+}
+
+/** مہمان کی رسائی ابھی بند کریں — ختم ہونے کا وقت ابھی کر دیں (صرف ایڈمن) */
+export async function closeGuest(formData: FormData): Promise<ActionResult> {
+  const id = clean(formData.get("id"), 100);
+  if (!id) return { error: "مہمان نہیں ملا۔" };
+
+  const checked = await requireAdmin();
+  if ("error" in checked) return { error: checked.error };
+  const { supabase, madrasaId, userId } = checked;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ guest_expires_at: new Date().toISOString() })
+    .eq("id", id)
+    .not("guest_expires_at", "is", null)
+    .select("id, name")
+    .single();
+  if (error || !data) {
+    if ((error as { code?: string } | null)?.code === "42P01")
+      return { error: "میز نہیں بنی — پہلے مرحلہ 67 کی SQL چلائیں۔" };
+    return { error: "مہمان بند نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+  }
+
+  await writeAudit(supabase, madrasaId, userId, "guest_closed", {
+    guest_id: data.id as string,
+    guest_name: (data.name as string) ?? "",
+  });
+  revalidatePath("/departments/users");
+  return { ok: true };
+}
