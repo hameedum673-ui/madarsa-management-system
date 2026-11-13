@@ -8,7 +8,7 @@ import { setMonthlySalary } from "@/app/departments/salaries/actions";
 import { getSalaryPersons } from "@/app/departments/salaries/people";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
+import { isMadrasaOwner } from "@/lib/approval";
 
 export default async function SetSalaryPage({
   searchParams,
@@ -17,7 +17,8 @@ export default async function SetSalaryPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
-  if (!(await isAppAdmin(supabase))) {
+  // حصہ 4 کی درستگی — تنخواہیں مدرسے کے مالک کے لیے ہیں (سپر ایڈمن ہونا ضروری نہیں)
+  if (!(await isMadrasaOwner(supabase))) {
     redirect("/");
   }
   const mine = await getMyMadrasa(supabase);

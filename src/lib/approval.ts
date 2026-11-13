@@ -81,6 +81,19 @@ export async function isSystemAdmin(
   return data === true;
 }
 
+/** کیا موجودہ صارف اپنے مدرسے کا مالک ہے؟ (حصہ 4 کی درستگی)
+ * — مالک وہ ہے جس کی approved_users قطار منظور شدہ ہے اور member_type
+ * 'owner' ہے۔ سپر ایڈمن ہونا ضروری نہیں — نیا مدرسہ مہتمم/ناظم کے کھاتے
+ * سے بھی چلتا ہے۔ عملہ (member_type 'staff') کبھی مالک نہیں ہوتا۔
+ * میز/فنکشن نہ بنی ہو تو false (محفوظ) */
+export async function isMadrasaOwner(
+  supabase: ServerClient,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("am_i_madrasa_owner");
+  if (error) return false;
+  return data === true;
+}
+
 /** کیا موجودہ صارف ایڈمن (super_admin) ہے؟ — سرور پر جانچ */
 export async function isAppAdmin(supabase: ServerClient): Promise<boolean> {
   const {

@@ -9,7 +9,7 @@ import BackButton from "@/components/BackButton";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
+import { isMadrasaOwner } from "@/lib/approval";
 import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
 import {
   currentMonthInKarachi,
@@ -39,7 +39,8 @@ export default async function SalariesPage({
     : currentMonthInKarachi();
 
   const supabase = await createClient();
-  if (!(await isAppAdmin(supabase))) {
+  // حصہ 4 کی درستگی — تنخواہیں مدرسے کے مالک کے لیے ہیں (سپر ایڈمن ہونا ضروری نہیں)
+  if (!(await isMadrasaOwner(supabase))) {
     redirect("/");
   }
   const mine = await getMyMadrasa(supabase);

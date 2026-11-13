@@ -11,7 +11,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
+import { isMadrasaOwner } from "@/lib/approval";
 import {
   CLOSED_MONTH_ERROR,
   isMonthClosed,
@@ -96,7 +96,7 @@ export async function setMonthlySalary(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
-  if (!(await isAppAdmin(supabase)))
+  if (!(await isMadrasaOwner(supabase)))
     return { error: "صرف ایڈمن تنخواہ طے کر سکتا ہے۔" };
 
   const person = await getPerson(
@@ -189,7 +189,7 @@ export async function addSalaryPayment(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
-  if (!(await isAppAdmin(supabase)))
+  if (!(await isMadrasaOwner(supabase)))
     return { error: "صرف ایڈمن تنخواہ دے سکتا ہے۔" };
 
   const person = await getPerson(
@@ -318,7 +318,7 @@ export async function voidSalaryPayment(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
-  if (!(await isAppAdmin(supabase)))
+  if (!(await isMadrasaOwner(supabase)))
     return { error: "صرف ایڈمن تنخواہ منسوخ کر سکتا ہے۔" };
 
   const { data: row } = await supabase

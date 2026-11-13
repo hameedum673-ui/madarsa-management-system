@@ -8,7 +8,7 @@ import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import RestoreBackupForm from "@/app/departments/backup/RestoreBackupForm";
 import { createClient } from "@/lib/supabase/server";
-import { isAppAdmin } from "@/lib/approval";
+import { isMadrasaOwner } from "@/lib/approval";
 
 const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "students", label: "طلبہ" },
@@ -48,9 +48,9 @@ function formatDate(value: string) {
 export default async function BackupPage() {
   const supabase = await createClient();
 
-  // حصہ 4 — بیک اپ صرف مالک کے لیے
-  const admin = await isAppAdmin(supabase);
-  if (!admin) {
+  // حصہ 4 کی درستگی — بیک اپ صرف مالک کے لیے (سپر ایڈمن ہونا ضروری نہیں)
+  const owner = await isMadrasaOwner(supabase);
+  if (!owner) {
     notFound();
   }
 

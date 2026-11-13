@@ -164,15 +164,18 @@ export async function updateSession(request: NextRequest) {
   // براہِ راست لنک کھولنے پر بھی سرور روکتا ہے — صرف بٹن چھپانا کافی نہیں۔
   if (!isAdmin && pathname.startsWith("/departments/")) {
     const slug = pathname.split("/")[2] ?? "";
-    // "صارفین اور اکاؤنٹس"، "اختیارات اور اجازتیں"، ان کا حب،
-    // "تنخواہیں" اور "عملے کے ارکان" صرف ایڈمن کے لیے ہیں
-    // (تنخواہ خفیہ معلومات ہے — مرحلہ 50؛ عملہ صرف مالک شامل کرتا ہے — حصہ 3)
+    // "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" صرف نظام کے ایڈمن
+    // کے لیے ہیں؛ ان کا حب، "تنخواہیں" اور "عملے کے ارکان" مدرسے کے مالک
+    // کے لیے بھی کھلے ہیں (حصہ 4 کی درستگی — مالک سپر ایڈمن نہیں ہوتا)
+    const { data: ownerData } = await supabase.rpc("am_i_madrasa_owner");
+    const isOwner = ownerData === true;
     if (
       slug === "users" ||
       slug === "permissions" ||
-      slug === "users-permissions" ||
-      slug === "salaries" ||
-      slug === "staff-members"
+      (!isOwner &&
+        (slug === "users-permissions" ||
+          slug === "salaries" ||
+          slug === "staff-members"))
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/";

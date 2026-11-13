@@ -9,7 +9,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { isAppAdmin } from "@/lib/approval";
+import { isMadrasaOwner } from "@/lib/approval";
 import {
   AUDIT_ACTION_LABELS,
   AUDIT_CATEGORIES,
@@ -34,8 +34,9 @@ export default async function AuditPage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const supabase = await createClient();
-  const admin = await isAppAdmin(supabase);
-  if (!admin) {
+  // حصہ 4 کی درستگی — آڈٹ لاگ مدرسے کے مالک کے لیے ہے (سپر ایڈمن ہونا ضروری نہیں)
+  const owner = await isMadrasaOwner(supabase);
+  if (!owner) {
     notFound();
   }
 

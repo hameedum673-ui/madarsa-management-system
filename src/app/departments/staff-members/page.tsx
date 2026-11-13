@@ -7,7 +7,7 @@
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { isAppAdmin, type ApprovedUser } from "@/lib/approval";
+import { isMadrasaOwner, type ApprovedUser } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
 import { SECTION_IDS } from "@/lib/students";
@@ -20,8 +20,9 @@ import {
 
 export default async function StaffMembersPage() {
   const supabase = await createClient();
-  const admin = await isAppAdmin(supabase);
-  if (!admin) {
+  // حصہ 4 کی درستگی — یہ صفحہ مدرسے کے مالک کے لیے ہے (سپر ایڈمن ہونا ضروری نہیں)
+  const owner = await isMadrasaOwner(supabase);
+  if (!owner) {
     notFound();
   }
   const mine = await getMyMadrasa(supabase);

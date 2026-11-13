@@ -12,7 +12,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { isAppAdmin, isSystemAdmin } from "@/lib/approval";
+import { isAppAdmin, isMadrasaOwner, isSystemAdmin } from "@/lib/approval";
 
 const USERS_PERMISSIONS_MODULES = [
   {
@@ -41,7 +41,9 @@ const STAFF_MODULE: HubModule = {
 export default async function UsersPermissionsHubPage() {
   const supabase = await createClient();
   const admin = await isAppAdmin(supabase);
-  if (!admin) {
+  // حصہ 4 کی درستگی — حب مالک کے لیے بھی کھلا ہے (اسے صرف عملے والا حصہ دکھتا ہے)
+  const owner = await isMadrasaOwner(supabase);
+  if (!admin && !owner) {
     notFound();
   }
   // حصہ 2 — نظام کا ایڈمن یا مدرسے کا مالک؟

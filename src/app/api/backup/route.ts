@@ -9,7 +9,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
+import { isMadrasaOwner } from "@/lib/approval";
 import { todayInKarachi } from "@/lib/attendance";
 
 export const dynamic = "force-dynamic";
@@ -63,9 +63,9 @@ export async function GET() {
   if (!mine) {
     return NextResponse.json({ error: "لاگ اِن نہیں ہے۔" }, { status: 401 });
   }
-  const admin = await isAppAdmin(supabase);
-  // حصہ 4 — بیک اپ صرف مالک ڈاؤن لوڈ کر سکتا ہے
-  if (!admin) {
+  const owner = await isMadrasaOwner(supabase);
+  // حصہ 4 کی درستگی — بیک اپ صرف مالک ڈاؤن لوڈ کر سکتا ہے (سپر ایڈمن ہونا ضروری نہیں)
+  if (!owner) {
     return NextResponse.json(
       { error: "صرف مدرسے کا مالک بیک اپ ڈاؤن لوڈ کر سکتا ہے۔" },
       { status: 403 },
@@ -77,7 +77,7 @@ export async function GET() {
     const { data } = await supabase.from(table).select("*");
     tables[table] = (data ?? []) as unknown[];
   }
-  if (admin) {
+  if (owner) {
     for (const table of ADMIN_TABLES) {
       const { data } = await supabase.from(table).select("*");
       tables[table] = (data ?? []) as unknown[];

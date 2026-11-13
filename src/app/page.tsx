@@ -4,7 +4,7 @@ import DepartmentGroups from "@/components/DepartmentGroups";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import { getMyMadrasa, type SectionId } from "@/lib/students";
-import { ROLE_LABELS } from "@/lib/approval";
+import { ROLE_LABELS, isMadrasaOwner } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { todayInKarachi } from "@/lib/attendance";
 import { GROUPS } from "@/data/departments";
@@ -251,6 +251,8 @@ export default async function DashboardPage() {
   let userName: string | null = null;
   let userRole: string | null = null;
   let isAdmin = false;
+  // حصہ 4 کی درستگی — مالک بھی (سپر ایڈمن نہ ہو تو بھی)
+  let isOwner = false;
   let deniedModules: string[] = [];
   // مرحلہ 32 — گھنٹی کے لیے تازہ فعال اطلاعات (زیادہ سے زیادہ 5)
   let recentNotices: {
@@ -304,9 +306,11 @@ export default async function DashboardPage() {
         userRole = ROLE_LABELS[myProfile.role as MadrasaRole] ?? null;
         isAdmin = myProfile.role === "super_admin";
       }
+      // حصہ 4 کی درستگی — مالک کی جانچ (Migration 043 نہ چلی ہو تو false)
+      isOwner = await isMadrasaOwner(supabase);
       // مرحلہ 80 — بیک اپ کی یاددہانی (مہمان کو نہیں — اس کا ڈیٹا نمونہ ہے؛
       // حصہ 4 — صرف مالک کو، عملے کو بیک اپ کا لنک دکھانا ہی نہیں)
-      if (!myProfile?.guest_expires_at && isAdmin) {
+      if (!myProfile?.guest_expires_at && (isAdmin || isOwner)) {
         const { data: lastBackup } = await supabase
           .from("backup_log")
           .select("downloaded_at")
@@ -369,6 +373,7 @@ export default async function DashboardPage() {
     userName = null;
     userRole = null;
     isAdmin = false;
+    isOwner = false;
     deniedModules = [];
     recentNotices = [];
     activeNoticesCount = 0;
@@ -379,7 +384,7 @@ export default async function DashboardPage() {
     <>
       <TopBar
         madrasaName={madrasaName}
-        isAdmin={isAdmin}
+        isAdmin={isAdmin || isOwner}
         userName={userName}
         userRole={userRole}
         notices={recentNotices}
@@ -417,7 +422,11 @@ export default async function DashboardPage() {
           (m) => !deniedModules.includes(m),
         )}
       />
-      <DepartmentGroups isAdmin={isAdmin} deniedModules={deniedModules} />
+      {/* حصہ 4 کی درستگی — مالک کو بھی صارفین/تنخواہوں کے بٹن دکھیں */}
+      <DepartmentGroups
+        isAdmin={isAdmin || isOwner}
+        deniedModules={deniedModules}
+      />
       <footer className="foot">
         {madrasaName ? (
           <>

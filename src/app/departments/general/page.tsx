@@ -9,7 +9,7 @@
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { isAppAdmin } from "@/lib/approval";
+import { isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 import type {
   MadrasaProfile,
@@ -26,9 +26,9 @@ export default async function GeneralPage() {
     notFound();
   }
 
-  // حصہ 4 — عمومی ریکارڈ صرف مالک کے لیے
-  const admin = await isAppAdmin(supabase);
-  if (!admin) {
+  // حصہ 4 کی درستگی — عمومی ریکارڈ صرف مالک کے لیے (سپر ایڈمن ہونا ضروری نہیں)
+  const owner = await isMadrasaOwner(supabase);
+  if (!owner) {
     notFound();
   }
 

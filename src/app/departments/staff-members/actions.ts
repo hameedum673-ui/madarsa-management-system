@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   ASSIGNABLE_ROLES,
-  isAppAdmin,
+  isMadrasaOwner,
   type ApprovalStatus,
 } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
@@ -62,8 +62,9 @@ type OwnerContext =
 
 async function requireOwner(): Promise<OwnerContext> {
   const supabase = await createClient();
-  const admin = await isAppAdmin(supabase);
-  if (!admin) return { error: "صرف مدرسے کا مالک یہ کام کر سکتا ہے۔" };
+  // حصہ 4 کی درستگی — مالک کی جانچ (سپر ایڈمن ہونا ضروری نہیں)
+  const owner = await isMadrasaOwner(supabase);
+  if (!owner) return { error: "صرف مدرسے کا مالک یہ کام کر سکتا ہے۔" };
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "مالک کا مدرسہ نہیں ملا۔" };
   return { supabase, ...mine };
