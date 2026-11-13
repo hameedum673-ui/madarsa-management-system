@@ -83,6 +83,13 @@ export async function GET() {
     tables,
   };
 
+  // مرحلہ 80 — ڈاؤن لوڈ کا ریکارڈ (ناکام ہو تو بھی فائل ملے گی —
+  // میز نہ بنی ہو تو یہ خاموشی سے ناکام ہوتا ہے، ڈاؤن لوڈ نہیں رکتا)
+  await supabase.from("backup_log").insert({
+    madrasa_id: mine.madrasaId,
+    downloaded_by: user.id,
+  });
+
   const filename = `madrasa-backup-${todayInKarachi()}.json`;
   return new NextResponse(JSON.stringify(payload, null, 2), {
     headers: {

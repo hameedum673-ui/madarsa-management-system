@@ -34,8 +34,28 @@ const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "audit_log", label: "آڈٹ لاگ" },
 ];
 
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("ur-PK", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default async function BackupPage() {
   const supabase = await createClient();
+
+  // مرحلہ 80 — آخری بیک اپ کی تاریخ (میز نہ بنی ہو تو خالی)
+  let lastBackupAt: string | null = null;
+  const { data: lastBackup } = await supabase
+    .from("backup_log")
+    .select("downloaded_at")
+    .order("downloaded_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (lastBackup?.downloaded_at) {
+    lastBackupAt = lastBackup.downloaded_at as string;
+  }
 
   const counts: { label: string; count: number | null }[] = [];
   for (const { table, label } of TABLE_LABELS) {
@@ -59,9 +79,10 @@ export default async function BackupPage() {
         <p className="sub">
           نیچے والا بٹن دبانے سے آپ کے اپنے مدرسے کا سارا ڈیٹا ایک فائل
           (JSON) کے طور پر ڈاؤن لوڈ ہوگا — فعال اور منسوخ ریکارڈ سمیت۔
-          صرف اپنا ڈیٹا آئے گا، دوسرے صارف کا ڈیٹا کبھی نہیں۔ فائل کو
-          محفوظ جگہ رکھیں۔ Supabase خود بھی روزانہ بیک اپ بناتا ہے — یہ
-          ڈاؤن لوڈ آپ کی اپنی اضافی کاپی ہے۔
+          صرف اپنا ڈیٹا آئے گا، دوسرے صارف کا ڈیٹا کبھی نہیں۔ یہ فائل
+          آپ کی اپنی کاپی ہے — اسے محفوظ جگہ رکھیں۔ مفت پلان پر
+          Supabase خودکار بیک اپ نہیں بناتا، اس لیے مہینے میں ایک بار
+          نیا بیک اپ ڈاؤن لوڈ کر کے دو جگہ رکھیں۔
         </p>
 
         <div className="form-actions">
@@ -69,6 +90,18 @@ export default async function BackupPage() {
             بیک اپ ڈاؤن لوڈ کریں
           </a>
         </div>
+
+        {lastBackupAt ? (
+          <p className="sub">
+            آخری بیک اپ: {formatDate(lastBackupAt)}
+            {Date.now() - new Date(lastBackupAt).getTime() >
+            30 * 24 * 60 * 60 * 1000
+              ? " — 30 دن سے زیادہ ہو گئے ہیں، نیا بیک اپ ڈاؤن لوڈ کر لیں۔"
+              : ""}
+          </p>
+        ) : (
+          <p className="sub">آخری بیک اپ کا ریکارڈ نہیں ہے — بیک اپ ڈاؤن لوڈ کریں۔</p>
+        )}
 
         <h3 className="form-section-title">آپ کے ڈیٹا کی تعداد</h3>
         <div className="detail-rows">

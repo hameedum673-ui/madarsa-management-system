@@ -257,6 +257,8 @@ export default async function DashboardPage() {
   let activeNoticesCount = 0;
   // مرحلہ 67 — مہمان ہو تو باقی وقت (نہ ہو تو خالی)
   let guestRemainingText: string | null = null;
+  // مرحلہ 80 — بیک اپ کی یاددہانی (نہ ہو تو خالی)
+  let backupReminderText: string | null = null;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -291,6 +293,29 @@ export default async function DashboardPage() {
             h > 0
               ? `${h.toLocaleString("ur-PK")} گھنٹہ ${m.toLocaleString("ur-PK")} منٹ`
               : `${m.toLocaleString("ur-PK")} منٹ`;
+        }
+      }
+      // مرحلہ 80 — بیک اپ کی یاددہانی (مہمان کو نہیں — اس کا ڈیٹا نمونہ ہے)
+      if (!myProfile?.guest_expires_at) {
+        const { data: lastBackup } = await supabase
+          .from("backup_log")
+          .select("downloaded_at")
+          .order("downloaded_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const lastAt =
+          (lastBackup?.downloaded_at as string | undefined) ?? null;
+        if (!lastAt) {
+          backupReminderText =
+            "ابھی تک بیک اپ ڈاؤن لوڈ نہیں ہوا — ڈیٹا محفوظ رکھنے کے لیے بیک اپ ڈاؤن لوڈ کر لیں۔";
+        } else {
+          const days = Math.floor(
+            (Date.now() - new Date(lastAt).getTime()) /
+              (24 * 60 * 60 * 1000),
+          );
+          if (days > 30) {
+            backupReminderText = `آخری بیک اپ کو ${days.toLocaleString("ur-PK")} دن ہو گئے ہیں — نیا بیک اپ ڈاؤن لوڈ کر لیں۔`;
+          }
         }
       }
       if (myProfile?.role) {
@@ -341,6 +366,7 @@ export default async function DashboardPage() {
     deniedModules = [];
     recentNotices = [];
     activeNoticesCount = 0;
+    backupReminderText = null;
   }
 
   return (
@@ -357,6 +383,12 @@ export default async function DashboardPage() {
         <p className="guest-banner">
           ڈیمو — باقی وقت: {guestRemainingText} — وقت ختم ہونے پر ڈیمو
           خودبخود بند ہو جائے گا۔
+        </p>
+      ) : null}
+      {backupReminderText ? (
+        <p className="backup-banner">
+          {backupReminderText}{" "}
+          <a href="/departments/backup">بیک اپ صفحہ کھولیں</a>
         </p>
       ) : null}
       <StatsRow

@@ -457,3 +457,5 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 
 /* مرحلہ 67 — مہمان کا نوٹ — ڈیش بورڈ کے اوپر */
 .guest-banner{background:var(--gold-soft);border:1px solid var(--gold);color:var(--navy);border-radius:10px;padding:10px 14px;margin:12px auto 0;max-width:1100px;text-align:center;font-weight:700}
+.backup-banner{background:var(--gold-soft);border:1px solid var(--gold);color:var(--navy);border-radius:10px;padding:10px 14px;margin:12px auto 0;max-width:1100px;text-align:center;font-weight:700}
+.backup-banner a{color:var(--navy);text-decoration:underline}
