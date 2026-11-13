@@ -137,40 +137,7 @@ export default function TopBar({
             </span>
           ) : null}
         </button>
-        <div
-          className={`dropdown${bellOpen ? " open" : ""}`}
-          role="menu"
-          onClick={(ev) => ev.stopPropagation()}
-        >
-          <div className="dd-head">اطلاعات</div>
-          {notices.length === 0 ? (
-            <div className="dd-empty">اس وقت کوئی نئی اطلاع موجود نہیں ہے۔</div>
-          ) : (
-            <>
-              {notices.map((n) => (
-                <Link
-                  key={n.id}
-                  className="dd-item dd-notice"
-                  href={`/departments/notices/${n.id}`}
-                  onClick={closeMenus}
-                >
-                  <span className="dd-notice-title">{n.title}</span>
-                  <span className="dd-notice-meta">
-                    {NOTICE_KIND_LABELS[n.kind as NoticeKind] ?? n.kind} —{" "}
-                    {new Date(n.notice_date).toLocaleDateString("ur-PK")}
-                  </span>
-                </Link>
-              ))}
-              <Link
-                className="dd-item"
-                href="/departments/notices"
-                onClick={closeMenus}
-              >
-                تمام اطلاعات دیکھیں
-              </Link>
-            </>
-          )}
-        </div>
+
       </div>
       <div className="menu-wrap">
         <button
@@ -193,37 +160,72 @@ export default function TopBar({
             <span className="urole">{userRole ?? "سپر ایڈمن"}</span>
           </span>
         </button>
-        <div
-          className={`dropdown${userOpen ? " open" : ""}`}
-          role="menu"
-          onClick={(ev) => ev.stopPropagation()}
-        >
-          <div className="dd-head">
-            {userName ?? "حمید"} — {userRole ?? "سپر ایڈمن"}
-          </div>
-          <Link className="dd-item" href="/profile" onClick={closeMenus}>
-            <span dangerouslySetInnerHTML={{ __html: PROFILE_ICON_SVG }} />
-            میرا پروفائل
-          </Link>
-          {isAdmin ? (
+
+      </div>
+      <div
+        className={`dropdown${bellOpen ? " open" : ""}`}
+        role="menu"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="dd-head">اطلاعات</div>
+        {notices.length === 0 ? (
+          <div className="dd-empty">اس وقت کوئی نئی اطلاع موجود نہیں ہے۔</div>
+        ) : (
+          <>
+            {notices.map((n) => (
+              <Link
+                key={n.id}
+                className="dd-item dd-notice"
+                href={`/departments/notices/${n.id}`}
+                onClick={closeMenus}
+              >
+                <span className="dd-notice-title">{n.title}</span>
+                <span className="dd-notice-meta">
+                  {NOTICE_KIND_LABELS[n.kind as NoticeKind] ?? n.kind} —{" "}
+                  {new Date(n.notice_date).toLocaleDateString("ur-PK")}
+                </span>
+              </Link>
+            ))}
             <Link
               className="dd-item"
-              href="/departments/users-permissions"
+              href="/departments/notices"
               onClick={closeMenus}
             >
-              <span dangerouslySetInnerHTML={{ __html: USERS_ICON_SVG }} />
-              صارفین اور اکاؤنٹس
+              تمام اطلاعات دیکھیں
             </Link>
-          ) : null}
-          <Link className="dd-item" href="/departments/settings" onClick={closeMenus}>
-            <span dangerouslySetInnerHTML={{ __html: SETTINGS_ICON_SVG }} />
-            نظام کی ترتیبات
-          </Link>
-          <button type="button" onClick={handleLogout}>
-            <span dangerouslySetInnerHTML={{ __html: LOGOUT_ICON_SVG }} />
-            لاگ آؤٹ
-          </button>
+          </>
+        )}
+      </div>
+      <div
+        className={`dropdown${userOpen ? " open" : ""}`}
+        role="menu"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="dd-head">
+          {userName ?? "حمید"} — {userRole ?? "سپر ایڈمن"}
         </div>
+        <Link className="dd-item" href="/profile" onClick={closeMenus}>
+          <span dangerouslySetInnerHTML={{ __html: PROFILE_ICON_SVG }} />
+          میرا پروفائل
+        </Link>
+        {isAdmin ? (
+          <Link
+            className="dd-item"
+            href="/departments/users-permissions"
+            onClick={closeMenus}
+          >
+            <span dangerouslySetInnerHTML={{ __html: USERS_ICON_SVG }} />
+            صارفین اور اکاؤنٹس
+          </Link>
+        ) : null}
+        <Link className="dd-item" href="/departments/settings" onClick={closeMenus}>
+          <span dangerouslySetInnerHTML={{ __html: SETTINGS_ICON_SVG }} />
+          نظام کی ترتیبات
+        </Link>
+        <button type="button" onClick={handleLogout}>
+          <span dangerouslySetInnerHTML={{ __html: LOGOUT_ICON_SVG }} />
+          لاگ آؤٹ
+        </button>
       </div>
     </header>
   );
