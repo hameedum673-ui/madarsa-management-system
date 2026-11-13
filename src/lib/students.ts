@@ -1,21 +1,24 @@
 /**
  * مرحلہ 4 — طلبہ کی اقسام، لیبل اور مددگار
  * شعبے وہی تین ہیں جو مرحلہ 1 میں منظور ہوئے تھے: حفظ، ناظرہ، درسِ نظامی۔
+ * مرحلہ 90 — چوتھا شعبہ: اسکول (مدارس میں جدید تعلیم کا شعبہ)۔
  */
 import type { createClient } from "@/lib/supabase/server";
 
-export type DepartmentId = "hifz" | "nazira" | "dars_e_nizami";
+export type DepartmentId = "hifz" | "nazira" | "dars_e_nizami" | "school";
 
 export const DEPARTMENT_IDS: DepartmentId[] = [
   "hifz",
   "nazira",
   "dars_e_nizami",
+  "school",
 ];
 
 export const DEPARTMENT_LABELS: Record<DepartmentId, string> = {
   hifz: "حفظ",
   nazira: "ناظرہ",
   dars_e_nizami: "درسِ نظامی",
+  school: "اسکول",
 };
 
 // مرحلہ 51 — بنین / بنات (شعبہ تعلیم سے الگ خانہ)

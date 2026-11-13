@@ -19,6 +19,7 @@ import {
   formatMonthUrdu,
 } from "@/lib/fees";
 import {
+  DEPARTMENT_IDS,
   DEPARTMENT_LABELS,
   SECTION_IDS,
   SECTION_LABELS,
@@ -303,7 +304,7 @@ export default async function ReportsPage({
                 <span>خارج شدہ طلبہ</span>
                 <strong>{studentsWithdrawn.length}</strong>
               </div>
-              {(["hifz", "nazira", "dars_e_nizami"] as DepartmentId[]).map(
+              {DEPARTMENT_IDS.map((dept) => (
                 (dept) => (
                   <div className="row" key={dept}>
                     <span>{DEPARTMENT_LABELS[dept]} (فعال)</span>
