@@ -9,6 +9,7 @@ import BackButton from "@/components/BackButton";
 import RestoreBackupForm from "@/app/departments/backup/RestoreBackupForm";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
+import { getMyMadrasa } from "@/lib/students";
 
 const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "students", label: "طلبہ" },
@@ -66,6 +67,35 @@ export default async function BackupPage() {
     lastBackupAt = lastBackup.downloaded_at as string;
   }
 
+  // مرحلہ 83 — خودکار بیک اپوں کی فہرست (نجی بکٹ؛ صرف اپنا مدرسہ)
+  // بکٹ/پالیسی نہ بنی ہو تو فہرست خالی رہتی ہے — صفحہ نہیں ٹوٹتا
+  const mine = await getMyMadrasa(supabase);
+  type AutoBackup = { name: string; url: string; sizeKb: string };
+  const autoBackups: AutoBackup[] = [];
+  if (mine) {
+    const { data: autoFiles } = await supabase.storage
+      .from("backups")
+      .list(mine.madrasaId, {
+        limit: 30,
+        sortBy: { column: "name", order: "desc" },
+      });
+    for (const f of autoFiles ?? []) {
+      const { data: signed } = await supabase.storage
+        .from("backups")
+        .createSignedUrl(`${mine.madrasaId}/${f.name}`, 3600);
+      if (!signed?.signedUrl) continue;
+      const size = (f.metadata as { size?: number } | null)?.size;
+      autoBackups.push({
+        name: f.name,
+        url: signed.signedUrl,
+        sizeKb:
+          typeof size === "number" && size > 0
+            ? `${Math.max(1, Math.round(size / 1024))} KB`
+            : "—",
+      });
+    }
+  }
+
   const counts: { label: string; count: number | null }[] = [];
   for (const { table, label } of TABLE_LABELS) {
     const { count, error } = await supabase
@@ -110,6 +140,35 @@ export default async function BackupPage() {
           </p>
         ) : (
           <p className="sub">آخری بیک اپ کا ریکارڈ نہیں ہے — بیک اپ ڈاؤن لوڈ کریں۔</p>
+        )}
+
+        <h3 className="form-section-title">خودکار بیک اپ (روزانہ)</h3>
+        {autoBackups.length === 0 ? (
+          <p className="sub">
+            ابھی کوئی خودکار بیک اپ نہیں — پہلا بیک اپ کل صبح بنے گا۔
+            (30 دن تک کے بیک اپ یہیں ملیں گے۔)
+          </p>
+        ) : (
+          <div className="detail-rows">
+            {autoBackups.map((b) => (
+              <div className="row" key={b.name}>
+                <span>
+                  {formatDate(
+                    b.name.replace("auto-", "").replace(".json", ""),
+                  )}{" "}
+                  — {b.sizeKb}
+                </span>
+                <a
+                  className="btn-ghost"
+                  href={b.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  ڈاؤن لوڈ کریں
+                </a>
+              </div>
+            ))}
+          </div>
         )}
 
         <h3 className="form-section-title">آپ کے ڈیٹا کی تعداد</h3>

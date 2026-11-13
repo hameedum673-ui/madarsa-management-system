@@ -5,51 +5,16 @@
  * حصہ 4 — ڈاؤن لوڈ صرف مدرسے کے مالک کے لیے ہے (عملہ بیک اپ نہیں لے سکتا —
  * اس کے ہاتھ میں پورے مدرسے کا ڈیٹا آ جاتا)۔ لاگ اِن اور منظوری کی جانچ
  * middleware پہلے ہی کر چکا ہوتا ہے۔
+ * میزوں کی فہرست lib/backupTables سے آتی ہے (خودکار بیک اپ کے ساتھ ایک ہی جگہ)۔
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { isMadrasaOwner } from "@/lib/approval";
 import { todayInKarachi } from "@/lib/attendance";
+import { ADMIN_TABLES, OWN_TABLES } from "@/lib/backupTables";
 
 export const dynamic = "force-dynamic";
-
-/** اپنے مدرسے کی تمام میزیں — فعال اور منسوخ ریکارڈ سمیت */
-const OWN_TABLES = [
-  "madrasas",
-  "madrasa_profile",
-  "students",
-  "teachers",
-  "staff",
-  "classes",
-  "student_attendance",
-  "teacher_attendance",
-  "fee_payments",
-  "fee_schedule",
-  "expenses",
-  "salary_payments",
-  "donations",
-  "zakat_records",
-  "ushr_records",
-  "welfare_records",
-  "student_expenses",
-  "exams",
-  "exam_results",
-  "hifz_progress",
-  "month_closings",
-  "admissions",
-  "notices",
-  "documents",
-  "document_files",
-  "audit_log",
-] as const;
-
-/** صرف ایڈمن کی میزیں */
-const ADMIN_TABLES = [
-  "approved_users",
-  "user_permissions",
-  "user_sections",
-] as const;
 
 export async function GET() {
   const supabase = await createClient();
