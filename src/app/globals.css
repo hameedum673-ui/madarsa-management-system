@@ -67,7 +67,7 @@
   .brand h1{
     font-family:"Noto Nastaliq Urdu",serif;
     font-size:1.28rem;font-weight:700;margin:0;line-height:2;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    white-space:normal;overflow:visible;
   }
   .brand .sysname{font-size:.8rem;color:#c8d8ec;margin-top:-6px}
   .topbar .spacer{flex:1;order:3}
@@ -216,7 +216,7 @@
     .logo{width:38px;height:38px}
     .logo svg{width:20px;height:20px}
     .logo img{width:24px;height:24px}
-    .brand h1{font-size:.92rem;white-space:normal;line-height:1.75}
+    .brand h1{font-size:.92rem;white-space:normal;line-height:2}
     .brand .sysname{font-size:.66rem;margin-top:-2px}
     .datebox{order:5;width:100%;text-align:right;font-size:.76rem;display:flex;gap:10px;flex-wrap:wrap}
     header.topbar{padding:9px 12px;gap:8px}
