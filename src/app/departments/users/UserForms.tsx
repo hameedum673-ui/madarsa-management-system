@@ -13,6 +13,7 @@ import {
   approveUser,
   setUserRole,
   setUserStatus,
+  transferWorkspace,
 } from "@/app/departments/users/actions";
 
 type SimpleAction = (
@@ -261,5 +262,105 @@ export function StatusForm({
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </form>
+  );
+}
+
+/** مرحلہ 82 — Gmail بدلنا (منتقلی) — دو قدمی تصدیق */
+export function TransferWorkspaceForm() {
+  const router = useRouter();
+  const [oldEmail, setOldEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    if (!confirming) {
+      if (!oldEmail.trim() || !newEmail.trim()) {
+        setError("دونوں Gmail لکھیں۔");
+        return;
+      }
+      setError("");
+      setConfirming(true);
+      return;
+    }
+    setError("");
+    setLoading(true);
+    const formData = new FormData();
+    formData.set("old_email", oldEmail.trim());
+    formData.set("new_email", newEmail.trim());
+    const res = await transferWorkspace(formData);
+    setLoading(false);
+    if ("error" in res) {
+      setError(res.error);
+      setConfirming(false);
+      return;
+    }
+    setDone(true);
+    setConfirming(false);
+    router.refresh();
+  }
+
+  return (
+    <div>
+      <div className="form-grid">
+        <label>
+          پرانی Gmail (جسے بدلنا ہے)
+          <input
+            type="email"
+            dir="ltr"
+            value={oldEmail}
+            onChange={(e) => setOldEmail(e.target.value)}
+            placeholder="old@gmail.com"
+          />
+        </label>
+        <label>
+          نئی Gmail (جس پر مدرسہ جائے گا)
+          <input
+            type="email"
+            dir="ltr"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="new@gmail.com"
+          />
+        </label>
+      </div>
+      <p className="form-note">
+        نئی Gmail پہلے ایک بار لاگ ان کر کے منظور ہوئی ہونی چاہیے، اور
+        اس کا اپنا مدرسہ خالی ہونا چاہیے۔ منتقلی کے بعد پرانی Gmail بند
+        ہو جائے گی؛ نئی Gmail پر 2FA الگ سے لگانا ہوگا۔ اگر آپ اپنی ہی
+        Gmail منتقل کر رہے ہیں تو اس کے بعد نئی Gmail سے لاگ ان کریں۔
+      </p>
+      <button
+        type="button"
+        className="btn-primary"
+        onClick={handleClick}
+        disabled={loading}
+      >
+        {loading
+          ? "براہِ کرم انتظار کریں…"
+          : confirming
+            ? "پکا منتقل کریں؟ پرانی Gmail بند ہو جائے گی"
+            : "منتقل کریں"}
+      </button>
+      {confirming ? (
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => setConfirming(false)}
+          disabled={loading}
+        >
+          منسوخ کریں
+        </button>
+      ) : null}
+      {error ? <p className="form-error">{error}</p> : null}
+      {done ? (
+        <p className="form-note">
+          منتقلی ہو گئی — اب نئی Gmail سے لاگ ان کریں، پرانا مدرسہ ویسا
+          ہی ملے گا۔
+        </p>
+      ) : null}
+    </div>
   );
 }

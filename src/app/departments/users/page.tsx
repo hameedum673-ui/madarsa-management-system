@@ -24,6 +24,7 @@ import {
   DemoteAdminForm,
   PromoteAdminForm,
   StatusForm,
+  TransferWorkspaceForm,
 } from "@/app/departments/users/UserForms";
 import {
   CloseGuestForm,
@@ -265,6 +266,16 @@ export default async function UsersPage() {
                 </p>
               </>
             )}
+
+            <h3 className="form-section-title">
+              Gmail بدلنا (مدرسے کی منتقلی)
+            </h3>
+            <p className="form-note">
+              اگر کسی مدرسے کے مالک کی Gmail کھو جائے تو اس کا مدرسہ نئی
+              Gmail پر منتقل کریں — ڈیٹا وہی رہے گا۔ پہلے آزمائشی کھاتے
+              پر جانچیں (مرحلہ 82)۔
+            </p>
+            <TransferWorkspaceForm />
           </>
         )}
       </div>

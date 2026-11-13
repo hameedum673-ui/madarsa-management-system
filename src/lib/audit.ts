@@ -68,6 +68,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   permissions_updated: "اجازتیں بدلی گئیں",
   madrasa_profile_updated: "مدرسے کی معلومات بدلی گئیں",
   workspace_created: "الگ مدرسہ بنایا گیا",
+  workspace_transferred: "مدرسے کی Gmail بدلی گئی (منتقلی)",
   backup_restored: "بیک اپ واپس لایا گیا",
 };
 
@@ -167,6 +168,7 @@ export const AUDIT_CATEGORIES = [
       "permissions_updated",
       "madrasa_profile_updated",
       "workspace_created",
+      "workspace_transferred",
       "backup_restored",
     ],
   },

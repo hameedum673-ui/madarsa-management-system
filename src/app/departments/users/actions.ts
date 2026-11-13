@@ -238,6 +238,42 @@ export async function setUserRole(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** مرحلہ 82 — مدرسے کی Gmail بدلنا (منتقلی) — صرف نظام کا ایڈمن۔
+ * اصل کام SECURITY DEFINER فنکشن transfer_workspace کرتا ہے؛ آڈٹ بھی
+ * وہیں لکھا جاتا ہے (یہاں دوبارہ آڈٹ نہیں لکھا جاتا)۔ */
+export async function transferWorkspace(
+  formData: FormData,
+): Promise<ActionResult> {
+  const oldEmail = clean(formData.get("old_email"), 100);
+  const newEmail = clean(formData.get("new_email"), 100);
+  if (!oldEmail || !newEmail)
+    return { error: "دونوں Gmail لکھیں۔" };
+  if (oldEmail.toLowerCase() === newEmail.toLowerCase())
+    return { error: "پرانی اور نئی Gmail ایک جیسی نہیں ہو سکتیں۔" };
+
+  const checked = await requireSystemAdmin();
+  if ("error" in checked) return { error: checked.error };
+  const { supabase } = checked;
+
+  const { data, error } = await supabase.rpc("transfer_workspace", {
+    p_old_email: oldEmail,
+    p_new_email: newEmail,
+  });
+  if (error) {
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "PGRST202" || code === "42883")
+      return { error: "میز نہیں بنی — پہلے مرحلہ 82 کی SQL چلائیں۔" };
+    // فنکشن کے اپنے اردو پیغام دکھائیں؛ تکنیکی انگریزی چھپائیں
+    const msg = (error as { message?: string } | null)?.message ?? "";
+    if (msg && /[؀-ۿ]/.test(msg)) return { error: msg };
+    return { error: "منتقلی نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+  }
+  if (data !== true) {
+    return { error: "منتقلی نہیں ہو سکی۔" };
+  }
+  return { ok: true };
+}
+
 /** ای میل سے نیا صارف شامل کریں — سیدھا منظور شدہ (ایڈمن خود شامل کر رہا ہے) */
 export async function addApprovedUser(
   formData: FormData,
