@@ -2,10 +2,13 @@
  * مرحلہ 30 — بیک اپ (سرور صفحہ)
  * ہر میز کی تعداد دکھاتا ہے + "بیک اپ ڈاؤن لوڈ کریں" کا بٹن۔
  * مرحلہ 42 — بیک اپ واپس لانے کا حصہ (RestoreBackupForm) بھی یہیں ہے۔
+ * حصہ 4 — یہ صفحہ صرف مدرسے کے مالک کے لیے ہے (عملہ بیک اپ نہیں دیکھ سکتا)۔
  */
+import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import RestoreBackupForm from "@/app/departments/backup/RestoreBackupForm";
 import { createClient } from "@/lib/supabase/server";
+import { isAppAdmin } from "@/lib/approval";
 
 const TABLE_LABELS: { table: string; label: string }[] = [
   { table: "students", label: "طلبہ" },
@@ -44,6 +47,12 @@ function formatDate(value: string) {
 
 export default async function BackupPage() {
   const supabase = await createClient();
+
+  // حصہ 4 — بیک اپ صرف مالک کے لیے
+  const admin = await isAppAdmin(supabase);
+  if (!admin) {
+    notFound();
+  }
 
   // مرحلہ 80 — آخری بیک اپ کی تاریخ (میز نہ بنی ہو تو خالی)
   let lastBackupAt: string | null = null;

@@ -2,8 +2,9 @@
  * مرحلہ 30 — بیک اپ ڈاؤن لوڈ (Route Handler)
  * اپنے مدرسے کا سارا ڈیٹا ایک JSON فائل کے طور پر ڈاؤن لوڈ ہوتا ہے۔
  * RLS خود یقین دلاتی ہے کہ صرف اپنا ڈیٹا آئے — دوسرے صارف کا ڈیٹا کبھی نہیں۔
- * صارفین کی فہرست (approved_users / user_permissions) صرف ایڈمن کے بیک اپ
- * میں آتی ہے۔ لاگ اِن اور منظوری کی جانچ middleware پہلے ہی کر چکا ہوتا ہے۔
+ * حصہ 4 — ڈاؤن لوڈ صرف مدرسے کے مالک کے لیے ہے (عملہ بیک اپ نہیں لے سکتا —
+ * اس کے ہاتھ میں پورے مدرسے کا ڈیٹا آ جاتا)۔ لاگ اِن اور منظوری کی جانچ
+ * middleware پہلے ہی کر چکا ہوتا ہے۔
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -63,6 +64,13 @@ export async function GET() {
     return NextResponse.json({ error: "لاگ اِن نہیں ہے۔" }, { status: 401 });
   }
   const admin = await isAppAdmin(supabase);
+  // حصہ 4 — بیک اپ صرف مالک ڈاؤن لوڈ کر سکتا ہے
+  if (!admin) {
+    return NextResponse.json(
+      { error: "صرف مدرسے کا مالک بیک اپ ڈاؤن لوڈ کر سکتا ہے۔" },
+      { status: 403 },
+    );
+  }
 
   const tables: Record<string, unknown[]> = {};
   for (const table of OWN_TABLES) {

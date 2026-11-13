@@ -16,6 +16,11 @@ export default function StatsRow({
   teachersBanat = 0,
   attendanceToday = null,
   balance = null,
+  // حصہ 4 — عملے کو صرف کھلے گروپ کے کارڈ دکھیں (پہلے سے سب true)
+  showStudents = true,
+  showTeachers = true,
+  showAttendance = true,
+  showBalance = true,
 }: {
   studentsCount?: number;
   teachersCount?: number;
@@ -26,6 +31,10 @@ export default function StatsRow({
   teachersBanat?: number;
   attendanceToday?: { present: number; total: number; marked: number } | null;
   balance?: { value: number; hasPayments: boolean } | null;
+  showStudents?: boolean;
+  showTeachers?: boolean;
+  showAttendance?: boolean;
+  showBalance?: boolean;
 }) {
   const zero = (0).toLocaleString("ur-PK");
   return (
@@ -35,6 +44,11 @@ export default function StatsRow({
         const isTeachers = index === 1;
         const isAttendance = index === 2;
         const isBalance = index === 3;
+        // حصہ 4 — بند گروپ کا کارڈ دکھائیں ہی نہیں
+        if (isStudents && !showStudents) return null;
+        if (isTeachers && !showTeachers) return null;
+        if (isAttendance && !showAttendance) return null;
+        if (isBalance && !showBalance) return null;
         const attendanceMarked =
           isAttendance && attendanceToday && attendanceToday.marked > 0;
         const balanceShown = isBalance && balance && balance.hasPayments;

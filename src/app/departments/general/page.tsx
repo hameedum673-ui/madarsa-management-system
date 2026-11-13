@@ -4,10 +4,12 @@
  * یقین دلاتی ہیں (مرحلہ 25 سے ہر صارف کا اپنا الگ مدرسہ ہے)۔ نام
  * `madrasas` میز سے، باقی معلومات `madrasa_profile` سے۔
  * میز ابھی نہ بنی ہو (migration 017 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
+ * حصہ 4 — یہ صفحہ صرف مدرسے کے مالک کے لیے ہے (عملہ مدرسے کا نام/پتہ نہیں بدل سکتا)۔
  */
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { isAppAdmin } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 import type {
   MadrasaProfile,
@@ -21,6 +23,12 @@ export default async function GeneralPage() {
 
   const mine = await getMyMadrasa(supabase);
   if (!mine) {
+    notFound();
+  }
+
+  // حصہ 4 — عمومی ریکارڈ صرف مالک کے لیے
+  const admin = await isAppAdmin(supabase);
+  if (!admin) {
     notFound();
   }
 

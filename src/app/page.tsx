@@ -7,6 +7,11 @@ import { getMyMadrasa, type SectionId } from "@/lib/students";
 import { ROLE_LABELS } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { todayInKarachi } from "@/lib/attendance";
+import { GROUPS } from "@/data/departments";
+
+// حصہ 4 — مالیاتی گروپ کے ماڈیول (بیلنس کارڈ صرف ان میں سے کوئی ایک کھلا ہو تو)
+const FIN_MODULE_IDS: string[] =
+  GROUPS.find((g) => g.id === "fin")?.modules.map((m) => m.id) ?? [];
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
 export default async function DashboardPage() {
@@ -295,8 +300,13 @@ export default async function DashboardPage() {
               : `${m.toLocaleString("ur-PK")} منٹ`;
         }
       }
-      // مرحلہ 80 — بیک اپ کی یاددہانی (مہمان کو نہیں — اس کا ڈیٹا نمونہ ہے)
-      if (!myProfile?.guest_expires_at) {
+      if (myProfile?.role) {
+        userRole = ROLE_LABELS[myProfile.role as MadrasaRole] ?? null;
+        isAdmin = myProfile.role === "super_admin";
+      }
+      // مرحلہ 80 — بیک اپ کی یاددہانی (مہمان کو نہیں — اس کا ڈیٹا نمونہ ہے؛
+      // حصہ 4 — صرف مالک کو، عملے کو بیک اپ کا لنک دکھانا ہی نہیں)
+      if (!myProfile?.guest_expires_at && isAdmin) {
         const { data: lastBackup } = await supabase
           .from("backup_log")
           .select("downloaded_at")
@@ -317,10 +327,6 @@ export default async function DashboardPage() {
             backupReminderText = `آخری بیک اپ کو ${days.toLocaleString("ur-PK")} دن ہو گئے ہیں — نیا بیک اپ ڈاؤن لوڈ کر لیں۔`;
           }
         }
-      }
-      if (myProfile?.role) {
-        userRole = ROLE_LABELS[myProfile.role as MadrasaRole] ?? null;
-        isAdmin = myProfile.role === "super_admin";
       }
       // بند شعبے — صرف عام صارف کے لیے (ایڈمن کو سب کچھ نظر آتا ہے)
       if (!isAdmin) {
@@ -391,6 +397,7 @@ export default async function DashboardPage() {
           <a href="/departments/backup">بیک اپ صفحہ کھولیں</a>
         </p>
       ) : null}
+      {/* حصہ 4 — کارڈ صرف کھلے گروپ کے حساب سے */}
       <StatsRow
         studentsCount={totalStudents}
         teachersCount={totalTeachers}
@@ -400,6 +407,15 @@ export default async function DashboardPage() {
         teachersBanat={teachersBanat}
         attendanceToday={attendanceToday}
         balance={balance}
+        showStudents={!deniedModules.includes("students")}
+        showTeachers={!deniedModules.includes("teachers")}
+        showAttendance={
+          !deniedModules.includes("att-students") ||
+          !deniedModules.includes("att-teachers")
+        }
+        showBalance={FIN_MODULE_IDS.some(
+          (m) => !deniedModules.includes(m),
+        )}
       />
       <DepartmentGroups isAdmin={isAdmin} deniedModules={deniedModules} />
       <footer className="foot">

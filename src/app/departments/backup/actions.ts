@@ -9,6 +9,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isAppAdmin } from "@/lib/approval";
 import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
@@ -55,6 +56,10 @@ export async function restoreBackup(
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  // حصہ 4 — بیک اپ واپس لانا صرف مالک کا کام ہے
+  if (!(await isAppAdmin(supabase))) {
+    return { error: "صرف مدرسے کا مالک بیک اپ واپس لا سکتا ہے۔" };
+  }
   if (!(await isModuleAllowedForMe(supabase, "backup"))) {
     return { error: MODULE_DENIED_ERROR };
   }
