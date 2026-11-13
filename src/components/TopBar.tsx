@@ -118,6 +118,7 @@ export default function TopBar({
         <div>{gregorian}</div>
         <div className="hijri">{hijri}</div>
       </div>
+      <div className="topbar-actions">
       <div className="menu-wrap">
         <button
           className="icon-btn"
@@ -161,6 +162,7 @@ export default function TopBar({
           </span>
         </button>
 
+      </div>
       </div>
       <div
         className={`dropdown${bellOpen ? " open" : ""}`}
