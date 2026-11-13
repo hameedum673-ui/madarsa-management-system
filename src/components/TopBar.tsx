@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BELL_SVG, LOGO_SVG } from "@/components/icons";
+import { BELL_SVG } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import { hijriTodayUrdu } from "@/lib/hijri";
 import { NOTICE_KIND_LABELS, type NoticeKind } from "@/lib/notices";
@@ -98,7 +98,9 @@ export default function TopBar({
     <header className="topbar">
       <div className="brand">
         <div className="logo" aria-hidden="true">
-          <span dangerouslySetInnerHTML={{ __html: LOGO_SVG }} />
+          {/* مرحلہ 79 — سفید JMS لوگو (شفاف PNG؛ سرنامہ gradient ہے،
+              اس لیے چوکور نیلا آئیکن نہیں چلے گا) */}
+          <img src="/icons/logo-white.png" alt="" />
         </div>
         <div>
           <h1>

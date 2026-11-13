@@ -18,3 +18,7 @@ for (const size of [192, 512, 180]) {
   writeFileSync(join(dir, `icon-${size}.png`), Buffer.from(b64, "base64"));
   console.log(`icon-${size}.png تیار`);
 }
+// مرحلہ 79 — سرنامے کے لیے شفاف سفید لوگو (ماسٹر) بھی بنائیں۔
+const logoB64 = readFileSync(join(dir, "logo-white.png.b64"), "utf-8").trim();
+writeFileSync(join(dir, "logo-white.png"), Buffer.from(logoB64, "base64"));
+console.log("logo-white.png تیار");

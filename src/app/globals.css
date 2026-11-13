@@ -62,6 +62,7 @@
     display:flex;align-items:center;justify-content:center;
   }
   .logo svg{width:28px;height:28px;stroke:var(--gold)}
+  .logo img{width:34px;height:34px}
   .brand h1{
     font-family:"Noto Nastaliq Urdu",serif;
     font-size:1.28rem;font-weight:700;margin:0;line-height:2;
@@ -212,6 +213,7 @@
     .brand{gap:9px}
     .logo{width:38px;height:38px}
     .logo svg{width:20px;height:20px}
+    .logo img{width:24px;height:24px}
     .brand h1{font-size:.92rem;white-space:normal;line-height:1.75}
     .brand .sysname{font-size:.66rem;margin-top:-2px}
     .datebox{order:5;width:100%;text-align:right;font-size:.76rem;display:flex;gap:10px;flex-wrap:wrap}
