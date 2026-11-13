@@ -1,5 +1,7 @@
 /**
- * مرحلہ 11 — صارفین اور اکاؤنٹس: ایڈمن کنٹرول (صرف ایڈمن دیکھ سکتا ہے)
+ * مرحلہ 11 — صارفین اور اکاؤنٹس: ایڈمن کنٹرول
+ * (صرف نظام کا ایڈمن دیکھ سکتا ہے — حصہ 2؛ مدرسے کا مالک اپنے عملے
+ * کا انتظام الگ صفحے سے کرے گا)
  * منظور شدہ / زیرِ منظوری / غیر فعال — منظوری، معطلی اور دوبارہ فعال کرنا۔
  * منظوری کے وقت کردار چنا جاتا ہے؛ صارف کا profile اگلے لاگ اِن پر خود بنتا ہے۔
  * میز ابھی نہ بنی ہو (migration 009 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
@@ -11,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   APPROVAL_STATUS_LABELS,
   ROLE_LABELS,
-  isAppAdmin,
+  isSystemAdmin,
   isPrimaryAdmin,
   type ApprovedUser,
 } from "@/lib/approval";
@@ -51,7 +53,7 @@ function formatDateTime(value: string | null): string {
 
 export default async function UsersPage() {
   const supabase = await createClient();
-  const admin = await isAppAdmin(supabase);
+  const admin = await isSystemAdmin(supabase);
   if (!admin) {
     notFound();
   }

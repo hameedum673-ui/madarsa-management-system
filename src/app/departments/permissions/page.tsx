@@ -1,5 +1,5 @@
 /**
- * مرحلہ 26 — اختیارات اور اجازتیں (سرور صفحہ، صرف ایڈمن)
+ * مرحلہ 26 — اختیارات اور اجازتیں (سرور صفحہ، صرف نظام کا ایڈمن — حصہ 2)
  * منظور شدہ صارف چنیں، اس کے شعبوں کی اجازتیں مقرر کریں۔
  * پہلے سے سب کچھ اجازت شدہ ہے — ایڈمن صرف وہی بند کرتا ہے جو بند کرنا ہو۔
  * "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" یہاں نہیں دکھائے گئے —
@@ -9,7 +9,7 @@
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { isAppAdmin, type ApprovedUser } from "@/lib/approval";
+import { isSystemAdmin, type ApprovedUser } from "@/lib/approval";
 import { SECTION_IDS } from "@/lib/students";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
 import PermissionsForm from "@/app/departments/permissions/PermissionsForm";
@@ -21,7 +21,7 @@ export default async function PermissionsPage({
   searchParams: Promise<{ user?: string }>;
 }) {
   const supabase = await createClient();
-  const admin = await isAppAdmin(supabase);
+  const admin = await isSystemAdmin(supabase);
   if (!admin) {
     notFound();
   }

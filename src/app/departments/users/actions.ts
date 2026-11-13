@@ -1,5 +1,7 @@
 /**
- * مرحلہ 11 — صارفین کی منظوری کے Server Actions (صرف ایڈمن)
+ * مرحلہ 11 — صارفین کی منظوری کے Server Actions (صرف نظام کا ایڈمن — حصہ 2)
+ * یہ کارروائیاں عالمی ہیں (نئے مدرسے منظور کرنا، مہمان کی ترتیب) —
+ * مدرسے کا مالک اپنے عملے کا انتظام الگ صفحے سے کرے گا (حصہ 3)۔
  * ہر کام سرور پر جانچا جاتا ہے؛ RLS پالیسیاں بھی ہر لکھنے پر لاگو ہوتی ہیں۔
  * ایڈمن کے علاوہ کوئی دوسرا شخص خود کو ایڈمن نہیں بنا سکتا — کرداروں کی
  * فہرست میں super_admin شامل ہی نہیں ہے۔
@@ -13,7 +15,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   ASSIGNABLE_ROLES,
-  isAppAdmin,
+  isSystemAdmin,
   type ApprovalStatus,
 } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
@@ -49,7 +51,7 @@ async function writeAudit(
   }
 }
 
-/** ایڈمن کی جانچ — صرف super_admin یہ کام کر سکتا ہے */
+/** نظام کے ایڈمن کی جانچ — صرف نظام کا ایڈمن یہ کام کر سکتا ہے (حصہ 2) */
 type AdminContext =
   | { error: string }
   | {
@@ -58,10 +60,10 @@ type AdminContext =
       userId: string;
     };
 
-async function requireAdmin(): Promise<AdminContext> {
+async function requireSystemAdmin(): Promise<AdminContext> {
   const supabase = await createClient();
-  const admin = await isAppAdmin(supabase);
-  if (!admin) return { error: "صرف ایڈمن یہ کام کر سکتا ہے۔" };
+  const admin = await isSystemAdmin(supabase);
+  if (!admin) return { error: "صرف نظام کا ایڈمن یہ کام کر سکتا ہے۔" };
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "ایڈمن کا مدرسہ نہیں ملا۔" };
   return { supabase, ...mine };
@@ -96,7 +98,7 @@ export async function approveUser(formData: FormData): Promise<ActionResult> {
   if (!(ASSIGNABLE_ROLES as string[]).includes(role))
     return { error: "کردار درست منتخب کریں۔" };
 
-  const checked = await requireAdmin();
+  const checked = await requireSystemAdmin();
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -151,7 +153,7 @@ export async function setUserStatus(formData: FormData): Promise<ActionResult> {
   if (status !== "approved" && status !== "disabled")
     return { error: "حالت درست منتخب کریں۔" };
 
-  const checked = await requireAdmin();
+  const checked = await requireSystemAdmin();
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -195,7 +197,7 @@ export async function setUserRole(formData: FormData): Promise<ActionResult> {
   if (!ALL_ROLES.includes(role))
     return { error: "کردار درست منتخب کریں۔" };
 
-  const checked = await requireAdmin();
+  const checked = await requireSystemAdmin();
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -249,7 +251,7 @@ export async function addApprovedUser(
   if (!(ASSIGNABLE_ROLES as string[]).includes(role))
     return { error: "کردار درست منتخب کریں۔" };
 
-  const checked = await requireAdmin();
+  const checked = await requireSystemAdmin();
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -298,7 +300,7 @@ export async function saveGuestSettings(
   if (!Number.isInteger(hours) || hours < 1 || hours > 24)
     return { error: "گھنٹے 1 سے 24 کے درمیان لکھیں۔" };
 
-  const checked = await requireAdmin();
+  const checked = await requireSystemAdmin();
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -329,7 +331,7 @@ export async function closeGuest(formData: FormData): Promise<ActionResult> {
   const id = clean(formData.get("id"), 100);
   if (!id) return { error: "مہمان نہیں ملا۔" };
 
-  const checked = await requireAdmin();
+  const checked = await requireSystemAdmin();
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -358,7 +360,7 @@ export async function closeGuest(formData: FormData): Promise<ActionResult> {
 export async function deleteGuest(id: string): Promise<ActionResult> {
   if (!id || typeof id !== "string") return { error: "مہمان نہیں ملا۔" };
 
-  const checked = await requireAdmin();
+  const checked = await requireSystemAdmin();
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 

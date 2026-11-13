@@ -1,5 +1,8 @@
 /**
- * مرحلہ 26 — اجازتیں محفوظ کرنے کا Server Action (صرف ایڈمن)
+ * مرحلہ 26 — اجازتیں محفوظ کرنے کا Server Action
+ * (صرف نظام کا ایڈمن — حصہ 2؛ یہ عالمی صفحہ ہے، کسی بھی ای میل کی
+ * اجازتیں بدل سکتا ہے، اس لیے مالک یہاں نہیں آ سکتا — عملے کی اجازتیں
+ * حصہ 3 والے صفحے سے مقرر ہوں گی)
  * ہر کام سرور پر جانچا جاتا ہے؛ RLS پالیسیاں بھی ہر لکھنے پر لاگو ہوتی ہیں۔
  * ایڈمن اپنی اجازتیں نہیں بدل سکتا — وہ ہمیشہ اجازت شدہ ہے۔
  */
@@ -8,7 +11,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
+import { isSystemAdmin } from "@/lib/approval";
 import { SECTION_IDS } from "@/lib/students";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
 
@@ -27,8 +30,8 @@ export async function savePermissions(
     return { error: "صارف کا Gmail درست نہیں ہے۔" };
 
   const supabase = await createClient();
-  const admin = await isAppAdmin(supabase);
-  if (!admin) return { error: "صرف ایڈمن یہ کام کر سکتا ہے۔" };
+  const admin = await isSystemAdmin(supabase);
+  if (!admin) return { error: "صرف نظام کا ایڈمن یہ کام کر سکتا ہے۔" };
   const mine = await getMyMadrasa(supabase);
   if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
 

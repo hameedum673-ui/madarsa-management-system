@@ -208,7 +208,7 @@ export default function TopBar({
           {isAdmin ? (
             <Link
               className="dd-item"
-              href="/departments/users"
+              href="/departments/users-permissions"
               onClick={closeMenus}
             >
               <span dangerouslySetInnerHTML={{ __html: USERS_ICON_SVG }} />

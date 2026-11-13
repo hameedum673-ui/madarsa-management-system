@@ -67,6 +67,18 @@ export async function isPrimaryAdmin(
   return data === true;
 }
 
+/** کیا موجودہ صارف نظام کا ایڈمن ہے؟ (حصہ 2)
+ * — نظام کا ایڈمن وہ ہے جو system_admins میں درج ہے (حمید صاحب کے کھاتے)؛
+ * مدرسے کا مالک super_admin ہو کر بھی نظام کا ایڈمن نہیں ہوتا۔
+ * میز/فنکشن نہ بنی ہو تو false (محفوظ) */
+export async function isSystemAdmin(
+  supabase: ServerClient,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("am_i_system_admin");
+  if (error) return false;
+  return data === true;
+}
+
 /** کیا موجودہ صارف ایڈمن (super_admin) ہے؟ — سرور پر جانچ */
 export async function isAppAdmin(supabase: ServerClient): Promise<boolean> {
   const {
