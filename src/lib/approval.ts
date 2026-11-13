@@ -50,6 +50,8 @@ export interface ApprovedUser {
   status: ApprovalStatus;
   assigned_role: MadrasaRole | null;
   assigned_madrasa_id: string | null;
+  designation: string | null;
+  member_type: string | null;
   approved_by: string | null;
   created_at: string;
   updated_at: string;
