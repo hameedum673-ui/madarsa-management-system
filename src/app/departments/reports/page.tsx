@@ -304,7 +304,7 @@ export default async function ReportsPage({
                 <span>خارج شدہ طلبہ</span>
                 <strong>{studentsWithdrawn.length}</strong>
               </div>
-              {DEPARTMENT_IDS.map((dept) => (
+              {DEPARTMENT_IDS.map(
                 (dept) => (
                   <div className="row" key={dept}>
                     <span>{DEPARTMENT_LABELS[dept]} (فعال)</span>
