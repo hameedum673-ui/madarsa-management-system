@@ -10,7 +10,7 @@ import { getMyMadrasa } from "@/lib/students";
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
 export const MADRASA_NAME_FALLBACK =
-  "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
+  "جامعہ منیجمنٹ سسٹم";
 
 /**
  * فون نمبر کو WhatsApp والی شکل میں کریں (92 + 10 ہندسے)

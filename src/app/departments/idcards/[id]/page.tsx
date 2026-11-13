@@ -77,7 +77,7 @@ export default async function IdCardPage({
   }
 
   // مدرسے کا نام کارڈ پر دکھانے کے لیے
-  let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
+  let madrasaName = "جامعہ منیجمنٹ سسٹم";
   const mine = await getMyMadrasa(supabase);
   if (mine) {
     const { data: madrasa } = await supabase

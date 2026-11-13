@@ -68,7 +68,7 @@ export default function ResetPasswordPage() {
     <main className="login11-page">
       <div className="login11-box">
         <h1 className="login11-title">
-          مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات
+          جامعہ منیجمنٹ سسٹم
         </h1>
         <p className="login11-sub">نیا پاس ورڈ لگائیں</p>
 

@@ -373,13 +373,11 @@ export default async function DashboardPage() {
       <footer className="foot">
         {madrasaName ? (
           <>
-            {madrasaName} — {madrasaAddress ?? "شادی لارج، ضلع بدین، سندھ"}
+            {madrasaName}
+            {madrasaAddress ? <> — {madrasaAddress}</> : null}
           </>
         ) : (
-          <>
-            مدرسہ سیدہ عائشہ صدیقہ <span className="gold">(رضی اللہ عنہا)</span>{" "}
-            للبنات — شادی لارج، ضلع بدین، سندھ
-          </>
+          <>جامعہ منیجمنٹ سسٹم</>
         )}
       </footer>
     </>

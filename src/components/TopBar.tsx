@@ -105,13 +105,10 @@ export default function TopBar({
             {madrasaName ? (
               madrasaName
             ) : (
-              <>
-                مدرسہ سیدہ عائشہ صدیقہ{" "}
-                <span style={{ fontSize: ".72em" }}>(رضی اللہ عنہا)</span> للبنات
-              </>
+              <>جامعہ منیجمنٹ سسٹم</>
             )}
           </h1>
-          <div className="sysname">جامع مدرسہ مینجمنٹ سسٹم — مین ڈیش بورڈ</div>
+          <div className="sysname">جامعہ منیجمنٹ سسٹم — مین ڈیش بورڈ</div>
         </div>
       </div>
       <div className="spacer"></div>

@@ -137,7 +137,7 @@ export default async function ExamResultPage({
     .single();
   const madrasaName =
     (madrasaData as { name: string } | null)?.name ??
-    "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
+    "جامعہ منیجمنٹ سسٹم";
 
   if (!mine) {
     return (

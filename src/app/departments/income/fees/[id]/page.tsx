@@ -76,7 +76,7 @@ export default async function ReceiptPage({
     notFound();
 
   // مدرسے کا نام رسید پر دکھانے کے لیے
-  let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
+  let madrasaName = "جامعہ منیجمنٹ سسٹم";
   const mine = await getMyMadrasa(supabase);
   if (mine) {
     const { data: madrasa } = await supabase

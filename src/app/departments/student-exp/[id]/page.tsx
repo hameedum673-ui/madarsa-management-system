@@ -68,7 +68,7 @@ export default async function StudentExpDetailPage({
   )
     notFound();
   const mine = await getMyMadrasa(supabase);
-  let madrasaName = "مدرسہ سیدہ عائشہ صدیقہ (رضی اللہ عنہا) للبنات";
+  let madrasaName = "جامعہ منیجمنٹ سسٹم";
   if (mine) {
     const { data: madrasa } = await supabase
       .from("madrasas")

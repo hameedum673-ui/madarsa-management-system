@@ -10,7 +10,7 @@ import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
  */
 
 export const metadata: Metadata = {
-  title: "جامع مدرسہ مینجمنٹ سسٹم — مین ڈیش بورڈ",
+  title: "جامعہ منیجمنٹ سسٹم — مین ڈیش بورڈ",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "مدرسہ مینجمنٹ",
+    title: "جامعہ مینجمنٹ",
     statusBarStyle: "default",
   },
   other: { "color-scheme": "light dark" },
