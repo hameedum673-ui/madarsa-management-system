@@ -68,6 +68,7 @@ export default async function ProfilePage() {
         group: "اکاؤنٹ",
         desc: "",
       }}
+      hideUnderConstruction
       extra={
         <>
           <div className="profile-rows">
