@@ -96,6 +96,18 @@ export default async function BackupPage() {
     }
   }
 
+  // مرحلہ 84 — "آخری بیک اپ" میں خودکار بیک اپ بھی شمار ہوتا ہے
+  const latestAutoAt =
+    autoBackups.length > 0
+      ? `${autoBackups[0].name.replace("auto-", "").replace(".json", "")}T00:00:00Z`
+      : null;
+  const lastAnyAt =
+    [lastBackupAt, latestAutoAt]
+      .filter((d): d is string => d !== null)
+      .sort()
+      .pop() ?? null;
+  const lastAnyAuto = lastAnyAt !== null && lastAnyAt === latestAutoAt;
+
   const counts: { label: string; count: number | null }[] = [];
   for (const { table, label } of TABLE_LABELS) {
     const { count, error } = await supabase
@@ -130,10 +142,11 @@ export default async function BackupPage() {
           </a>
         </div>
 
-        {lastBackupAt ? (
+        {lastAnyAt ? (
           <p className="sub">
-            آخری بیک اپ: {formatDate(lastBackupAt)}
-            {Date.now() - new Date(lastBackupAt).getTime() >
+            آخری بیک اپ: {formatDate(lastAnyAt)}
+            {lastAnyAuto ? " (خودکار)" : ""}
+            {Date.now() - new Date(lastAnyAt).getTime() >
             30 * 24 * 60 * 60 * 1000
               ? " — 30 دن سے زیادہ ہو گئے ہیں، نیا بیک اپ ڈاؤن لوڈ کر لیں۔"
               : ""}

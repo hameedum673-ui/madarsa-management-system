@@ -310,6 +310,8 @@ export default async function DashboardPage() {
       isOwner = await isMadrasaOwner(supabase);
       // مرحلہ 80 — بیک اپ کی یاددہانی (مہمان کو نہیں — اس کا ڈیٹا نمونہ ہے؛
       // حصہ 4 — صرف مالک کو، عملے کو بیک اپ کا لنک دکھانا ہی نہیں)
+      // مرحلہ 84 — یاددہانی اب خودکار بیک اپ کو بھی دیکھتی ہے (ورنہ روزانہ
+      // خودکار بیک اپ کے باوجود 30 دن بعد غلط وارننگ آتی)
       if (!myProfile?.guest_expires_at && (isAdmin || isOwner)) {
         const { data: lastBackup } = await supabase
           .from("backup_log")
@@ -317,8 +319,29 @@ export default async function DashboardPage() {
           .order("downloaded_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        const lastAt =
+        const manualAt =
           (lastBackup?.downloaded_at as string | undefined) ?? null;
+        let autoAt: string | null = null;
+        const { data: autoFiles } = await supabase.storage
+          .from("backups")
+          .list(mine.madrasaId, {
+            limit: 1,
+            sortBy: { column: "name", order: "desc" },
+          });
+        const latestAutoName = (autoFiles ?? [])[0]?.name as
+          | string
+          | undefined;
+        const autoMatch = latestAutoName
+          ? /^auto-(\d{4})-(\d{2})-(\d{2})\.json$/.exec(latestAutoName)
+          : null;
+        if (autoMatch) {
+          autoAt = `${autoMatch[1]}-${autoMatch[2]}-${autoMatch[3]}T00:00:00Z`;
+        }
+        const lastAt =
+          [manualAt, autoAt]
+            .filter((d): d is string => d !== null)
+            .sort()
+            .pop() ?? null;
         if (!lastAt) {
           backupReminderText =
             "ابھی تک بیک اپ ڈاؤن لوڈ نہیں ہوا — ڈیٹا محفوظ رکھنے کے لیے بیک اپ ڈاؤن لوڈ کر لیں۔";
