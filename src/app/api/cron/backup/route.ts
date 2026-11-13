@@ -6,6 +6,7 @@
  * صرف Vercel کے env میں ہوتی ہے، کوڈ میں کبھی نہیں۔
  * صرف منظور شدہ مالک والے مدرسے — مہمان (ڈیمو) اور خالی یتیم مدرسے نہیں۔
  * ہر مدرسے کی ناکامی دوسرے کو نہیں روکتی۔
+ * نوٹ: Vercel میں env لگنے کے بعد دوبارہ ڈیپلائی ضروری ہے۔
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
