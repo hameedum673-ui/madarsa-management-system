@@ -11,6 +11,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // مرحلہ 76 — manifest.json اور sw.js لاگ ان کے بغیر کھلنے چاہئیں
+    // (براؤزر انسٹال کے لیے ان کو بغیر سیشن کے پڑھتا ہے)۔
+    "/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -6,6 +6,7 @@
  */
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
+import InstallAppButton from "@/components/InstallAppButton";
 import ChangePasswordForm from "@/app/departments/settings/ChangePasswordForm";
 import MfaSettings from "@/app/departments/settings/MfaSettings";
 import { createClient } from "@/lib/supabase/server";
@@ -89,6 +90,14 @@ export default async function SettingsPage() {
           خود لاگ آؤٹ کر دیتا ہے اور لاگ اِن والے صفحے پر لے جاتا ہے — تاکہ
           کھلا ہوا فون یا کمپیوٹر کسی اور کے ہاتھ نہ لگے۔
         </p>
+
+        <h3 className="form-section-title">ایپ (ہوم اسکرین پر آئیکن)</h3>
+        <p className="sub">
+          اس سسٹم کو اپنے فون کی ہوم اسکرین پر ایپ کی طرح لگایا جا سکتا ہے —
+          نیچے والا بٹن دبائیں۔ انسٹال ہونے کے بعد ہر نئی تبدیلی خودبخود آتی
+          رہے گی، دوبارہ کچھ لگانے کی ضرورت نہیں۔
+        </p>
+        <InstallAppButton />
 
         <h3 className="form-section-title">نظام کی معلومات</h3>
         <div className="form-actions">

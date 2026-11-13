@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AutoLogout from "@/components/AutoLogout";
 import NavigationLoader from "@/components/NavigationLoader";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 /**
  * بنیادی ڈھانچہ — زبان اردو، سمت RTL، وہی عنوان اور وہی اردو فونٹ،
@@ -10,7 +11,19 @@ import NavigationLoader from "@/components/NavigationLoader";
 
 export const metadata: Metadata = {
   title: "جامع مدرسہ مینجمنٹ سسٹم — مین ڈیش بورڈ",
-  icons: { icon: "data:," },
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/icon-180.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "مدرسہ مینجمنٹ",
+    statusBarStyle: "default",
+  },
   other: { "color-scheme": "light dark" },
 };
 
@@ -18,6 +31,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#123a63",
 };
 
 export default function RootLayout({
@@ -38,6 +52,7 @@ export default function RootLayout({
       <body>
         <AutoLogout />
         <NavigationLoader />
+        <ServiceWorkerRegister />
         <div className="wrap">{children}</div>
       </body>
     </html>

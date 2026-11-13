@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { WHATSAPP_URL } from "@/lib/approval";
+import InstallAppButton from "@/components/InstallAppButton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -203,6 +204,8 @@ export default function LoginPage() {
             ) : null}
           </>
         ) : null}
+
+        <InstallAppButton dark />
 
         <a
           className="login11-whatsapp"

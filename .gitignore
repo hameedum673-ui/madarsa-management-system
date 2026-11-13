@@ -22,3 +22,6 @@
 # typescript
 *.tsbuildinfo
 /next-env.d.ts
+
+# مرحلہ 76 — آئیکن کی PNG فائلیں build کے وقت بنتی ہیں
+/public/icons/icon-*.png

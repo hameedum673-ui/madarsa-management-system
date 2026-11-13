@@ -1,1 +1,25 @@
-{"dependencies":{"@supabase/ssr":"^0.12.7","@supabase/supabase-js":"^2.119.0","next":"^15.5.0","react":"^19.1.0","react-dom":"^19.1.0"},"description":"جامع مدرسہ مینجمنٹ سسٹم — مین ڈیش بورڈ (Next.js + TypeScript)","devDependencies":{"@types/node":"^24.0.0","@types/react":"^19.1.0","@types/react-dom":"^19.1.0","typescript":"^5.9.0"},"name":"madrasa-management-system","private":true,"scripts":{"build":"next build","dev":"next dev","start":"next start"},"version":"2.0.0"}
+{
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "description": "جامع مدرسہ مینجمنٹ سسٹم — مین ڈیش بورڈ (Next.js + TypeScript)",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.9.0"
+  },
+  "name": "madrasa-management-system",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "prebuild": "node scripts/generate-icons.mjs"
+  },
+  "version": "2.0.0"
+}
