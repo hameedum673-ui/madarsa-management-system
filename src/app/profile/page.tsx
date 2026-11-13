@@ -4,6 +4,7 @@
  * معلومات ڈیٹا بیس سے دکھائی جاتی ہیں۔
  */
 import ModuleCard from "@/components/ModuleCard";
+import ProfileForm from "@/app/profile/ProfileForm";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { ROLE_LABELS } from "@/lib/approval";
@@ -19,6 +20,7 @@ export default async function ProfilePage() {
   let madrasaName = "—";
   let userName = "—";
   let userRole = "—";
+  let userWhatsapp = "";
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -37,11 +39,24 @@ export default async function ProfilePage() {
       userName = (myProfile as { name?: string } | null)?.name ?? "—";
       const role = (myProfile as { role?: string } | null)?.role;
       userRole = role ? (ROLE_LABELS[role as MadrasaRole] ?? role) : "—";
+
+      // مرحلہ 86 — اپنا واٹس ایپ نمبر (اپنی قطار پڑھنے کی پالیسی سے؛
+      // مہمان کی کوئی منظوری والی قطار نہیں — خالی رہتا ہے)
+      if (email) {
+        const { data: approved } = await supabase
+          .from("approved_users")
+          .select("whatsapp")
+          .eq("email", email.toLowerCase())
+          .maybeSingle();
+        userWhatsapp =
+          (approved as { whatsapp?: string | null } | null)?.whatsapp ?? "";
+      }
     }
   } catch {
     madrasaName = "—";
     userName = "—";
     userRole = "—";
+    userWhatsapp = "";
   }
 
   return (
@@ -54,24 +69,31 @@ export default async function ProfilePage() {
         desc: "",
       }}
       extra={
-        <div className="profile-rows">
-          <div className="row">
-            <span>نام</span>
-            <span>{userName}</span>
+        <>
+          <div className="profile-rows">
+            <div className="row">
+              <span>نام</span>
+              <span>{userName}</span>
+            </div>
+            <div className="row">
+              <span>عہدہ</span>
+              <span>{userRole}</span>
+            </div>
+            <div className="row">
+              <span>Gmail</span>
+              <span>{email || "—"}</span>
+            </div>
+            <div className="row">
+              <span>ادارہ</span>
+              <span>{madrasaName}</span>
+            </div>
           </div>
-          <div className="row">
-            <span>عہدہ</span>
-            <span>{userRole}</span>
-          </div>
-          <div className="row">
-            <span>Gmail</span>
-            <span>{email || "—"}</span>
-          </div>
-          <div className="row">
-            <span>ادارہ</span>
-            <span>{madrasaName}</span>
-          </div>
-        </div>
+          {/* مرحلہ 86 — اپنی پروفائل بدلنا */}
+          <ProfileForm
+            initialName={userName === "—" ? "" : userName}
+            initialWhatsapp={userWhatsapp}
+          />
+        </>
       }
     />
   );
