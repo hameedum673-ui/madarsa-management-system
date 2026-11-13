@@ -193,6 +193,32 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
+    // مرحلہ 78 — داخلے، طلبہ اور شناختی کارڈ کا حب: طلبہ، داخلے
+    // یا شناختی کارڈ میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛ تینوں
+    // بند ہوں تو ڈیش بورڈ پر واپس۔
+    if (slug === "students-idcards") {
+      const { data: studentsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "students" },
+      );
+      const { data: admissionsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "admissions" },
+      );
+      const { data: idcardsAllowed } = await supabase.rpc(
+        "my_module_allowed",
+        { p_module: "idcards" },
+      );
+      if (
+        studentsAllowed === false &&
+        admissionsAllowed === false &&
+        idcardsAllowed === false
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    }
     // مرحلہ 57 — حاضری کا حب: طلبہ یا اساتذہ کی حاضری میں سے ایک
     // کی بھی اجازت ہو تو کھلتا ہے؛ دونوں بند ہوں تو ڈیش بورڈ پر
     // واپس۔

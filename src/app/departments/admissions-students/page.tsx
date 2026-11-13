@@ -57,7 +57,7 @@ export default async function AdmissionsStudentsPage() {
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/students-idcards" />
           <h2>داخلے اور طلبہ</h2>
         </div>
 

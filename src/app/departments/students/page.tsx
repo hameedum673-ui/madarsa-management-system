@@ -73,7 +73,7 @@ export default async function StudentsPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/admissions-students" />
           <h2>طلبہ کا ریکارڈ</h2>
           <span className="page-count">
             {q

@@ -104,7 +104,7 @@ export default async function AdmissionsPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/admissions-students" />
           <h2>نئے داخلے</h2>
           <span className="page-count">
             کل: {counts.all.toLocaleString("ur-PK")} — زیرِ غور:{" "}

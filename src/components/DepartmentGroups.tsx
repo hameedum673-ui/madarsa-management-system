@@ -66,6 +66,14 @@ function GroupSection({
     group.id === "admin" &&
     visibleIds.has("users") &&
     visibleIds.has("permissions");
+  // مرحلہ 78 — "داخلے اور طلبہ" اور "شناختی کارڈ" ایک بٹن میں:
+  // (طلبہ یا داخلے) اور شناختی کارڈ دونوں نظر آئیں تو ایک بٹن
+  // "داخلے، طلبہ اور شناختی کارڈ" دکھائیں؛ صرف ایک نظر آئے تو وہی
+  // اکیلا بٹن دکھائیں۔
+  const showStudentsIdcardsHub =
+    group.id === "edu" &&
+    (visibleIds.has("students") || visibleIds.has("admissions")) &&
+    visibleIds.has("idcards");
   return (
     <section className="group" aria-label={group.title}>
       <div className="g-head">
@@ -80,6 +88,7 @@ function GroupSection({
           if (showAttendanceHub && m.id === "att-teachers") return null;
           if (showWelfareHub && m.id === "student-exp") return null;
           if (showUsersHub && m.id === "permissions") return null;
+          if (showStudentsIdcardsHub && m.id === "idcards") return null;
           // مرحلہ 48 — زکوٰۃ، عشر اور صدقات کے بٹن ڈیش بورڈ پر نہیں
           // دکھائے جاتے — وہ "آمدنی کا ریکارڈ" حب کے اندر ہیں۔
           if (
@@ -105,7 +114,16 @@ function GroupSection({
             showWelfareHub && group.id === "fin" && m.id === "welfare";
           const isUsersHubTile =
             showUsersHub && group.id === "admin" && m.id === "users";
-          const href = isReportsHubTile
+          // مرحلہ 78 — حب کا بٹن: طلبہ والا بٹن، ورنہ (طلبہ بند ہو
+          // تو) داخلے والا بٹن حب کا بٹن بنتا ہے۔
+          const isStudentsIdcardsHubTile =
+            showStudentsIdcardsHub &&
+            group.id === "edu" &&
+            (m.id === "students" ||
+              (m.id === "admissions" && !visibleIds.has("students")));
+          const href = isStudentsIdcardsHubTile
+            ? "/departments/students-idcards"
+            : isReportsHubTile
             ? "/departments/reports-hub"
             : isAttendanceHubTile
               ? "/departments/attendance"
@@ -116,7 +134,9 @@ function GroupSection({
                   : showCombined && m.id === "students"
                     ? "/departments/admissions-students"
                     : `/departments/${m.id}`;
-          const label = isReportsHubTile
+          const label = isStudentsIdcardsHubTile
+            ? "داخلے، طلبہ اور شناختی کارڈ"
+            : isReportsHubTile
             ? "رپورٹس"
             : isAttendanceHubTile
               ? "حاضری"

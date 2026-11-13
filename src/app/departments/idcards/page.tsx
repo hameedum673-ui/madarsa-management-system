@@ -49,7 +49,7 @@ export default async function IdCardsPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/students-idcards" />
           <h2>طلبہ کے شناختی کارڈ</h2>
           <span className="page-count">
             کل فعال: {students.length.toLocaleString("ur-PK")}
