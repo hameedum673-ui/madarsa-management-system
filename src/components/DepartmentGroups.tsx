@@ -68,7 +68,7 @@ function GroupSection({
     visibleIds.has("permissions");
   // مرحلہ 78 — "داخلے اور طلبہ" اور "شناختی کارڈ" ایک بٹن میں:
   // (طلبہ یا داخلے) اور شناختی کارڈ دونوں نظر آئیں تو ایک بٹن
-  // "داخلے، طلبہ اور شناختی کارڈ" دکھائیں؛ صرف ایک نظر آئے تو وہی
+  // "داخلے اور ID کارڈ" دکھائیں؛ صرف ایک نظر آئے تو وہی
   // اکیلا بٹن دکھائیں۔
   const showStudentsIdcardsHub =
     group.id === "edu" &&
@@ -135,7 +135,7 @@ function GroupSection({
                     ? "/departments/admissions-students"
                     : `/departments/${m.id}`;
           const label = isStudentsIdcardsHubTile
-            ? "داخلے، طلبہ اور شناختی کارڈ"
+            ? "داخلے اور ID کارڈ"
             : isReportsHubTile
             ? "رپورٹس"
             : isAttendanceHubTile
