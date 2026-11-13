@@ -12,11 +12,15 @@ import {
   APPROVAL_STATUS_LABELS,
   ROLE_LABELS,
   isAppAdmin,
+  isPrimaryAdmin,
   type ApprovedUser,
 } from "@/lib/approval";
+import { getMyMadrasa } from "@/lib/students";
 import {
   AddUserForm,
   ApproveForm,
+  DemoteAdminForm,
+  PromoteAdminForm,
   StatusForm,
 } from "@/app/departments/users/UserForms";
 import {
@@ -51,6 +55,10 @@ export default async function UsersPage() {
   if (!admin) {
     notFound();
   }
+
+  // مرحلہ 81 — پہلا ایڈمن ہو تو تنزلی کے فارم دکھیں گے
+  const primary = await isPrimaryAdmin(supabase);
+  const mine = await getMyMadrasa(supabase);
 
   const { data, error } = await supabase
     .from("approved_users")
@@ -161,6 +169,20 @@ export default async function UsersPage() {
                               primary
                             />
                           )}
+                          {u.status === "approved" &&
+                          u.assigned_role !== "super_admin" ? (
+                            <span style={{ marginInlineStart: "6px" }}>
+                              <PromoteAdminForm id={u.id} />
+                            </span>
+                          ) : null}
+                          {u.status === "approved" &&
+                          u.assigned_role === "super_admin" &&
+                          primary &&
+                          u.assigned_madrasa_id !== mine?.madrasaId ? (
+                            <span style={{ marginInlineStart: "6px" }}>
+                              <DemoteAdminForm id={u.id} />
+                            </span>
+                          ) : null}
                         </td>
                       </tr>
                     ))}
@@ -172,6 +194,9 @@ export default async function UsersPage() {
             <p className="form-note">
               منظور شدہ صارف کا profile اگلے لاگ اِن پر خود بن جائے گا۔ صارف کا
               ریکارڈ کبھی حذف نہیں ہوتا — رسائی بند کرنی ہو تو «غیر فعال» کریں۔
+              «ایڈمن بنائیں» سے دوسرا ایڈمن بنتا ہے — وہ صارفین منظور کر سکے
+              گا مگر آپ کا ڈیٹا نہیں دیکھ سکے گا؛ ایڈمن ختم کرنا صرف پہلا
+              ایڈمن کر سکتا ہے۔
             </p>
 
             <h3 className="form-section-title">مہمان رسائی (ڈیمو)</h3>

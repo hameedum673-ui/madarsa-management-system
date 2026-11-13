@@ -11,6 +11,7 @@ import { ASSIGNABLE_ROLES, ROLE_LABELS } from "@/lib/approval";
 import {
   addApprovedUser,
   approveUser,
+  setUserRole,
   setUserStatus,
 } from "@/app/departments/users/actions";
 
@@ -127,6 +128,111 @@ export function ApproveForm({ id }: { id: string }) {
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </form>
+  );
+}
+
+/** مرحلہ 81 — صارف کو ایڈمن بنائیں (دو قدمی تصدیق) */
+export function PromoteAdminForm({ id }: { id: string }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
+    setError("");
+    setLoading(true);
+    const formData = new FormData();
+    formData.set("id", id);
+    formData.set("role", "super_admin");
+    const res = await setUserRole(formData);
+    setLoading(false);
+    if ("error" in res) {
+      setError(res.error);
+      setConfirming(false);
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <span>
+      <button
+        type="button"
+        className="btn-ghost"
+        onClick={handleClick}
+        disabled={loading}
+      >
+        {loading
+          ? "براہِ کرم انتظار کریں…"
+          : confirming
+            ? "پکا ایڈمن بنائیں؟"
+            : "ایڈمن بنائیں"}
+      </button>
+      {error ? <p className="form-error">{error}</p> : null}
+    </span>
+  );
+}
+
+/** مرحلہ 81 — ایڈمن ختم کریں (نیا کردار چن کر؛ دو قدمی تصدیق) */
+export function DemoteAdminForm({ id }: { id: string }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("clerk");
+
+  async function handleClick() {
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
+    setError("");
+    setLoading(true);
+    const formData = new FormData();
+    formData.set("id", id);
+    formData.set("role", role);
+    const res = await setUserRole(formData);
+    setLoading(false);
+    if ("error" in res) {
+      setError(res.error);
+      setConfirming(false);
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <span>
+      <select
+        className="field-input"
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        style={{ width: "110px" }}
+      >
+        {ASSIGNABLE_ROLES.map((r) => (
+          <option key={r} value={r}>
+            {ROLE_LABELS[r]}
+          </option>
+        ))}
+      </select>{" "}
+      <button
+        type="button"
+        className="btn-ghost"
+        onClick={handleClick}
+        disabled={loading}
+      >
+        {loading
+          ? "براہِ کرم انتظار کریں…"
+          : confirming
+            ? "پکا ختم کریں؟"
+            : "ایڈمن ختم کریں"}
+      </button>
+      {error ? <p className="form-error">{error}</p> : null}
+    </span>
   );
 }
 

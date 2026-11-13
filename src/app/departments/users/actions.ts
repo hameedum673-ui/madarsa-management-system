@@ -184,6 +184,58 @@ export async function setUserStatus(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** صارف کا کردار بدلیں — ترقی یا تنزلی (مرحلہ 81)
+ * ترقی کوئی بھی super_admin کر سکتا ہے؛ تنزلی کی جانچ RPC میں ہے
+ * (صرف پہلا ایڈمن، اور پہلے ایڈمن کو کوئی نہیں ہٹا سکتا) */
+export async function setUserRole(formData: FormData): Promise<ActionResult> {
+  const id = clean(formData.get("id"), 100);
+  const role = clean(formData.get("role"), 30);
+  if (!id) return { error: "صارف نہیں ملا۔" };
+  const ALL_ROLES: string[] = ["super_admin", ...ASSIGNABLE_ROLES];
+  if (!ALL_ROLES.includes(role))
+    return { error: "کردار درست منتخب کریں۔" };
+
+  const checked = await requireAdmin();
+  if ("error" in checked) return { error: checked.error };
+  const { supabase, madrasaId, userId } = checked;
+
+  const { data: target } = await supabase
+    .from("approved_users")
+    .select("id, email, name, assigned_role")
+    .eq("id", id)
+    .single();
+  if (!target) return { error: "صارف نہیں ملا۔" };
+
+  const { data, error } = await supabase.rpc("set_user_role", {
+    p_approved_user_id: id,
+    p_role: role,
+  });
+  if (error) {
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "PGRST202" || code === "42883")
+      return { error: "میز نہیں بنی — پہلے مرحلہ 81 کی SQL چلائیں۔" };
+    return { error: "کردار نہیں بدلا جا سکا۔ دوبارہ کوشش کریں۔" };
+  }
+  if (data !== true) {
+    return { error: "کردار نہیں بدلا جا سکا۔" };
+  }
+
+  await writeAudit(
+    supabase,
+    madrasaId,
+    userId,
+    role === "super_admin" ? "user_promoted" : "user_demoted",
+    {
+      approved_user_id: target.id as string,
+      email: target.email as string,
+      role,
+    },
+  );
+
+  revalidatePath("/departments/users");
+  return { ok: true };
+}
+
 /** ای میل سے نیا صارف شامل کریں — سیدھا منظور شدہ (ایڈمن خود شامل کر رہا ہے) */
 export async function addApprovedUser(
   formData: FormData,

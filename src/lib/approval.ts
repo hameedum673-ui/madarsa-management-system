@@ -57,6 +57,16 @@ export interface ApprovedUser {
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
+/** کیا موجودہ صارف پہلا ایڈمن ہے؟ (سب سے پرانی super_admin پروفائل)
+ * — مرحلہ 81: میز نہ بنی ہو تو false (محفوظ) */
+export async function isPrimaryAdmin(
+  supabase: ServerClient,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("am_i_primary_admin");
+  if (error) return false;
+  return data === true;
+}
+
 /** کیا موجودہ صارف ایڈمن (super_admin) ہے؟ — سرور پر جانچ */
 export async function isAppAdmin(supabase: ServerClient): Promise<boolean> {
   const {
