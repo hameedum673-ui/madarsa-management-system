@@ -204,6 +204,13 @@ const ur: Dict = {
   "hub.students.active_cards": "فعال طلبہ (جن کے کارڈ بن سکتے ہیں)",
   "hub.students.open2": "شناختی کارڈ کھولیں",
 
+  "hub.adm_students.sec1": "جدید داخلہ",
+  "hub.adm_students.sec1_desc": "نیا داخلہ درج کریں اور زیرِ غور درخواستوں کا فیصلہ کریں۔",
+  "hub.adm_students.open1": "جدید داخلہ کھولیں",
+  "hub.adm_students.sec2": "قدیم داخلہ",
+  "hub.adm_students.sec2_desc": "پہلے سے داخل شدہ طلبہ کا مکمل ریکارڈ دیکھیں اور تبدیل کریں۔",
+  "hub.adm_students.open2": "قدیم داخلہ کھولیں",
+
   "students.new_title": "نئی طالبہ شامل کریں",
   "students.count_total": "کل: {n}",
   "students.count_search": "تلاش کا نتیجہ: {n}",
@@ -552,6 +559,13 @@ const ar: Dict = {
   "hub.students.sec2_desc": "اعرض بطاقات هوية الطالبات النشطات واحفظ الصورة.",
   "hub.students.active_cards": "الطالبات النشطات (اللاتي يمكن إصدار بطاقات لهن)",
   "hub.students.open2": "افتح بطاقات الهوية",
+
+  "hub.adm_students.sec1": "قبول جديد",
+  "hub.adm_students.sec1_desc": "سجّل قبولًا جديدًا واتخذ قرارًا بشأن الطلبات قيد النظر.",
+  "hub.adm_students.open1": "افتح القبول الجديد",
+  "hub.adm_students.sec2": "قبول قديم",
+  "hub.adm_students.sec2_desc": "اعرض السجل الكامل للطلاب المسجلين وعدّله.",
+  "hub.adm_students.open2": "افتح القبول القديم",
 
   "students.new_title": "إضافة طالبة جديدة",
   "students.count_total": "المجموع: {n}",
