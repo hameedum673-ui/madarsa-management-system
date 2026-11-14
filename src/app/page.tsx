@@ -11,6 +11,8 @@ import {
 import { ROLE_LABELS, isMadrasaOwner } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { todayInKarachi } from "@/lib/attendance";
+import { getMyLanguage } from "@/lib/language";
+import { numLocale, t } from "@/i18n/dictionary";
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
 export default async function DashboardPage() {
@@ -28,6 +30,9 @@ export default async function DashboardPage() {
     getMyMadrasa(supabase).catch(() => null),
   ]);
   const today = todayInKarachi();
+  // مرحلہ 102 — صارف کی زبان (کوکی، پھر پروفائل، پھر اردو) — باقی
+  // سوالوں کے ساتھ ایک ہی وقت میں
+  const langP = getMyLanguage().catch(() => "ur" as const);
   const sectionEq =
     allowedSections.size < 2
       ? ([...allowedSections][0] ?? "__none__")
@@ -357,6 +362,7 @@ export default async function DashboardPage() {
 
   // --- سب سوال ایک ساتھ پوچھے جاتے ہیں، جواب یہاں ملتا ہے ---
   const [
+    lang,
     counts,
     attendanceRaw,
     madrasaName,
@@ -369,6 +375,7 @@ export default async function DashboardPage() {
     recentNotices,
     activeNoticesCount,
   ] = await Promise.all([
+    langP,
     countsP,
     attendanceP,
     madrasaNameP,
@@ -449,10 +456,14 @@ export default async function DashboardPage() {
       const mins = Math.floor(ms / 60000);
       const h = Math.floor(mins / 60);
       const m = mins % 60;
-      guestRemainingText =
+      // مرحلہ 102 — باقی وقت چنی ہوئی زبان میں
+      const timeText =
         h > 0
-          ? `${h.toLocaleString("ur-PK")} گھنٹہ ${m.toLocaleString("ur-PK")} منٹ`
-          : `${m.toLocaleString("ur-PK")} منٹ`;
+          ? `${h.toLocaleString(numLocale(lang))} ${t(lang, "common.hour")} ${m.toLocaleString(numLocale(lang))} ${t(lang, "common.minute")}`
+          : `${m.toLocaleString(numLocale(lang))} ${t(lang, "common.minute")}`;
+      guestRemainingText = t(lang, "topbar.guest_banner", {
+        time: timeText,
+      });
     }
   }
 
@@ -466,14 +477,15 @@ export default async function DashboardPage() {
         .sort()
         .pop() ?? null;
     if (!lastAt) {
-      backupReminderText =
-        "ابھی تک بیک اپ ڈاؤن لوڈ نہیں ہوا — ڈیٹا محفوظ رکھنے کے لیے بیک اپ ڈاؤن لوڈ کر لیں۔";
+      backupReminderText = t(lang, "topbar.backup_none");
     } else {
       const days = Math.floor(
         (Date.now() - new Date(lastAt).getTime()) / (24 * 60 * 60 * 1000),
       );
       if (days > 30) {
-        backupReminderText = `آخری بیک اپ کو ${days.toLocaleString("ur-PK")} دن ہو گئے ہیں — نیا بیک اپ ڈاؤن لوڈ کر لیں۔`;
+        backupReminderText = t(lang, "topbar.backup_old", {
+          days: days.toLocaleString(numLocale(lang)),
+        });
       }
     }
   }
@@ -491,17 +503,15 @@ export default async function DashboardPage() {
         userRole={userRole}
         notices={recentNotices}
         noticesCount={activeNoticesCount}
+        lang={lang}
       />
       {guestRemainingText ? (
-        <p className="guest-banner">
-          ڈیمو — باقی وقت: {guestRemainingText} — وقت ختم ہونے پر ڈیمو
-          خودبخود بند ہو جائے گا۔
-        </p>
+        <p className="guest-banner">{guestRemainingText}</p>
       ) : null}
       {backupReminderText ? (
         <p className="backup-banner">
           {backupReminderText}{" "}
-          <a href="/departments/backup">بیک اپ صفحہ کھولیں</a>
+          <a href="/departments/backup">{t(lang, "topbar.backup_open")}</a>
         </p>
       ) : null}
       {/* حصہ 4 — کارڈ صرف کھلے گروپ کے حساب سے */}
@@ -523,11 +533,13 @@ export default async function DashboardPage() {
           !deniedModules.includes("att-students") ||
           !deniedModules.includes("att-teachers")
         }
+        lang={lang}
       />
       {/* حصہ 4 کی درستگی — مالک کو بھی صارفین/تنخواہوں کے بٹن دکھیں */}
       <DepartmentGroups
         isAdmin={isAdmin || isOwner}
         deniedModules={deniedModules}
+        lang={lang}
       />
       <footer className="foot">
         {madrasaName ? (
@@ -536,7 +548,7 @@ export default async function DashboardPage() {
             {madrasaAddress ? <> — {madrasaAddress}</> : null}
           </>
         ) : (
-          <>جامعہ منیجمنٹ سسٹم</>
+          <>{t(lang, "app.name")}</>
         )}
       </footer>
     </>

@@ -69,6 +69,11 @@
     font-size:1.28rem;font-weight:700;margin:0;line-height:2;
     white-space:normal;overflow:visible;
   }
+  /* مرحلہ 102 — عربی میں سرخیاں نسخ فونٹ میں (نستعلیق عربی کے لیے نہیں) */
+  html.lang-ar .brand h1,
+  html.lang-ar .g-head h2,
+  html.lang-ar .mod-card h2,
+  html.lang-ar .page-head h2{font-family:var(--font-naskh),"Noto Naskh Arabic",serif}
   .brand .sysname{font-size:.8rem;color:#c8d8ec;margin-top:-6px}
   .topbar .spacer{flex:1;order:3}
   .datebox{order:2;text-align:center;color:#dbe7f5;font-size:.86rem;line-height:1.5}

@@ -6,11 +6,13 @@
 import ModuleCard from "@/components/ModuleCard";
 import LogoForm from "@/app/profile/LogoForm";
 import ProfileForm from "@/app/profile/ProfileForm";
+import LanguageForm from "@/app/profile/LanguageForm";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 import { ROLE_LABELS } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
+import type { Lang } from "@/i18n/dictionary";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -25,6 +27,7 @@ export default async function ProfilePage() {
   let userWhatsapp = "";
   let madrasaLogoUrl: string | null = null;
   let canManageLogo = false;
+  let myLanguage: Lang = "ur";
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -75,6 +78,22 @@ export default async function ProfilePage() {
         userWhatsapp =
           (approved as { whatsapp?: string | null } | null)?.whatsapp ?? "";
       }
+
+      // مرحلہ 102 — اپنی زبان (الگ سوال، تاکہ migration 054 نہ چلی
+      // ہو تو صرف زبان اردو رہے، باقی معلومات ویسے ہی ملیں)
+      try {
+        const { data: langRow, error: langError } = await supabase
+          .from("profiles")
+          .select("language")
+          .eq("id", mine.userId)
+          .maybeSingle();
+        if (!langError && langRow) {
+          const l = (langRow as { language?: string } | null)?.language;
+          if (l === "ar") myLanguage = "ar";
+        }
+      } catch {
+        myLanguage = "ur";
+      }
     }
   } catch {
     madrasaName = "—";
@@ -118,6 +137,8 @@ export default async function ProfilePage() {
             initialName={userName === "—" ? "" : userName}
             initialWhatsapp={userWhatsapp}
           />
+          {/* مرحلہ 102 — اپنی زبان چننا */}
+          <LanguageForm currentLanguage={myLanguage} />
           {/* مرحلہ 98 — مدرسے کا لوگو */}
           <LogoForm
             logoUrl={madrasaLogoUrl}

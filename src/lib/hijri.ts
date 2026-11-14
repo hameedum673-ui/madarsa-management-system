@@ -91,3 +91,35 @@ export function hijriTodayUrdu(now: Date): string {
     n.toLocaleString("ur-PK", { useGrouping: false });
   return `${num(h.day)} ${HIJRI_MONTHS_UR[h.month - 1]}، ${num(h.year)}ھ`;
 }
+
+/** مرحلہ 102 — ہجری مہینوں کے عربی نام (وہی حسابی طریقہ، وہی انشانکن) */
+export const HIJRI_MONTHS_AR = [
+  "محرم",
+  "صفر",
+  "ربيع الأول",
+  "ربيع الآخر",
+  "جمادى الأولى",
+  "جمادى الآخرة",
+  "رجب",
+  "شعبان",
+  "رمضان",
+  "شوال",
+  "ذو القعدة",
+  "ذو الحجة",
+];
+
+/** دی گئی تاریخ کی پاکستان کے وقت کے مطابق ہجری تاریخ — عربی الفاظ میں */
+export function hijriTodayArabic(now: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Karachi",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(now);
+  const get = (type: string) =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
+  const h = gregorianToHijri(get("year"), get("month"), get("day"));
+  const num = (n: number) =>
+    n.toLocaleString("ar-EG", { useGrouping: false });
+  return `${num(h.day)} ${HIJRI_MONTHS_AR[h.month - 1]}، ${num(h.year)}هـ`;
+}

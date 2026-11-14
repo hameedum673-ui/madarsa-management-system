@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BELL_SVG } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
-import { hijriTodayUrdu } from "@/lib/hijri";
+import { hijriTodayArabic, hijriTodayUrdu } from "@/lib/hijri";
 import { NOTICE_KIND_LABELS, type NoticeKind } from "@/lib/notices";
+import { t, type Lang } from "@/i18n/dictionary";
 
 /** مرحلہ 32 — گھنٹی میں دکھانے کے لیے اطلاع کا مختصر ریکارڈ */
 export interface TopBarNotice {
@@ -39,6 +40,7 @@ export default function TopBar({
   userRole,
   notices = [],
   noticesCount = 0,
+  lang = "ur",
 }: {
   madrasaName?: string | null;
   madrasaLogoUrl?: string | null;
@@ -47,6 +49,7 @@ export default function TopBar({
   userRole?: string | null;
   notices?: TopBarNotice[];
   noticesCount?: number;
+  lang?: Lang;
 } = {}) {
   const router = useRouter();
   const [gregorian, setGregorian] = useState("—");
@@ -57,19 +60,23 @@ export default function TopBar({
   useEffect(() => {
     try {
       const now = new Date();
+      // مرحلہ 102 — تاریخ چنی ہوئی زبان میں (اردو/عربی — دونوں مشرقی ہندسے)
+      const locale = lang === "ar" ? "ar-EG" : "ur-PK";
       setGregorian(
-        new Intl.DateTimeFormat("ur-PK", {
+        new Intl.DateTimeFormat(locale, {
           weekday: "long",
           day: "numeric",
           month: "long",
           year: "numeric",
         }).format(now),
       );
-      setHijri(hijriTodayUrdu(now));
+      setHijri(
+        lang === "ar" ? hijriTodayArabic(now) : hijriTodayUrdu(now),
+      );
     } catch {
       /* تاریخ دستیاب نہ ہو تو جگہ خالی رہتی ہے، جیسے اصل فائل میں تھا */
     }
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -109,10 +116,10 @@ export default function TopBar({
             {madrasaName ? (
               madrasaName
             ) : (
-              <>جامعہ منیجمنٹ سسٹم</>
+              <>{t(lang, "app.name")}</>
             )}
           </h1>
-          <div className="sysname">جامعہ منیجمنٹ سسٹم — مین ڈیش بورڈ</div>
+          <div className="sysname">{t(lang, "app.sysname")}</div>
         </div>
       </div>
       <div className="spacer"></div>
@@ -125,7 +132,7 @@ export default function TopBar({
         <button
           className="icon-btn"
           type="button"
-          aria-label="اطلاعات"
+          aria-label={t(lang, "topbar.notifications")}
           aria-haspopup="true"
           onClick={(ev) => {
             ev.stopPropagation();
@@ -147,7 +154,7 @@ export default function TopBar({
           className="userchip"
           type="button"
           aria-haspopup="true"
-          aria-label="صارف کا مینو"
+          aria-label={t(lang, "topbar.user_menu")}
           onClick={(ev) => {
             ev.stopPropagation();
             setBellOpen(false);
@@ -172,9 +179,9 @@ export default function TopBar({
         role="menu"
         onClick={(ev) => ev.stopPropagation()}
       >
-        <div className="dd-head">اطلاعات</div>
+        <div className="dd-head">{t(lang, "topbar.notifications")}</div>
         {notices.length === 0 ? (
-          <div className="dd-empty">اس وقت کوئی نئی اطلاع موجود نہیں ہے۔</div>
+          <div className="dd-empty">{t(lang, "topbar.no_notices")}</div>
         ) : (
           <>
             {notices.map((n) => (
@@ -186,8 +193,14 @@ export default function TopBar({
               >
                 <span className="dd-notice-title">{n.title}</span>
                 <span className="dd-notice-meta">
-                  {NOTICE_KIND_LABELS[n.kind as NoticeKind] ?? n.kind} —{" "}
-                  {new Date(n.notice_date).toLocaleDateString("ur-PK")}
+                  {/* مرحلہ 102 — گھنٹی میں اطلاع کی قسم چنی ہوئی زبان میں */}
+                  {["notice", "announcement", "holiday"].includes(n.kind)
+                    ? t(lang, `notice.kind.${n.kind as NoticeKind}`)
+                    : (NOTICE_KIND_LABELS[n.kind as NoticeKind] ?? n.kind)}{" "}
+                  —{" "}
+                  {new Date(n.notice_date).toLocaleDateString(
+                    lang === "ar" ? "ar-EG" : "ur-PK",
+                  )}
                 </span>
               </Link>
             ))}
@@ -196,7 +209,7 @@ export default function TopBar({
               href="/departments/notices"
               onClick={closeMenus}
             >
-              تمام اطلاعات دیکھیں
+              {t(lang, "topbar.all_notices")}
             </Link>
           </>
         )}
@@ -211,7 +224,7 @@ export default function TopBar({
         </div>
         <Link className="dd-item" href="/profile" onClick={closeMenus}>
           <span dangerouslySetInnerHTML={{ __html: PROFILE_ICON_SVG }} />
-          میرا پروفائل
+          {t(lang, "topbar.my_profile")}
         </Link>
         {isAdmin ? (
           <Link
@@ -220,16 +233,16 @@ export default function TopBar({
             onClick={closeMenus}
           >
             <span dangerouslySetInnerHTML={{ __html: USERS_ICON_SVG }} />
-            صارفین اور اکاؤنٹس
+            {t(lang, "topbar.users")}
           </Link>
         ) : null}
         <Link className="dd-item" href="/departments/settings" onClick={closeMenus}>
           <span dangerouslySetInnerHTML={{ __html: SETTINGS_ICON_SVG }} />
-          نظام کی ترتیبات
+          {t(lang, "topbar.settings")}
         </Link>
         <button type="button" onClick={handleLogout}>
           <span dangerouslySetInnerHTML={{ __html: LOGOUT_ICON_SVG }} />
-          لاگ آؤٹ
+          {t(lang, "topbar.logout")}
         </button>
       </div>
     </header>

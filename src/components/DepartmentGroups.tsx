@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GROUPS } from "@/data/departments";
 import { Icon } from "@/components/icons";
 import type { DepartmentGroup } from "@/lib/types";
+import { t, type Lang } from "@/i18n/dictionary";
 
 /**
  * شعبہ جات کے گروپ اور ان کے بٹن — منظور شدہ ترتیب جوں کی توں:
@@ -14,11 +15,13 @@ function GroupSection({
   isAdmin,
   deniedModules,
   showReportsHub,
+  lang = "ur",
 }: {
   group: DepartmentGroup;
   isAdmin: boolean;
   deniedModules: string[];
   showReportsHub: boolean;
+  lang?: Lang;
 }) {
   // مرحلہ 25 — "صارفین اور اکاؤنٹس" بٹن صرف ایڈمن کو نظر آئے؛ عام صارف
   // کو نہ بٹن نظر آئے گا، نہ 404 ملے گا (صفحہ خود بھی ایڈمن کے لیے ہے)۔
@@ -135,17 +138,17 @@ function GroupSection({
                     ? "/departments/admissions-students"
                     : `/departments/${m.id}`;
           const label = isStudentsIdcardsHubTile
-            ? "طلبہ کے داخلے اور ریکارڈ"
+            ? t(lang, "hub.students_idcards")
             : isReportsHubTile
-            ? "رپورٹس"
+            ? t(lang, "hub.reports")
             : isAttendanceHubTile
-              ? "حاضری"
+              ? t(lang, "hub.attendance")
               : isWelfareHubTile
-                ? "وظائف اور طلبہ کے اخراجات"
+                ? t(lang, "hub.welfare")
                 : isUsersHubTile
-                  ? "صارفین اور اختیارات"
+                  ? t(lang, "hub.users")
                   : showCombined && m.id === "students"
-                    ? "داخلے اور طلبہ"
+                    ? t(lang, "hub.admissions_students")
                     : m.label;
           const icon = isReportsHubTile ? "report" : m.icon;
           return (
@@ -168,11 +171,24 @@ function GroupSection({
 export default function DepartmentGroups({
   isAdmin = false,
   deniedModules = [],
+  lang = "ur",
 }: {
   isAdmin?: boolean;
   deniedModules?: string[];
+  lang?: Lang;
 } = {}) {
-  const [edu, fin, admin, other] = GROUPS;
+  // مرحلہ 102 — گروپوں اور بٹنوں کے نام چنی ہوئی زبان میں (اصل ڈیٹا
+  // نہیں بدلتا — صرف دکھانے کے لیے ترجمہ کیا جاتا ہے)۔
+  const groups: DepartmentGroup[] = GROUPS.map((g) => ({
+    ...g,
+    title: t(lang, `group.${g.id}`),
+    modules: g.modules.map((m) => ({
+      ...m,
+      label: t(lang, `module.${m.id}`),
+      desc: t(lang, `module.${m.id}.desc`),
+    })),
+  }));
+  const [edu, fin, admin, other] = groups;
   // مرحلہ 56 — رپورٹس کے 4 بٹن ایک میں: چاروں میں سے کم از کم 2
   // کی اجازت ہو تو حب کا بٹن دکھائیں؛ صرف ایک کی اجازت ہو تو وہی
   // اکیلا بٹن دکھے (حب نہیں)۔
@@ -184,14 +200,14 @@ export default function DepartmentGroups({
       .length >= 2;
   return (
     <>
-      <GroupSection group={edu} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
-      <GroupSection group={fin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
+      <GroupSection group={edu} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
+      <GroupSection group={fin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
       <div className="split">
         <div>
-          <GroupSection group={admin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
+          <GroupSection group={admin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
         </div>
         <div>
-          <GroupSection group={other} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} />
+          <GroupSection group={other} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
         </div>
       </div>
     </>

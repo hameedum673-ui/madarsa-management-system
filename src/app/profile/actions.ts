@@ -6,6 +6,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
@@ -58,6 +59,48 @@ export async function updateMyProfile(
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "profile_updated", {
     name,
+  });
+  revalidatePath("/profile");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * مرحلہ 102 — اپنی زبان بدلنا (اردو / عربی)
+ * انگریزی اس مرحلے میں بند ہے — چنی جائے تو اردو غلطی ملتی ہے۔
+ * پروفائل میں محفوظ ہوتی ہے (set_my_language RPC — migration 054) اور
+ * "lang" کوکی بھی لگ جاتی ہے تاکہ اگلا صفحہ فوراً نئی زبان میں کھلے۔
+ */
+export async function setLanguage(
+  formData: FormData,
+): Promise<ProfileResult> {
+  const lang = String(formData.get("language") ?? "").trim();
+  if (lang !== "ur" && lang !== "ar")
+    return { error: "انگریزی جلد آ رہا ہے۔" };
+
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+
+  const { error } = await supabase.rpc("set_my_language", {
+    p_language: lang,
+  });
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883") {
+      return { error: "پہلے مرحلہ 102 کی SQL چلائیں۔" };
+    }
+    return { error: error.message || "زبان محفوظ نہیں ہو سکی۔" };
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set("lang", lang, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "language_changed", {
+    language: lang,
   });
   revalidatePath("/profile");
   revalidatePath("/");

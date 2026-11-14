@@ -1,5 +1,6 @@
 import { STATS } from "@/data/departments";
 import { Icon } from "@/components/icons";
+import { numLocale, t, type Lang } from "@/i18n/dictionary";
 
 /**
  * ڈیش بورڈ کے چار اعدادوشمار۔
@@ -24,6 +25,7 @@ export default function StatsRow({
   showTeachers = true,
   showClasses = true,
   showAttendance = true,
+  lang = "ur",
 }: {
   studentsCount?: number;
   teachersCount?: number;
@@ -40,8 +42,17 @@ export default function StatsRow({
   showTeachers?: boolean;
   showClasses?: boolean;
   showAttendance?: boolean;
+  lang?: Lang;
 }) {
-  const zero = (0).toLocaleString("ur-PK");
+  const locale = numLocale(lang);
+  const zero = (0).toLocaleString(locale);
+  // مرحلہ 102 — کارڈ کے نام چنی ہوئی زبان میں (STATS سے صرف آئیکن)
+  const statKeys = [
+    "stat.students",
+    "stat.teachers",
+    "stat.attendance",
+    "stat.classes",
+  ] as const;
   return (
     <div className="stats">
       {STATS.map((s, index) => {
@@ -57,16 +68,19 @@ export default function StatsRow({
         const attendanceMarked =
           isAttendance && attendanceToday && attendanceToday.marked > 0;
         const value = isStudents
-          ? studentsCount.toLocaleString("ur-PK")
+          ? studentsCount.toLocaleString(locale)
           : isTeachers
-            ? teachersCount.toLocaleString("ur-PK")
+            ? teachersCount.toLocaleString(locale)
             : isAttendance && attendanceMarked
-              ? attendanceToday.present.toLocaleString("ur-PK")
+              ? attendanceToday.present.toLocaleString(locale)
               : isClasses
-                ? classesCount.toLocaleString("ur-PK")
+                ? classesCount.toLocaleString(locale)
                 : zero;
         // مرحلہ 51 — بنین/بنات کی گنتی کا مجموعہ کل سے ملے تو الگ
         // گنتی دکھائیں؛ نہ ملے (SQL نہ چلی ہو) تو پرانا نوٹ دکھائیں۔
+        // مرحلہ 102 — نوٹ بھی چنی ہوئی زبان میں۔
+        const split = (banin: number, banat: number) =>
+          `${t(lang, "word.banin")} ${banin.toLocaleString(locale)} · ${t(lang, "word.banat")} ${banat.toLocaleString(locale)}`;
         const studentsSplitOk =
           studentsCount > 0 &&
           studentsBanin + studentsBanat === studentsCount;
@@ -78,27 +92,34 @@ export default function StatsRow({
           classesBanin + classesBanat === classesCount;
         const note =
           isStudents && studentsSplitOk
-            ? `بنین ${studentsBanin.toLocaleString("ur-PK")} · بنات ${studentsBanat.toLocaleString("ur-PK")}`
+            ? split(studentsBanin, studentsBanat)
             : isStudents && studentsCount > 0
-              ? "فعال طالبات"
+              ? t(lang, "stat.note.students_active")
               : isTeachers && teachersSplitOk
-                ? `بنین ${teachersBanin.toLocaleString("ur-PK")} · بنات ${teachersBanat.toLocaleString("ur-PK")}`
+                ? split(teachersBanin, teachersBanat)
                 : isTeachers && teachersCount > 0
-                  ? "فعال اساتذہ"
+                  ? t(lang, "stat.note.teachers_active")
               : isAttendance && attendanceMarked
-                ? `آج ${attendanceToday.total.toLocaleString("ur-PK")} میں سے ${attendanceToday.present.toLocaleString("ur-PK")} حاضر`
+                ? t(lang, "stat.note.attendance_today", {
+                    total: attendanceToday.total.toLocaleString(locale),
+                    present: attendanceToday.present.toLocaleString(locale),
+                  })
                 : isClasses && classesSplitOk
-                  ? `بنین ${classesBanin.toLocaleString("ur-PK")} · بنات ${classesBanat.toLocaleString("ur-PK")}`
+                  ? split(classesBanin, classesBanat)
                   : isClasses && classesCount > 0
-                    ? "فعال جماعتیں"
-                    : s.note;
+                    ? t(lang, "stat.note.classes_active")
+                    : isAttendance
+                      ? t(lang, "stat.note.attendance_empty")
+                      : isClasses
+                        ? t(lang, "stat.note.classes_empty")
+                        : t(lang, "stat.note.empty");
         return (
           <div className="stat" key={s.label}>
             <div className="sic">
               <Icon name={s.icon} />
             </div>
             <div>
-              <div className="slabel">{s.label}</div>
+              <div className="slabel">{t(lang, statKeys[index])}</div>
               <div className="svalue">{value}</div>
               <div className="snote">{note}</div>
             </div>

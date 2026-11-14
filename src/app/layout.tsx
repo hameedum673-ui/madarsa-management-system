@@ -4,6 +4,7 @@ import "./globals.css";
 import AutoLogout from "@/components/AutoLogout";
 import NavigationLoader from "@/components/NavigationLoader";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { getMyLanguage } from "@/lib/language";
 
 /**
  * بنیادی ڈھانچہ — زبان اردو، سمت RTL، وہی عنوان اور وہی اردو فونٹ،
@@ -51,13 +52,21 @@ export const viewport: Viewport = {
   themeColor: "#123a63",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // مرحلہ 102 — صارف کی زبان: کوکی، پھر پروفائل، پھر اردو۔
+  // عربی اور اردو دونوں RTL ہیں، اس لیے سمت نہیں بدلتی؛ صرف lang اور
+  // فونٹ بدلتا ہے (lang-ar سرخیوں کو نسخ فونٹ دیتی ہے — globals.css)۔
+  const lang = await getMyLanguage();
   return (
-    <html lang="ur" dir="rtl" className={`${naskhArabic.variable} ${nastaliqUrdu.variable}`}>
+    <html
+      lang={lang}
+      dir="rtl"
+      className={`${naskhArabic.variable} ${nastaliqUrdu.variable}${lang === "ar" ? " lang-ar" : ""}`}
+    >
       <body>
         <AutoLogout />
         <NavigationLoader />
