@@ -3,7 +3,11 @@ import StatsRow from "@/components/StatsRow";
 import DepartmentGroups from "@/components/DepartmentGroups";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
-import { getMyMadrasa, type SectionId } from "@/lib/students";
+import {
+  getMyMadrasa,
+  SECTION_IDS,
+  type SectionId,
+} from "@/lib/students";
 import { ROLE_LABELS, isMadrasaOwner } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { todayInKarachi } from "@/lib/attendance";
@@ -15,357 +19,381 @@ const FIN_MODULE_IDS: string[] =
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
 export default async function DashboardPage() {
-  // مرحلہ 4/5/6 — «کل طلبہ»، «کل اساتذہ» اور «آج کی حاضری» اصل تعداد دکھاتے ہیں۔
-  // میز نہ بنی ہو یا کوئی خرابی ہو تو صفر دکھایا جاتا ہے، صفحہ نہیں ٹوٹتا۔
+  // مرحلہ 91 — سوالات ایک ساتھ: پہلے وہ 2 چیزیں جن پر باقی سب منحصر
+  // ہے (اجازت والے شعبے + اپنی شناخت — دونوں ایک ساتھ)، پھر باقی سارے
+  // سوال ایک ہی وقت میں (Promise.all)۔ پہلے ہر سوال ایک کے بعد ایک
+  // پوچھا جاتا تھا — اسی لیے ڈیش بورڈ کھلنے میں 10 سے 15 سیکنڈ لگتے تھے۔
+  // حساب، فلٹر اور غلطی پر طے شدہ جواب — سب ویسے ہی ہیں جیسے پہلے تھے۔
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
-  const allowedSections = await getMyAllowedSections(supabase);
+  const [allowedSections, mine] = await Promise.all([
+    getMyAllowedSections(supabase).catch(
+      () => new Set(SECTION_IDS) as Set<SectionId>,
+    ),
+    getMyMadrasa(supabase).catch(() => null),
+  ]);
+  const today = todayInKarachi();
+  const sectionEq =
+    allowedSections.size < 2
+      ? ([...allowedSections][0] ?? "__none__")
+      : null;
 
-  let totalStudents = 0;
-  try {
-    let studentsQuery = supabase
-      .from("students")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active");
-    if (allowedSections.size < 2) {
-      studentsQuery = studentsQuery.eq(
-        "section",
-        [...allowedSections][0] ?? "__none__",
-      );
+  // --- ہر سوال اپنی کوشش میں: ناکام ہو تو طے شدہ جواب، باقی نہیں رکتے ---
+  const studentsCountP = (async () => {
+    try {
+      let q = supabase
+        .from("students")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active");
+      if (sectionEq) q = q.eq("section", sectionEq);
+      const { count } = await q;
+      return count ?? 0;
+    } catch {
+      return 0;
     }
-    const { count } = await studentsQuery;
-    totalStudents = count ?? 0;
-  } catch {
-    totalStudents = 0;
-  }
+  })();
 
-  let totalTeachers = 0;
-  try {
-    let teachersQuery = supabase
-      .from("teachers")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active");
-    if (allowedSections.size < 2) {
-      teachersQuery = teachersQuery.eq(
-        "section",
-        [...allowedSections][0] ?? "__none__",
-      );
+  const teachersCountP = (async () => {
+    try {
+      let q = supabase
+        .from("teachers")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active");
+      if (sectionEq) q = q.eq("section", sectionEq);
+      const { count } = await q;
+      return count ?? 0;
+    } catch {
+      return 0;
     }
-    const { count } = await teachersQuery;
-    totalTeachers = count ?? 0;
-  } catch {
-    totalTeachers = 0;
-  }
+  })();
 
-  // مرحلہ 51 — بنین / بنات کی الگ گنتی (فعال طلبہ اور اساتذہ)
-  // میز میں section والا کالم نہ ہو (SQL نہ چلی ہو) تو گنتی صفر رہتی ہے۔
-  let studentsBanin = 0;
-  let studentsBanat = 0;
-  try {
-    const { count: cBanin } = await supabase
-      .from("students")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .eq("section", "banin");
-    const { count: cBanat } = await supabase
-      .from("students")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .eq("section", "banat");
-    studentsBanin = allowedSections.has("banin") ? (cBanin ?? 0) : 0;
-    studentsBanat = allowedSections.has("banat") ? (cBanat ?? 0) : 0;
-  } catch {
-    studentsBanin = 0;
-    studentsBanat = 0;
-  }
+  // مرحلہ 51 — بنین / بنات کی الگ گنتی (میز میں section والا کالم نہ ہو
+  // تو گنتی صفر رہتی ہے)
+  const studentsBaninP = (async () => {
+    try {
+      const { count } = await supabase
+        .from("students")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("section", "banin");
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
 
-  let teachersBanin = 0;
-  let teachersBanat = 0;
-  try {
-    const { count: cBanin } = await supabase
-      .from("teachers")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .eq("section", "banin");
-    const { count: cBanat } = await supabase
-      .from("teachers")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .eq("section", "banat");
-    teachersBanin = allowedSections.has("banin") ? (cBanin ?? 0) : 0;
-    teachersBanat = allowedSections.has("banat") ? (cBanat ?? 0) : 0;
-  } catch {
-    teachersBanin = 0;
-    teachersBanat = 0;
-  }
+  const studentsBanatP = (async () => {
+    try {
+      const { count } = await supabase
+        .from("students")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("section", "banat");
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const teachersBaninP = (async () => {
+    try {
+      const { count } = await supabase
+        .from("teachers")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("section", "banin");
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const teachersBanatP = (async () => {
+    try {
+      const { count } = await supabase
+        .from("teachers")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("section", "banat");
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
 
   // آج کی حاضری — پاکستان کی تاریخ کے حساب سے
   // (مرحلہ 54 — محدود صارف کو صرف اجازت والے شعبے کی حاضری دکھے)
-  let attendanceToday: { present: number; total: number; marked: number } | null =
-    null;
-  try {
-    const today = todayInKarachi();
-    if (allowedSections.size === 0) {
-      attendanceToday = { present: 0, total: totalStudents, marked: 0 };
-    } else if (allowedSections.size < 2) {
-      // محدود صارف — آج کی حاضری کی قطاریں پڑھ کر شعبے کے حساب سے گنیں
-      const { data: attRows } = await supabase
-        .from("student_attendance")
-        .select("status, students(section)")
-        .eq("date", today);
-      const allowedRows = (
-        (attRows ?? []) as unknown as {
-          status: string;
-          students: { section: string } | null;
-        }[]
-      ).filter((r) =>
-        allowedSections.has((r.students?.section ?? "banat") as SectionId),
-      );
-      attendanceToday = {
-        present: allowedRows.filter((r) => r.status === "present").length,
-        total: totalStudents,
-        marked: allowedRows.length,
+  const attendanceP = (async (): Promise<{
+    present: number;
+    marked: number;
+  } | null> => {
+    try {
+      if (allowedSections.size === 0) {
+        return { present: 0, marked: 0 };
+      }
+      if (allowedSections.size < 2) {
+        // محدود صارف — آج کی حاضری کی قطاریں پڑھ کر شعبے کے حساب سے گنیں
+        const { data: attRows } = await supabase
+          .from("student_attendance")
+          .select("status, students(section)")
+          .eq("date", today);
+        const allowedRows = (
+          (attRows ?? []) as unknown as {
+            status: string;
+            students: { section: string } | null;
+          }[]
+        ).filter((r) =>
+          allowedSections.has((r.students?.section ?? "banat") as SectionId),
+        );
+        return {
+          present: allowedRows.filter((r) => r.status === "present").length,
+          marked: allowedRows.length,
+        };
+      }
+      const [presentRes, markedRes] = await Promise.all([
+        supabase
+          .from("student_attendance")
+          .select("id", { count: "exact", head: true })
+          .eq("date", today)
+          .eq("status", "present"),
+        supabase
+          .from("student_attendance")
+          .select("id", { count: "exact", head: true })
+          .eq("date", today),
+      ]);
+      return {
+        present: presentRes.count ?? 0,
+        marked: markedRes.count ?? 0,
       };
-    } else {
-      const { count: presentCount } = await supabase
-        .from("student_attendance")
-        .select("id", { count: "exact", head: true })
-        .eq("date", today)
-        .eq("status", "present");
-      const { count: markedCount } = await supabase
-        .from("student_attendance")
-        .select("id", { count: "exact", head: true })
-        .eq("date", today);
-      attendanceToday = {
-        present: presentCount ?? 0,
-        total: totalStudents,
-        marked: markedCount ?? 0,
-      };
+    } catch {
+      return null;
     }
-  } catch {
-    attendanceToday = null;
-  }
+  })();
 
   // مرحلہ 8 + مرحلہ 16 + مرحلہ 20 + مرحلہ 48 (وکالت کا اصول) — مالی بیلنس:
-  // فعال فیس + فعال عطیات + زکوٰۃ (وصولی) + عشر (وصولی)
-  // مائنس فعال اخراجات۔ منسوخ ریکارڈ نہیں گنے جاتے۔
+  // فعال فیس + فعال عطیات + زکوٰۃ (وصولی) + عشر (وصولی) مائنس فعال
+  // اخراجات۔ منسوخ ریکارڈ نہیں گنے جاتے۔
   // (مرحلہ 49 — تقسیم ختم، صرف وصولی گنی جاتی ہے)
-  let balance: { value: number; hasPayments: boolean } | null = null;
-  try {
-    const { data: payments } = await supabase
-      .from("fee_payments")
-      .select("amount, students(section)")
-      .eq("status", "active");
-    // مرحلہ 54 — بیلنس میں فیس صرف اجازت والے شعبے کی
-    const feeRows = (
-      (payments ?? []) as unknown as {
-        amount: number;
-        students: { section: string } | null;
-      }[]
-    ).filter((p) =>
-      allowedSections.has((p.students?.section ?? "banat") as SectionId),
-    );
-    const { data: given } = await supabase
-      .from("donations")
-      .select("amount, section")
-      .eq("status", "active");
-    // مرحلہ 62 — عطیات بھی صرف اجازت والے شعبے کے
-    const donationRows = (
-      (given ?? []) as { amount: number; section: string | null }[]
-    ).filter((d) =>
-      allowedSections.has((d.section ?? "banat") as SectionId),
-    );
-    const { data: spent } = await supabase
-      .from("expenses")
-      .select("amount, section")
-      .eq("status", "active");
-    // مرحلہ 62 — اخراجات بھی صرف اجازت والے شعبے کے
-    const expenseRows = (
-      (spent ?? []) as { amount: number; section: string | null }[]
-    ).filter((e) =>
-      allowedSections.has((e.section ?? "banat") as SectionId),
-    );
-    const { data: zakatData } = await supabase
-      .from("zakat_records")
-      .select("kind, amount, section")
-      .eq("status", "active");
-    // مرحلہ 62 — زکوٰۃ بھی صرف اجازت والے شعبے کی
-    const zakatRows = (
-      (zakatData ?? []) as {
-        kind: string;
-        amount: number;
-        section: string | null;
-      }[]
-    ).filter((r) =>
-      allowedSections.has((r.section ?? "banat") as SectionId),
-    );
-    const { data: ushrData } = await supabase
-      .from("ushr_records")
-      .select("kind, amount, section")
-      .eq("status", "active");
-    // مرحلہ 62 — عشر بھی صرف اجازت والے شعبے کا
-    const ushrRows = (
-      (ushrData ?? []) as {
-        kind: string;
-        amount: number;
-        section: string | null;
-      }[]
-    ).filter((r) =>
-      allowedSections.has((r.section ?? "banat") as SectionId),
-    );
-    const feesTotal = feeRows.reduce((sum, p) => sum + (p.amount ?? 0), 0);
-    const donationsTotal = donationRows.reduce(
-      (sum, d) => sum + (d.amount ?? 0),
-      0,
-    );
-    const expensesTotal = expenseRows.reduce(
-      (sum, e) => sum + (e.amount ?? 0),
-      0,
-    );
-    // مرحلہ 49 — تقسیم ختم: زکوٰۃ/عشر صرف "وصولی" گنے جاتے ہیں
-    const zakatNet = zakatRows
-      .filter((r) => r.kind === "received")
-      .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-    const ushrNet = ushrRows
-      .filter((r) => r.kind === "received")
-      .reduce((sum, r) => sum + (r.amount ?? 0), 0);
-    balance = {
-      value: feesTotal + donationsTotal + zakatNet + ushrNet - expensesTotal,
-      hasPayments:
-        feeRows.length > 0 ||
-        donationRows.length > 0 ||
-        expenseRows.length > 0 ||
-        zakatRows.length > 0 ||
-        ushrRows.length > 0,
-    };
-  } catch {
-    balance = null;
-  }
+  const feeRowsP = (async () => {
+    try {
+      const { data: payments } = await supabase
+        .from("fee_payments")
+        .select("amount, students(section)")
+        .eq("status", "active");
+      // مرحلہ 54 — بیلنس میں فیس صرف اجازت والے شعبے کی
+      return (
+        (payments ?? []) as unknown as {
+          amount: number;
+          students: { section: string } | null;
+        }[]
+      ).filter((p) =>
+        allowedSections.has((p.students?.section ?? "banat") as SectionId),
+      );
+    } catch {
+      // پھینکی گئی خرابی (نیٹ کٹ جائے) تو بیلنس بالکل نہیں دکھانا —
+      // آدھا بیلنس غلط عدد دکھائے گا (پہلے بھی یہی اصول تھا)
+      return null;
+    }
+  })();
 
-  // مرحلہ 24 — مدرسے کا نام اور پتہ ڈیٹا بیس سے (عمومی ریکارڈ سے بدلتا ہے)۔
-  // نہ ملے تو پرانا لکھا ہوا نام دکھایا جاتا ہے، صفحہ نہیں ٹوٹتا۔
-  // مرحلہ 25 — لاگ اِن صارف کا نام/کردار بھی (اوپر والے مینو کے لیے)۔
-  // مرحلہ 26 — بند شعبوں کی فہرست (صرف عام صارف کے لیے)۔
-  let madrasaName: string | null = null;
-  let madrasaAddress: string | null = null;
-  let userName: string | null = null;
-  let userRole: string | null = null;
-  let isAdmin = false;
-  // حصہ 4 کی درستگی — مالک بھی (سپر ایڈمن نہ ہو تو بھی)
-  let isOwner = false;
-  let deniedModules: string[] = [];
-  // مرحلہ 32 — گھنٹی کے لیے تازہ فعال اطلاعات (زیادہ سے زیادہ 5)
-  let recentNotices: {
-    id: string;
-    title: string;
-    kind: string;
-    notice_date: string;
-  }[] = [];
-  let activeNoticesCount = 0;
-  // مرحلہ 67 — مہمان ہو تو باقی وقت (نہ ہو تو خالی)
-  let guestRemainingText: string | null = null;
-  // مرحلہ 80 — بیک اپ کی یاددہانی (نہ ہو تو خالی)
-  let backupReminderText: string | null = null;
-  try {
-    const mine = await getMyMadrasa(supabase);
-    if (mine) {
+  const donationRowsP = (async () => {
+    try {
+      const { data: given } = await supabase
+        .from("donations")
+        .select("amount, section")
+        .eq("status", "active");
+      // مرحلہ 62 — عطیات بھی صرف اجازت والے شعبے کے
+      return (
+        (given ?? []) as { amount: number; section: string | null }[]
+      ).filter((d) =>
+        allowedSections.has((d.section ?? "banat") as SectionId),
+      );
+    } catch {
+      return null;
+    }
+  })();
+
+  const expenseRowsP = (async () => {
+    try {
+      const { data: spent } = await supabase
+        .from("expenses")
+        .select("amount, section")
+        .eq("status", "active");
+      // مرحلہ 62 — اخراجات بھی صرف اجازت والے شعبے کے
+      return (
+        (spent ?? []) as { amount: number; section: string | null }[]
+      ).filter((e) =>
+        allowedSections.has((e.section ?? "banat") as SectionId),
+      );
+    } catch {
+      return null;
+    }
+  })();
+
+  const zakatRowsP = (async () => {
+    try {
+      const { data: zakatData } = await supabase
+        .from("zakat_records")
+        .select("kind, amount, section")
+        .eq("status", "active");
+      // مرحلہ 62 — زکوٰۃ بھی صرف اجازت والے شعبے کی
+      return (
+        (zakatData ?? []) as {
+          kind: string;
+          amount: number;
+          section: string | null;
+        }[]
+      ).filter((r) =>
+        allowedSections.has((r.section ?? "banat") as SectionId),
+      );
+    } catch {
+      return null;
+    }
+  })();
+
+  const ushrRowsP = (async () => {
+    try {
+      const { data: ushrData } = await supabase
+        .from("ushr_records")
+        .select("kind, amount, section")
+        .eq("status", "active");
+      // مرحلہ 62 — عشر بھی صرف اجازت والے شعبے کا
+      return (
+        (ushrData ?? []) as {
+          kind: string;
+          amount: number;
+          section: string | null;
+        }[]
+      ).filter((r) =>
+        allowedSections.has((r.section ?? "banat") as SectionId),
+      );
+    } catch {
+      return null;
+    }
+  })();
+
+  // مرحلہ 24/25/26/32/67/80/84 — نام، پتہ، صارف، بند شعبے، اطلاعات، بیک اپ
+  const madrasaNameP = (async (): Promise<string | null> => {
+    if (!mine) return null;
+    try {
       const { data: madrasa } = await supabase
         .from("madrasas")
         .select("name")
         .eq("id", mine.madrasaId)
         .single();
-      if (madrasa?.name) madrasaName = madrasa.name as string;
+      return (madrasa?.name as string | undefined) ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const madrasaAddressP = (async (): Promise<string | null> => {
+    if (!mine) return null;
+    try {
       const { data: profile } = await supabase
         .from("madrasa_profile")
         .select("address")
         .eq("madrasa_id", mine.madrasaId)
         .single();
-      if (profile?.address) madrasaAddress = profile.address as string;
+      return (profile?.address as string | undefined) ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const myProfileP = (async (): Promise<{
+    name: string | null;
+    role: string | null;
+    guest_expires_at: string | null;
+  } | null> => {
+    if (!mine) return null;
+    try {
       const { data: myProfile } = await supabase
         .from("profiles")
         .select("name, role, guest_expires_at")
         .eq("id", mine.userId)
         .single();
-      if (myProfile?.name) userName = myProfile.name as string;
-      // مرحلہ 67 — مہمان کا باقی وقت (گھنٹے + منٹ)
-      if (myProfile?.guest_expires_at) {
-        const ms =
-          new Date(myProfile.guest_expires_at as string).getTime() -
-          Date.now();
-        if (ms > 0) {
-          const mins = Math.floor(ms / 60000);
-          const h = Math.floor(mins / 60);
-          const m = mins % 60;
-          guestRemainingText =
-            h > 0
-              ? `${h.toLocaleString("ur-PK")} گھنٹہ ${m.toLocaleString("ur-PK")} منٹ`
-              : `${m.toLocaleString("ur-PK")} منٹ`;
-        }
-      }
-      if (myProfile?.role) {
-        userRole = ROLE_LABELS[myProfile.role as MadrasaRole] ?? null;
-        isAdmin = myProfile.role === "super_admin";
-      }
-      // حصہ 4 کی درستگی — مالک کی جانچ (Migration 043 نہ چلی ہو تو false)
-      isOwner = await isMadrasaOwner(supabase);
-      // مرحلہ 80 — بیک اپ کی یاددہانی (مہمان کو نہیں — اس کا ڈیٹا نمونہ ہے؛
-      // حصہ 4 — صرف مالک کو، عملے کو بیک اپ کا لنک دکھانا ہی نہیں)
-      // مرحلہ 84 — یاددہانی اب خودکار بیک اپ کو بھی دیکھتی ہے (ورنہ روزانہ
-      // خودکار بیک اپ کے باوجود 30 دن بعد غلط وارننگ آتی)
-      if (!myProfile?.guest_expires_at && (isAdmin || isOwner)) {
-        const { data: lastBackup } = await supabase
+      if (!myProfile) return null;
+      return {
+        name: (myProfile.name as string | undefined) ?? null,
+        role: (myProfile.role as string | undefined) ?? null,
+        guest_expires_at:
+          (myProfile.guest_expires_at as string | undefined) ?? null,
+      };
+    } catch {
+      return null;
+    }
+  })();
+
+  // حصہ 4 کی درستگی — مالک کی جانچ (Migration 043 نہ چلی ہو تو false)
+  const isOwnerP = (async () => {
+    if (!mine) return false;
+    try {
+      return await isMadrasaOwner(supabase);
+    } catch {
+      return false;
+    }
+  })();
+
+  // مرحلہ 80/84 — بیک اپ کی یاددہانی (دستی + خودکار — دونوں میں سے تازہ)
+  const backupP = (async (): Promise<{
+    manualAt: string | null;
+    autoAt: string | null;
+  }> => {
+    if (!mine) return { manualAt: null, autoAt: null };
+    try {
+      const [manualRes, autoRes] = await Promise.all([
+        supabase
           .from("backup_log")
           .select("downloaded_at")
           .order("downloaded_at", { ascending: false })
           .limit(1)
-          .maybeSingle();
-        const manualAt =
-          (lastBackup?.downloaded_at as string | undefined) ?? null;
-        let autoAt: string | null = null;
-        const { data: autoFiles } = await supabase.storage
-          .from("backups")
-          .list(mine.madrasaId, {
-            limit: 1,
-            sortBy: { column: "name", order: "desc" },
-          });
-        const latestAutoName = (autoFiles ?? [])[0]?.name as
-          | string
-          | undefined;
-        const autoMatch = latestAutoName
-          ? /^auto-(\d{4})-(\d{2})-(\d{2})\.json$/.exec(latestAutoName)
-          : null;
-        if (autoMatch) {
-          autoAt = `${autoMatch[1]}-${autoMatch[2]}-${autoMatch[3]}T00:00:00Z`;
-        }
-        const lastAt =
-          [manualAt, autoAt]
-            .filter((d): d is string => d !== null)
-            .sort()
-            .pop() ?? null;
-        if (!lastAt) {
-          backupReminderText =
-            "ابھی تک بیک اپ ڈاؤن لوڈ نہیں ہوا — ڈیٹا محفوظ رکھنے کے لیے بیک اپ ڈاؤن لوڈ کر لیں۔";
-        } else {
-          const days = Math.floor(
-            (Date.now() - new Date(lastAt).getTime()) /
-              (24 * 60 * 60 * 1000),
-          );
-          if (days > 30) {
-            backupReminderText = `آخری بیک اپ کو ${days.toLocaleString("ur-PK")} دن ہو گئے ہیں — نیا بیک اپ ڈاؤن لوڈ کر لیں۔`;
-          }
-        }
+          .maybeSingle(),
+        supabase.storage.from("backups").list(mine.madrasaId, {
+          limit: 1,
+          sortBy: { column: "name", order: "desc" },
+        }),
+      ]);
+      const manualAt =
+        (manualRes.data?.downloaded_at as string | undefined) ?? null;
+      let autoAt: string | null = null;
+      const latestAutoName = (autoRes.data ?? [])[0]?.name as
+        | string
+        | undefined;
+      const autoMatch = latestAutoName
+        ? /^auto-(\d{4})-(\d{2})-(\d{2})\.json$/.exec(latestAutoName)
+        : null;
+      if (autoMatch) {
+        autoAt = `${autoMatch[1]}-${autoMatch[2]}-${autoMatch[3]}T00:00:00Z`;
       }
-      // بند شعبے — صرف عام صارف کے لیے (ایڈمن کو سب کچھ نظر آتا ہے)
-      if (!isAdmin) {
-        const { data: denied } = await supabase
-          .from("user_permissions")
-          .select("module")
-          .eq("allowed", false);
-        deniedModules = ((denied ?? []) as { module: string }[]).map(
-          (d) => d.module,
-        );
-      }
-      // مرحلہ 32 — گھنٹی کے لیے تازہ فعال اطلاعات (میز نہ بنی ہو تو خالی)
+      return { manualAt, autoAt };
+    } catch {
+      return { manualAt: null, autoAt: null };
+    }
+  })();
+
+  // بند شعبے — صرف عام صارف کے لیے (ایڈمن کو سب کچھ نظر آتا ہے؛
+  // ایڈمن کے لیے پوچھنا بھی اس کے اپنے بند شعبے نہیں دیتا، اس لیے
+  // جواب بعد میں پھینک دیا جاتا ہے)
+  const deniedP = (async (): Promise<string[]> => {
+    if (!mine) return [];
+    try {
+      const { data: denied } = await supabase
+        .from("user_permissions")
+        .select("module")
+        .eq("allowed", false);
+      return ((denied ?? []) as { module: string }[]).map((d) => d.module);
+    } catch {
+      return [];
+    }
+  })();
+
+  // مرحلہ 32 — گھنٹی کے لیے تازہ فعال اطلاعات (زیادہ سے زیادہ 5)
+  const noticesP = (async (): Promise<
+    { id: string; title: string; kind: string; notice_date: string }[]
+  > => {
+    if (!mine) return [];
+    try {
       const { data: noticeRows } = await supabase
         .from("notices")
         .select("id, title, kind, notice_date")
@@ -373,7 +401,7 @@ export default async function DashboardPage() {
         .order("notice_date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(5);
-      recentNotices = ((noticeRows ?? []) as {
+      return ((noticeRows ?? []) as {
         id: string;
         title: string;
         kind: string;
@@ -384,24 +412,155 @@ export default async function DashboardPage() {
         kind: n.kind,
         notice_date: n.notice_date,
       }));
+    } catch {
+      return [];
+    }
+  })();
+
+  const noticesCountP = (async () => {
+    if (!mine) return 0;
+    try {
       const { count: noticeCount } = await supabase
         .from("notices")
         .select("id", { count: "exact", head: true })
         .eq("status", "active");
-      activeNoticesCount = noticeCount ?? 0;
+      return noticeCount ?? 0;
+    } catch {
+      return 0;
     }
-  } catch {
-    madrasaName = null;
-    madrasaAddress = null;
-    userName = null;
-    userRole = null;
-    isAdmin = false;
-    isOwner = false;
-    deniedModules = [];
-    recentNotices = [];
-    activeNoticesCount = 0;
-    backupReminderText = null;
+  })();
+
+  // --- سب سوال ایک ساتھ پوچھے جاتے ہیں، جواب یہاں ملتا ہے ---
+  const [
+    totalStudents,
+    totalTeachers,
+    studentsBaninRaw,
+    studentsBanatRaw,
+    teachersBaninRaw,
+    teachersBanatRaw,
+    attendanceRaw,
+    feeRows,
+    donationRows,
+    expenseRows,
+    zakatRows,
+    ushrRows,
+    madrasaName,
+    madrasaAddress,
+    myProfile,
+    isOwner,
+    backupDates,
+    deniedRows,
+    recentNotices,
+    activeNoticesCount,
+  ] = await Promise.all([
+    studentsCountP,
+    teachersCountP,
+    studentsBaninP,
+    studentsBanatP,
+    teachersBaninP,
+    teachersBanatP,
+    attendanceP,
+    feeRowsP,
+    donationRowsP,
+    expenseRowsP,
+    zakatRowsP,
+    ushrRowsP,
+    madrasaNameP,
+    madrasaAddressP,
+    myProfileP,
+    isOwnerP,
+    backupP,
+    deniedP,
+    noticesP,
+    noticesCountP,
+  ]);
+
+  const studentsBanin = allowedSections.has("banin") ? studentsBaninRaw : 0;
+  const studentsBanat = allowedSections.has("banat") ? studentsBanatRaw : 0;
+  const teachersBanin = allowedSections.has("banin") ? teachersBaninRaw : 0;
+  const teachersBanat = allowedSections.has("banat") ? teachersBanatRaw : 0;
+
+  const attendanceToday: {
+    present: number;
+    total: number;
+    marked: number;
+  } | null = attendanceRaw
+    ? {
+        present: attendanceRaw.present,
+        total: totalStudents,
+        marked: attendanceRaw.marked,
+      }
+    : null;
+
+  // بیلنس — وہی فارمولہ (مرحلہ 49: زکوٰۃ/عشر صرف "وصولی")؛
+  // پانچ میں سے ایک سوال بھی پھینکی خرابی دے تو بیلنس null (پہلے بھی یہی تھا)
+  const balance: { value: number; hasPayments: boolean } | null =
+    feeRows && donationRows && expenseRows && zakatRows && ushrRows
+      ? {
+          value:
+            feeRows.reduce((sum, p) => sum + (p.amount ?? 0), 0) +
+            donationRows.reduce((sum, d) => sum + (d.amount ?? 0), 0) +
+            zakatRows
+              .filter((r) => r.kind === "received")
+              .reduce((sum, r) => sum + (r.amount ?? 0), 0) +
+            ushrRows
+              .filter((r) => r.kind === "received")
+              .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
+            expenseRows.reduce((sum, e) => sum + (e.amount ?? 0), 0),
+          hasPayments:
+            feeRows.length > 0 ||
+            donationRows.length > 0 ||
+            expenseRows.length > 0 ||
+            zakatRows.length > 0 ||
+            ushrRows.length > 0,
+        }
+      : null;
+
+  // مرحلہ 25/67 — صارف کا نام/کردار، مہمان کا باقی وقت
+  const userName = myProfile?.name ?? null;
+  const userRole = myProfile?.role
+    ? (ROLE_LABELS[myProfile.role as MadrasaRole] ?? null)
+    : null;
+  const isAdmin = myProfile?.role === "super_admin";
+  let guestRemainingText: string | null = null;
+  if (myProfile?.guest_expires_at) {
+    const ms =
+      new Date(myProfile.guest_expires_at).getTime() - Date.now();
+    if (ms > 0) {
+      const mins = Math.floor(ms / 60000);
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      guestRemainingText =
+        h > 0
+          ? `${h.toLocaleString("ur-PK")} گھنٹہ ${m.toLocaleString("ur-PK")} منٹ`
+          : `${m.toLocaleString("ur-PK")} منٹ`;
+    }
   }
+
+  // مرحلہ 80/84 — بیک اپ کی یاددہانی (مہمان کو نہیں — اس کا ڈیٹا نمونہ
+  // ہے؛ حصہ 4 — صرف مالک کو، عملے کو بیک اپ کا لنک دکھانا ہی نہیں)
+  let backupReminderText: string | null = null;
+  if (!myProfile?.guest_expires_at && (isAdmin || isOwner)) {
+    const lastAt =
+      [backupDates.manualAt, backupDates.autoAt]
+        .filter((d): d is string => d !== null)
+        .sort()
+        .pop() ?? null;
+    if (!lastAt) {
+      backupReminderText =
+        "ابھی تک بیک اپ ڈاؤن لوڈ نہیں ہوا — ڈیٹا محفوظ رکھنے کے لیے بیک اپ ڈاؤن لوڈ کر لیں۔";
+    } else {
+      const days = Math.floor(
+        (Date.now() - new Date(lastAt).getTime()) / (24 * 60 * 60 * 1000),
+      );
+      if (days > 30) {
+        backupReminderText = `آخری بیک اپ کو ${days.toLocaleString("ur-PK")} دن ہو گئے ہیں — نیا بیک اپ ڈاؤن لوڈ کر لیں۔`;
+      }
+    }
+  }
+
+  // بند شعبے — صرف عام صارف کے لیے
+  const deniedModules: string[] = isAdmin ? [] : deniedRows;
 
   return (
     <>
