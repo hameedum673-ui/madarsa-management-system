@@ -389,6 +389,29 @@ const ur: Dict = {
   "teacher.err.status_invalid": "حالت درست منتخب کریں (فعال یا خارج)۔",
 
   "staff.err.name_required": "عملے کا نام ضروری ہے۔",
+
+  "classes.title": "درجات اور جماعتیں",
+  "classes.add": "+ نئی جماعت شامل کریں",
+  "classes.section_filter": "شعبہ (بنین / بنات)",
+  "classes.table_missing": "جماعتوں کی میز ابھی نہیں بنی — پہلے مرحلہ 14 کی SQL چلائیں۔",
+  "classes.empty": "ابھی کوئی جماعت درج نہیں ہے۔ اوپر والے بٹن سے پہلی جماعت شامل کریں۔",
+  "classes.new_title": "نئی جماعت شامل کریں",
+
+  "col.sort_order": "ترتیب نمبر",
+  "col.class_name": "جماعت کا نام",
+
+  "class.status.active": "فعال",
+  "class.status.inactive": "غیر فعال",
+
+  "class.form.name": "جماعت کا نام *",
+  "class.form.name_ph": "مثلاً درجہ اولیٰ، ناظرہ درجہ اول",
+  "class.form.dept": "شعبہ *",
+  "class.form.section": "شعبہ (بنین / بنات) *",
+  "class.form.sort_order": "ترتیب نمبر *",
+
+  "class.err.name_required": "جماعت کا نام ضروری ہے۔",
+  "class.err.sort_order": "ترتیب نمبر 1 سے 999 کے درمیان ہونا چاہیے۔",
+  "class.err.status_invalid": "حالت درست منتخب کریں (فعال یا غیر فعال)۔",
 };
 
 const ar: Dict = {
@@ -745,6 +768,29 @@ const ar: Dict = {
   "teacher.err.status_invalid": "اختر الحالة الصحيحة (نشط أو منسحب).",
 
   "staff.err.name_required": "اسم الموظف مطلوب.",
+
+  "classes.title": "الدرجات والشعب",
+  "classes.add": "+ إضافة شعبة جديدة",
+  "classes.section_filter": "القسم (بنون / بنات)",
+  "classes.table_missing": "لم يتم إنشاء جدول الشعب بعد — شغّل SQL للمرحلة 14 أولًا.",
+  "classes.empty": "لا توجد شعبة مسجلة بعد. أضف الشعبة الأولى من الزر أعلاه.",
+  "classes.new_title": "إضافة شعبة جديدة",
+
+  "col.sort_order": "رقم الترتيب",
+  "col.class_name": "اسم الشعبة",
+
+  "class.status.active": "نشط",
+  "class.status.inactive": "غير نشط",
+
+  "class.form.name": "اسم الشعبة *",
+  "class.form.name_ph": "مثال: الدرجة الأولى، ناظرة الدرجة الأولى",
+  "class.form.dept": "القسم *",
+  "class.form.section": "القسم (بنون / بنات) *",
+  "class.form.sort_order": "رقم الترتيب *",
+
+  "class.err.name_required": "اسم الشعبة مطلوب.",
+  "class.err.sort_order": "يجب أن يكون رقم الترتيب بين 1 و999.",
+  "class.err.status_invalid": "اختر الحالة الصحيحة (نشط أو غير نشط).",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

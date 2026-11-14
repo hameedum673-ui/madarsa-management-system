@@ -9,11 +9,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
 } from "@/lib/students";
-import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
+import type { MadrasaClass } from "@/lib/classes";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -25,12 +24,14 @@ export default function ClassForm({
   submitLabel,
   cancelHref,
   showStatus,
+  lang = "ur",
 }: {
   initial?: Partial<MadrasaClass>;
   action: FormAction;
   submitLabel: string;
   cancelHref: string;
   showStatus?: boolean;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -53,9 +54,10 @@ export default function ClassForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">جماعت کا نام *</span>
+          <span className="field-label">{t(lang, "class.form.name")}</span>
           <input
             className="field-input"
             name="name"
@@ -63,12 +65,12 @@ export default function ClassForm({
             required
             maxLength={100}
             defaultValue={initial?.name ?? ""}
-            placeholder="مثلاً درجہ اولیٰ، ناظرہ درجہ اول"
+            placeholder={t(lang, "class.form.name_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ *</span>
+          <span className="field-label">{t(lang, "class.form.dept")}</span>
           <select
             className="field-input"
             name="department"
@@ -77,14 +79,14 @@ export default function ClassForm({
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+                {t(lang, `dept.${d}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <span className="field-label">{t(lang, "class.form.section")}</span>
           <select
             className="field-input"
             name="section"
@@ -93,14 +95,16 @@ export default function ClassForm({
           >
             {SECTION_IDS.map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABELS[s]}
+                {t(lang, `section.${s}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">ترتیب نمبر *</span>
+          <span className="field-label">
+            {t(lang, "class.form.sort_order")}
+          </span>
           <input
             className="field-input"
             name="sort_order"
@@ -116,15 +120,17 @@ export default function ClassForm({
 
       {showStatus ? (
         <label className="field">
-          <span className="field-label">حالت</span>
+          <span className="field-label">{t(lang, "col.status")}</span>
           <select
             className="field-input"
             name="status"
             required
             defaultValue={initial?.status ?? "active"}
           >
-            <option value="active">{CLASS_STATUS_LABELS.active}</option>
-            <option value="inactive">{CLASS_STATUS_LABELS.inactive}</option>
+            <option value="active">{t(lang, "class.status.active")}</option>
+            <option value="inactive">
+              {t(lang, "class.status.inactive")}
+            </option>
           </select>
         </label>
       ) : null}
@@ -133,10 +139,10 @@ export default function ClassForm({
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : submitLabel}
+          {loading ? t(lang, "common.wait") : submitLabel}
         </button>
         <Link className="btn-ghost" href={cancelHref}>
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

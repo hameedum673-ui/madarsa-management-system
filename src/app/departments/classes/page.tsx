@@ -12,13 +12,13 @@ import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
-import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
+import type { MadrasaClass } from "@/lib/classes";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function ClassesPage({
   searchParams,
@@ -35,7 +35,10 @@ export default async function ClassesPage({
 
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
-  const allowedSections = await getMyAllowedSections(supabase);
+  const [allowedSections, lang] = await Promise.all([
+    getMyAllowedSections(supabase),
+    getMyLanguage(),
+  ]);
   // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
   const { from, to } = pageRange(page);
@@ -69,72 +72,72 @@ export default async function ClassesPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>درجات اور جماعتیں</h2>
+          <h2>{t(lang, "classes.title")}</h2>
           <span className="page-count">
-            کل: {(count ?? 0).toLocaleString("ur-PK")}
+            {t(lang, "students.count_total", {
+              n: (count ?? 0).toLocaleString("ur-PK"),
+            })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/classes/new">
-            + نئی جماعت شامل کریں
+            {t(lang, "classes.add")}
           </Link>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">شعبہ</span>
+            <span className="field-label">{t(lang, "col.dept")}</span>
             <select
               className="field-input"
               name="department"
               defaultValue={department}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {DEPARTMENT_IDS.map((d) => (
                 <option key={d} value={d}>
-                  {DEPARTMENT_LABELS[d]}
+                  {t(lang, `dept.${d}`)}
                 </option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">
+              {t(lang, "classes.section_filter")}
+            </span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {tableMissing ? (
-          <p className="empty-state">
-            جماعتوں کی میز ابھی نہیں بنی — پہلے مرحلہ 14 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "classes.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : classes.length === 0 ? (
-          <p className="empty-state">
-            ابھی کوئی جماعت درج نہیں ہے۔ اوپر والے بٹن سے پہلی جماعت شامل کریں۔
-          </p>
+          <p className="empty-state">{t(lang, "classes.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>ترتیب نمبر</th>
-                  <th>جماعت کا نام</th>
-                  <th>شعبہ</th>
-                  <th>بنین / بنات</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.sort_order")}</th>
+                  <th>{t(lang, "col.class_name")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,13 +149,13 @@ export default async function ClassesPage({
                         {c.name}
                       </Link>
                     </td>
-                    <td>{DEPARTMENT_LABELS[c.department]}</td>
-                    <td>{SECTION_LABELS[c.section]}</td>
+                    <td>{t(lang, `dept.${c.department}`)}</td>
+                    <td>{t(lang, `section.${c.section}`)}</td>
                     <td>
                       <span
                         className={`badge${c.status === "inactive" ? " badge-withdrawn" : ""}`}
                       >
-                        {CLASS_STATUS_LABELS[c.status]}
+                        {t(lang, `class.status.${c.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -162,7 +165,7 @@ export default async function ClassesPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

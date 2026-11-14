@@ -6,10 +6,11 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
-import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
-import { CLASS_STATUS_LABELS, type MadrasaClass } from "@/lib/classes";
+import type { MadrasaClass } from "@/lib/classes";
 import ClassForm from "@/app/departments/classes/ClassForm";
 import { updateClass } from "@/app/departments/classes/actions";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function ClassDetailPage({
   params,
@@ -18,6 +19,7 @@ export default async function ClassDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data, error } = await supabase
     .from("classes")
     .select("*")
@@ -32,6 +34,7 @@ export default async function ClassDetailPage({
   // مرحلہ 54 — بند شعبے کا ریکارڈ نہیں کھلے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(madrasaClass.section)) notFound();
+  const lang = await langP;
 
   return (
     <div className="module-view open">
@@ -42,36 +45,39 @@ export default async function ClassDetailPage({
           <span
             className={`badge${madrasaClass.status === "inactive" ? " badge-withdrawn" : ""}`}
           >
-            {CLASS_STATUS_LABELS[madrasaClass.status]}
+            {t(lang, `class.status.${madrasaClass.status}`)}
           </span>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>شعبہ</span>
-            <span>{DEPARTMENT_LABELS[madrasaClass.department]}</span>
+            <span>{t(lang, "col.dept")}</span>
+            <span>{t(lang, `dept.${madrasaClass.department}`)}</span>
           </div>
           <div className="row">
-            <span>شعبہ (بنین / بنات)</span>
-            <span>{SECTION_LABELS[madrasaClass.section]}</span>
+            <span>{t(lang, "classes.section_filter")}</span>
+            <span>{t(lang, `section.${madrasaClass.section}`)}</span>
           </div>
           <div className="row">
-            <span>ترتیب نمبر</span>
+            <span>{t(lang, "col.sort_order")}</span>
             <span>{madrasaClass.sort_order.toLocaleString("ur-PK")}</span>
           </div>
           <div className="row">
-            <span>حالت</span>
-            <span>{CLASS_STATUS_LABELS[madrasaClass.status]}</span>
+            <span>{t(lang, "col.status")}</span>
+            <span>{t(lang, `class.status.${madrasaClass.status}`)}</span>
           </div>
         </div>
 
-        <h3 className="form-section-title">ریکارڈ تبدیل کریں</h3>
+        <h3 className="form-section-title">
+          {t(lang, "student.detail.edit_title")}
+        </h3>
         <ClassForm
           initial={madrasaClass}
           action={updateClass.bind(null, madrasaClass.id)}
-          submitLabel="تبدیلی محفوظ کریں"
+          submitLabel={t(lang, "student.form.update")}
           cancelHref="/departments/classes"
           showStatus
+          lang={lang}
         />
 
       </div>

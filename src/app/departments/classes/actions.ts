@@ -10,7 +10,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
   isModuleAllowedForMe,
-  MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
@@ -20,6 +19,14 @@ import {
   type SectionId,
 } from "@/lib/students";
 import type { ClassStatus } from "@/lib/classes";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
+
+/** مرحلہ 105 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -34,9 +41,10 @@ interface ClassFields {
   sortOrder: number;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
+  lang: Lang,
 ): { fields: ClassFields } | { error: string } {
   const name = clean(formData.get("name"), 100);
   const department = clean(formData.get("department"), 20);
@@ -44,13 +52,13 @@ function validateFields(
   const sortOrderRaw = clean(formData.get("sort_order"), 10);
   const sortOrder = Number(sortOrderRaw);
 
-  if (!name) return { error: "جماعت کا نام ضروری ہے۔" };
+  if (!name) return { error: t(lang, "class.err.name_required") };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
-    return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+    return { error: t(lang, "student.err.dept_invalid") };
   if (!SECTION_IDS.includes(section as SectionId))
-    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
+    return { error: t(lang, "student.err.section_invalid") };
   if (!Number.isInteger(sortOrder) || sortOrder < 1 || sortOrder > 999)
-    return { error: "ترتیب نمبر 1 سے 999 کے درمیان ہونا چاہیے۔" };
+    return { error: t(lang, "class.err.sort_order") };
 
   return {
     fields: {
@@ -84,21 +92,22 @@ async function writeAudit(
 
 /** نئی جماعت شامل کریں */
 export async function addClass(formData: FormData): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "classes"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(f.section))
-    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "student.err.section_denied") };
 
   const { data, error } = await supabase
     .from("classes")
@@ -114,7 +123,7 @@ export async function addClass(formData: FormData): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "student.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "class_created", {
@@ -132,25 +141,26 @@ export async function updateClass(
   id: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const status = clean(formData.get("status"), 20);
   if (status !== "active" && status !== "inactive")
-    return { error: "حالت درست منتخب کریں (فعال یا غیر فعال)۔" };
+    return { error: t(lang, "class.err.status_invalid") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "classes"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(f.section))
-    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "student.err.section_denied") };
 
   // RLS خود یقین دلاتی ہے کہ یہ جماعت اسی مدرسے کی ہے
   const { data, error } = await supabase
@@ -169,7 +179,7 @@ export async function updateClass(
     .single();
 
   if (error || !data) {
-    return { error: "تبدیلی محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "student.err.update_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "class_updated", {
