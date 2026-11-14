@@ -33,6 +33,7 @@ const LOGOUT_ICON_SVG =
 
 export default function TopBar({
   madrasaName,
+  madrasaLogoUrl,
   isAdmin = true,
   userName,
   userRole,
@@ -40,6 +41,7 @@ export default function TopBar({
   noticesCount = 0,
 }: {
   madrasaName?: string | null;
+  madrasaLogoUrl?: string | null;
   isAdmin?: boolean;
   userName?: string | null;
   userRole?: string | null;
@@ -152,13 +154,14 @@ export default function TopBar({
             setUserOpen((v) => !v);
           }}
         >
+          {/* مرحلہ 98 — گول بٹن: صرف دائرہ؛ لوگو ہو تو تصویر،
+              ورنہ مدرسے کے نام کا پہلا حرف (جیسا پہلے تھا) */}
           <span className="avatar" aria-hidden="true">
-            {(userName ?? "حمید").trim().charAt(0) || "ح"}
-          </span>
-          <span className="umeta">
-            <span className="uname">{userName ?? "حمید"}</span>
-            <br />
-            <span className="urole">{userRole ?? "سپر ایڈمن"}</span>
+            {madrasaLogoUrl ? (
+              <img src={madrasaLogoUrl} alt="" />
+            ) : (
+              (madrasaName ?? userName ?? "حمید").trim().charAt(0) || "ح"
+            )}
           </span>
         </button>
 

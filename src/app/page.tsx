@@ -209,6 +209,23 @@ export default async function DashboardPage() {
     }
   })();
 
+  // مرحلہ 98 — مدرسے کا لوگو (الگ سوال، تاکہ migration 051 نہ چلی ہو
+  // تو صرف لوگو خالی رہے، پتہ/نام ویسے ہی ملیں)
+  const madrasaLogoUrlP = (async (): Promise<string | null> => {
+    if (!mine) return null;
+    try {
+      const { data: profile, error } = await supabase
+        .from("madrasa_profile")
+        .select("logo_url")
+        .eq("madrasa_id", mine.madrasaId)
+        .maybeSingle();
+      if (error || !profile) return null;
+      return (profile.logo_url as string | undefined) ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
   const myProfileP = (async (): Promise<{
     name: string | null;
     role: string | null;
@@ -344,6 +361,7 @@ export default async function DashboardPage() {
     attendanceRaw,
     madrasaName,
     madrasaAddress,
+    madrasaLogoUrl,
     myProfile,
     isOwner,
     backupDates,
@@ -355,6 +373,7 @@ export default async function DashboardPage() {
     attendanceP,
     madrasaNameP,
     madrasaAddressP,
+    madrasaLogoUrlP,
     myProfileP,
     isOwnerP,
     backupP,
@@ -466,6 +485,7 @@ export default async function DashboardPage() {
     <>
       <TopBar
         madrasaName={madrasaName}
+        madrasaLogoUrl={madrasaLogoUrl}
         isAdmin={isAdmin || isOwner}
         userName={userName}
         userRole={userRole}

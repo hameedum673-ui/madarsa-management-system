@@ -89,17 +89,21 @@
   .dropdown .dd-notice{flex-direction:column;align-items:flex-start;gap:2px}
   .dropdown .dd-notice-title{font-weight:700;font-size:.9rem}
   .dropdown .dd-notice-meta{font-size:.75rem;color:var(--muted)}
+  /* مرحلہ 98 — صارف کا بٹن اب صرف گول دائرہ ہے (نام/عہدہ نہیں) */
   .userchip{
-    display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);
-    border:1px solid rgba(255,255,255,.25);border-radius:999px;
-    padding:5px 6px 5px 14px;color:#fff;text-align:right;
+    display:flex;align-items:center;justify-content:center;
+    width:44px;height:44px;padding:0;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.25);border-radius:50%;
+    color:#fff;flex:0 0 auto;
   }
   .avatar{
     width:34px;height:34px;border-radius:50%;background:var(--gold);color:#231a02;
-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex:0 0 auto;overflow:hidden;
   }
-  .userchip .uname{font-weight:700;font-size:.92rem;line-height:1.3}
-  .userchip .urole{font-size:.74rem;color:#c8d8ec;line-height:1.3}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  /* مرحلہ 98 — پروفائل صفحے پر لوگو کا بڑا گول نمونہ */
+  .logo-preview{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);display:block}
+  .logo-preview-letter{width:96px;height:96px;border-radius:50%;background:var(--gold);color:#231a02;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:2rem}
   .menu-wrap{position:relative}
   .topbar-actions{display:flex;align-items:center;gap:14px;margin-inline-start:auto;order:4}
   .dropdown{
@@ -221,9 +225,7 @@
     .datebox{order:5;width:100%;text-align:right;font-size:.76rem;display:flex;gap:10px;flex-wrap:wrap}
     header.topbar{padding:9px 12px;gap:8px}
     .topbar-actions{gap:8px}
-    .userchip{padding:4px 5px 4px 10px;gap:7px}
-    .userchip .uname{font-size:.8rem}
-    .userchip .urole{font-size:.64rem}
+    .userchip{width:38px;height:38px;padding:0}
     .avatar{width:28px;height:28px;font-size:.85rem}
     .icon-btn{width:36px;height:36px}
     .stat{flex-direction:column;padding:7px 3px;gap:2px;text-align:center}

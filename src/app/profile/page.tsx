@@ -4,8 +4,10 @@
  * معلومات ڈیٹا بیس سے دکھائی جاتی ہیں۔
  */
 import ModuleCard from "@/components/ModuleCard";
+import LogoForm from "@/app/profile/LogoForm";
 import ProfileForm from "@/app/profile/ProfileForm";
 import { createClient } from "@/lib/supabase/server";
+import { isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 import { ROLE_LABELS } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
@@ -21,6 +23,8 @@ export default async function ProfilePage() {
   let userName = "—";
   let userRole = "—";
   let userWhatsapp = "";
+  let madrasaLogoUrl: string | null = null;
+  let canManageLogo = false;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -30,6 +34,26 @@ export default async function ProfilePage() {
         .eq("id", mine.madrasaId)
         .single();
       madrasaName = (madrasa as { name?: string } | null)?.name ?? "—";
+
+      // مرحلہ 98 — مدرسے کا لوگو (الگ سوال، تاکہ migration 051 نہ چلی
+      // ہو تو صرف لوگو خالی رہے، باقی معلومات ویسے ہی ملیں)
+      try {
+        const { data: profile, error } = await supabase
+          .from("madrasa_profile")
+          .select("logo_url")
+          .eq("madrasa_id", mine.madrasaId)
+          .maybeSingle();
+        if (!error && profile)
+          madrasaLogoUrl =
+            (profile.logo_url as string | undefined) ?? null;
+      } catch {
+        madrasaLogoUrl = null;
+      }
+      try {
+        canManageLogo = await isMadrasaOwner(supabase);
+      } catch {
+        canManageLogo = false;
+      }
 
       const { data: myProfile } = await supabase
         .from("profiles")
@@ -93,6 +117,12 @@ export default async function ProfilePage() {
           <ProfileForm
             initialName={userName === "—" ? "" : userName}
             initialWhatsapp={userWhatsapp}
+          />
+          {/* مرحلہ 98 — مدرسے کا لوگو */}
+          <LogoForm
+            logoUrl={madrasaLogoUrl}
+            canManage={canManageLogo}
+            madrasaName={madrasaName === "—" ? "" : madrasaName}
           />
         </>
       }
