@@ -15,12 +15,11 @@ import {
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
-  STUDENT_STATUS_LABELS,
   type SectionId,
 } from "@/lib/students";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import type { Teacher } from "@/lib/teachers";
 
 function formatDate(value: string | null): string {
@@ -39,6 +38,7 @@ export default async function TeachersPage({
   const safeQ = sanitizeSearch(q);
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
+  const langP = getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   const rawSection = params.section ?? "all";
@@ -71,102 +71,103 @@ export default async function TeachersPage({
   const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
+  const lang = await langP;
 
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>اساتذہ کا ریکارڈ</h2>
+          <h2>{t(lang, "module.teachers")}</h2>
           <span className="page-count">
-            کل: {(count ?? 0).toLocaleString("ur-PK")}
+            {t(lang, "teachers.count_total", { n: count ?? 0 })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/teachers/new">
-            + نیا استاد شامل کریں
+            {t(lang, "teachers.add")}
           </Link>
         </div>
 
         <form className="att-controls" method="get">
           <label className="att-field">
-            <span className="att-label">تلاش کریں</span>
+            <span className="att-label">{t(lang, "students.search_label")}</span>
             <input
               className="att-input"
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="نام، والد کا نام، یا فون نمبر"
+              placeholder={t(lang, "teachers.search_placeholder")}
             />
           </label>
           <label className="att-field">
-            <span className="att-label">شعبہ (بنین / بنات)</span>
+            <span className="att-label">{t(lang, "students.section_filter")}</span>
             <select
               className="att-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            تلاش کریں
+            {t(lang, "students.search_button")}
           </button>
           {q ? (
             <Link className="btn-ghost" href="/departments/teachers">
-              سب دکھائیں
+              {t(lang, "students.show_all")}
             </Link>
           ) : null}
         </form>
 
         {tableMissing ? (
           <p className="empty-state">
-            اساتذہ کی میز ابھی نہیں بنی — پہلے مرحلہ 5 کی SQL چلائیں۔
+            {t(lang, "teachers.table_missing")}
           </p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : teachers.length === 0 ? (
           <p className="empty-state">
-            ابھی کوئی استاد درج نہیں ہے۔ اوپر والے بٹن سے پہلا استاد شامل کریں۔
+            {t(lang, "teachers.empty")}
           </p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>نام</th>
-                  <th>والد کا نام</th>
-                  <th>فون</th>
-                  <th>شعبہ</th>
-                  <th>بنین / بنات</th>
-                  <th>عہدہ</th>
-                  <th>تقرری</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "col.father")}</th>
+                  <th>{t(lang, "col.phone")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.position")}</th>
+                  <th>{t(lang, "col.joining")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
-                {teachers.map((t) => (
-                  <tr key={t.id}>
+                {teachers.map((tr) => (
+                  <tr key={tr.id}>
                     <td>
-                      <Link href={`/departments/teachers/${t.id}`}>
-                        {t.name}
+                      <Link href={`/departments/teachers/${tr.id}`}>
+                        {tr.name}
                       </Link>
                     </td>
-                    <td>{t.father_name}</td>
-                    <td dir="ltr">{t.phone ?? "—"}</td>
-                    <td>{DEPARTMENT_LABELS[t.department]}</td>
-                    <td>{SECTION_LABELS[t.section]}</td>
-                    <td>{t.position ?? "—"}</td>
-                    <td>{formatDate(t.joining_date)}</td>
+                    <td>{tr.father_name}</td>
+                    <td dir="ltr">{tr.phone ?? "—"}</td>
+                    <td>{t(lang, `dept.${tr.department}`)}</td>
+                    <td>{t(lang, `section.${tr.section}`)}</td>
+                    <td>{tr.position ?? "—"}</td>
+                    <td>{formatDate(tr.joining_date)}</td>
                     <td>
                       <span
-                        className={`badge${t.status === "withdrawn" ? " badge-withdrawn" : ""}`}
+                        className={`badge${tr.status === "withdrawn" ? " badge-withdrawn" : ""}`}
                       >
-                        {STUDENT_STATUS_LABELS[t.status]}
+                        {t(lang, `person.status.${tr.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -176,7 +177,7 @@ export default async function TeachersPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

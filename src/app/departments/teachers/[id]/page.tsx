@@ -6,11 +6,8 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
-import {
-  DEPARTMENT_LABELS,
-  SECTION_LABELS,
-  STUDENT_STATUS_LABELS,
-} from "@/lib/students";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import type { Teacher } from "@/lib/teachers";
 import TeacherForm from "@/app/departments/teachers/TeacherForm";
 import { updateTeacher } from "@/app/departments/teachers/actions";
@@ -27,6 +24,7 @@ export default async function TeacherDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data, error } = await supabase
     .from("teachers")
     .select("*")
@@ -41,6 +39,7 @@ export default async function TeacherDetailPage({
   // مرحلہ 54 — بند شعبے کا ریکارڈ نہیں کھلے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(teacher.section)) notFound();
+  const lang = await langP;
 
   return (
     <div className="module-view open">
@@ -51,56 +50,57 @@ export default async function TeacherDetailPage({
           <span
             className={`badge${teacher.status === "withdrawn" ? " badge-withdrawn" : ""}`}
           >
-            {STUDENT_STATUS_LABELS[teacher.status]}
+            {t(lang, `person.status.${teacher.status}`)}
           </span>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>والد کا نام</span>
+            <span>{t(lang, "col.father")}</span>
             <span>{teacher.father_name}</span>
           </div>
           <div className="row">
-            <span>شعبہ</span>
-            <span>{DEPARTMENT_LABELS[teacher.department]}</span>
+            <span>{t(lang, "col.dept")}</span>
+            <span>{t(lang, `dept.${teacher.department}`)}</span>
           </div>
           <div className="row">
-            <span>شعبہ (بنین / بنات)</span>
-            <span>{SECTION_LABELS[teacher.section]}</span>
+            <span>{t(lang, "students.section_filter")}</span>
+            <span>{t(lang, `section.${teacher.section}`)}</span>
           </div>
           <div className="row">
-            <span>عہدہ</span>
+            <span>{t(lang, "col.position")}</span>
             <span>{teacher.position ?? "—"}</span>
           </div>
           <div className="row">
-            <span>تقرری کی تاریخ</span>
+            <span>{t(lang, "teacher.detail.joining")}</span>
             <span>{formatDate(teacher.joining_date)}</span>
           </div>
           <div className="row">
-            <span>فون</span>
+            <span>{t(lang, "teacher.form.phone")}</span>
             <span dir="ltr">{teacher.phone ?? "—"}</span>
           </div>
           <div className="row">
-            <span>شناختی کارڈ نمبر</span>
+            <span>{t(lang, "teacher.form.cnic")}</span>
             <span dir="ltr">{teacher.cnic ?? "—"}</span>
           </div>
           <div className="row">
-            <span>تعلیمی قابلیت</span>
+            <span>{t(lang, "teacher.form.qualification")}</span>
             <span>{teacher.qualification ?? "—"}</span>
           </div>
           <div className="row">
-            <span>پتہ</span>
+            <span>{t(lang, "student.form.address")}</span>
             <span>{teacher.address ?? "—"}</span>
           </div>
         </div>
 
-        <h3 className="form-section-title">ریکارڈ تبدیل کریں</h3>
+        <h3 className="form-section-title">{t(lang, "student.detail.edit_title")}</h3>
         <TeacherForm
           initial={teacher}
           action={updateTeacher.bind(null, teacher.id)}
-          submitLabel="تبدیلی محفوظ کریں"
+          submitLabel={t(lang, "student.form.update")}
           cancelHref="/departments/teachers"
           showStatus
+          lang={lang}
         />
 
       </div>

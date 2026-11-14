@@ -8,7 +8,8 @@
  * دائرہ اس مرحلے کا: صرف ڈیش بورڈ کا خول (سرخی، گروپ، بٹن، اعداد والے
  * کارڈ، گھنٹی، مینیو) + پروفائل میں زبان والا حصہ + عام الفاظ۔
  * مرحلہ 103 — طلبہ کے داخلے اور ریکارڈ (طلبہ / داخلے / شناختی کارڈ)
- * کے صفحے بھی اسی فہرست سے عربی ہوتے ہیں۔ باقی ماڈیول اگلے مرحلوں
+ * کے صفحے بھی اسی فہرست سے عربی ہوتے ہیں۔ مرحلہ 104 — اساتذہ اور عملے
+ * کا ریکارڈ بھی اسی فہرست سے عربی ہوتا ہے۔ باقی ماڈیول اگلے مرحلوں
  * میں آئیں گے۔
  */
 
@@ -332,6 +333,55 @@ const ur: Dict = {
   "pagination.page": "صفحہ {p} از {total}",
   "pagination.prev": "پچھلا",
   "pagination.next": "اگلا",
+
+  // مرحلہ 104 — اساتذہ اور عملے کا ریکارڈ
+  "person.status.active": "فعال",
+  "person.status.withdrawn": "خارج",
+
+  "col.phone": "فون",
+  "col.position": "عہدہ",
+  "col.position_work": "عہدہ / کام",
+  "col.joining": "تقرری",
+
+  "teachers.new_title": "نیا استاد شامل کریں",
+  "teachers.count_total": "کل: {n}",
+  "teachers.add": "+ نیا استاد شامل کریں",
+  "teachers.search_placeholder": "نام، والد کا نام، یا فون نمبر",
+  "teachers.table_missing": "اساتذہ کی میز ابھی نہیں بنی — پہلے مرحلہ 5 کی SQL چلائیں۔",
+  "teachers.empty": "ابھی کوئی استاد درج نہیں ہے۔ اوپر والے بٹن سے پہلا استاد شامل کریں۔",
+
+  "staff.new_title": "نیا عملہ شامل کریں",
+  "staff.count_total": "کل: {n}",
+  "staff.add": "+ نیا عملہ شامل کریں",
+  "staff.search_placeholder": "نام، والد کا نام، یا فون نمبر",
+  "staff.table_missing": "عملے کی میز ابھی نہیں بنی — پہلے مرحلہ 13 کی SQL چلائیں۔",
+  "staff.empty": "ابھی کوئی عملہ درج نہیں ہے۔ اوپر والے بٹن سے پہلا عملہ شامل کریں۔",
+
+  "teacher.form.name": "استاد کا نام *",
+  "teacher.form.name_ph": "مثلاً قاری محمد",
+  "teacher.form.position": "عہدہ",
+  "teacher.form.position_ph": "مثلاً مدرّس، صدر مدرّس",
+  "teacher.form.joining": "تقرری کی تاریخ *",
+  "teacher.form.phone": "فون",
+  "teacher.form.cnic": "شناختی کارڈ نمبر",
+  "teacher.form.qualification": "تعلیمی قابلیت",
+  "teacher.form.qualification_ph": "مثلاً فارغ التحصیل، سندِ حفظ",
+  "teacher.detail.joining": "تقرری کی تاریخ",
+
+  "staff.form.name": "عملے کا نام *",
+  "staff.form.name_ph": "مثلاً محمد علی",
+  "staff.form.position": "عہدہ / کام",
+  "staff.form.position_ph": "مثلاً باورچی، چوکیدار، کلرک",
+  "staff.form.qualification_ph": "مثلاً میٹرک، پرائمری",
+
+  "teacher.err.name_required": "استاد کا نام ضروری ہے۔",
+  "teacher.err.joining_invalid": "تقرری کی تاریخ درست نہیں ہے۔",
+  "teacher.err.joining_future": "تقرری کی تاریخ آج سے آگے نہیں ہو سکتی۔",
+  "teacher.err.phone_invalid": "فون نمبر درست نہیں ہے۔",
+  "teacher.err.cnic_invalid": "شناختی کارڈ نمبر درست نہیں ہے (13 ہندسے)۔",
+  "teacher.err.status_invalid": "حالت درست منتخب کریں (فعال یا خارج)۔",
+
+  "staff.err.name_required": "عملے کا نام ضروری ہے۔",
 };
 
 const ar: Dict = {
@@ -632,6 +682,55 @@ const ar: Dict = {
   "pagination.page": "الصفحة {p} من {total}",
   "pagination.prev": "السابق",
   "pagination.next": "التالي",
+
+  // المرحلة 104 — سجل المعلمين والموظفين
+  "person.status.active": "نشط",
+  "person.status.withdrawn": "منسحب",
+
+  "col.phone": "الهاتف",
+  "col.position": "المسمى الوظيفي",
+  "col.position_work": "المسمى الوظيفي / العمل",
+  "col.joining": "تاريخ التعيين",
+
+  "teachers.new_title": "إضافة معلم جديد",
+  "teachers.count_total": "المجموع: {n}",
+  "teachers.add": "+ إضافة معلم جديد",
+  "teachers.search_placeholder": "الاسم أو اسم الأب أو رقم الهاتف",
+  "teachers.table_missing": "لم يُنشأ جدول المعلمين بعد — نفّذ أولًا SQL المرحلة 5.",
+  "teachers.empty": "لا يوجد أي معلم مسجل بعد. أضف أول معلم من الزر أعلاه.",
+
+  "staff.new_title": "إضافة موظف جديد",
+  "staff.count_total": "المجموع: {n}",
+  "staff.add": "+ إضافة موظف جديد",
+  "staff.search_placeholder": "الاسم أو اسم الأب أو رقم الهاتف",
+  "staff.table_missing": "لم يُنشأ جدول الموظفين بعد — نفّذ أولًا SQL المرحلة 13.",
+  "staff.empty": "لا يوجد أي موظف مسجل بعد. أضف أول موظف من الزر أعلاه.",
+
+  "teacher.form.name": "اسم المعلم *",
+  "teacher.form.name_ph": "مثلًا قارئ محمد",
+  "teacher.form.position": "المسمى الوظيفي",
+  "teacher.form.position_ph": "مثلًا مدرِّس، شيخ المدرسين",
+  "teacher.form.joining": "تاريخ التعيين *",
+  "teacher.form.phone": "الهاتف",
+  "teacher.form.cnic": "رقم بطاقة الهوية الوطنية",
+  "teacher.form.qualification": "المؤهل العلمي",
+  "teacher.form.qualification_ph": "مثلًا خريج، شهادة الحفظ",
+  "teacher.detail.joining": "تاريخ التعيين",
+
+  "staff.form.name": "اسم الموظف *",
+  "staff.form.name_ph": "مثلًا محمد علي",
+  "staff.form.position": "المسمى الوظيفي / العمل",
+  "staff.form.position_ph": "مثلًا طباخ، حارس، كاتب",
+  "staff.form.qualification_ph": "مثلًا الثانوية، الابتدائية",
+
+  "teacher.err.name_required": "اسم المعلم مطلوب.",
+  "teacher.err.joining_invalid": "تاريخ التعيين غير صحيح.",
+  "teacher.err.joining_future": "لا يمكن أن يكون تاريخ التعيين بعد اليوم.",
+  "teacher.err.phone_invalid": "رقم الهاتف غير صحيح.",
+  "teacher.err.cnic_invalid": "رقم بطاقة الهوية غير صحيح (13 رقمًا).",
+  "teacher.err.status_invalid": "اختر الحالة الصحيحة (نشط أو منسحب).",
+
+  "staff.err.name_required": "اسم الموظف مطلوب.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

@@ -9,11 +9,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
-  STUDENT_STATUS_LABELS,
 } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 import type { StaffMember } from "@/lib/staff";
 
 type FormAction = (
@@ -26,12 +24,14 @@ export default function StaffForm({
   submitLabel,
   cancelHref,
   showStatus,
+  lang = "ur",
 }: {
   initial?: Partial<StaffMember>;
   action: FormAction;
   submitLabel: string;
   cancelHref: string;
   showStatus?: boolean;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -56,9 +56,10 @@ export default function StaffForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">عملے کا نام *</span>
+          <span className="field-label">{t(lang, "staff.form.name")}</span>
           <input
             className="field-input"
             name="name"
@@ -66,12 +67,12 @@ export default function StaffForm({
             required
             maxLength={100}
             defaultValue={initial?.name ?? ""}
-            placeholder="مثلاً محمد علی"
+            placeholder={t(lang, "staff.form.name_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">والد کا نام *</span>
+          <span className="field-label">{t(lang, "student.form.father")}</span>
           <input
             className="field-input"
             name="father_name"
@@ -79,12 +80,12 @@ export default function StaffForm({
             required
             maxLength={100}
             defaultValue={initial?.father_name ?? ""}
-            placeholder="مثلاً محمد احمد"
+            placeholder={t(lang, "student.form.father_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ *</span>
+          <span className="field-label">{t(lang, "student.form.dept")}</span>
           <select
             className="field-input"
             name="department"
@@ -93,14 +94,14 @@ export default function StaffForm({
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+                {t(lang, `dept.${d}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <span className="field-label">{t(lang, "student.form.section")}</span>
           <select
             className="field-input"
             name="section"
@@ -109,26 +110,26 @@ export default function StaffForm({
           >
             {SECTION_IDS.map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABELS[s]}
+                {t(lang, `section.${s}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">عہدہ / کام</span>
+          <span className="field-label">{t(lang, "staff.form.position")}</span>
           <input
             className="field-input"
             name="position"
             type="text"
             maxLength={100}
             defaultValue={initial?.position ?? ""}
-            placeholder="مثلاً باورچی، چوکیدار، کلرک"
+            placeholder={t(lang, "staff.form.position_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">تقرری کی تاریخ *</span>
+          <span className="field-label">{t(lang, "teacher.form.joining")}</span>
           <input
             className="field-input"
             name="joining_date"
@@ -139,7 +140,7 @@ export default function StaffForm({
         </label>
 
         <label className="field">
-          <span className="field-label">فون</span>
+          <span className="field-label">{t(lang, "teacher.form.phone")}</span>
           <input
             className="field-input"
             name="phone"
@@ -152,7 +153,7 @@ export default function StaffForm({
         </label>
 
         <label className="field">
-          <span className="field-label">شناختی کارڈ نمبر</span>
+          <span className="field-label">{t(lang, "teacher.form.cnic")}</span>
           <input
             className="field-input"
             name="cnic"
@@ -165,40 +166,40 @@ export default function StaffForm({
         </label>
 
         <label className="field">
-          <span className="field-label">تعلیمی قابلیت</span>
+          <span className="field-label">{t(lang, "teacher.form.qualification")}</span>
           <input
             className="field-input"
             name="qualification"
             type="text"
             maxLength={200}
             defaultValue={initial?.qualification ?? ""}
-            placeholder="مثلاً میٹرک، پرائمری"
+            placeholder={t(lang, "staff.form.qualification_ph")}
           />
         </label>
       </div>
 
       <label className="field">
-        <span className="field-label">پتہ</span>
+        <span className="field-label">{t(lang, "student.form.address")}</span>
         <textarea
           className="field-input field-textarea"
           name="address"
           maxLength={500}
           defaultValue={initial?.address ?? ""}
-          placeholder="مکمل پتہ"
+          placeholder={t(lang, "student.form.address_ph")}
         />
       </label>
 
       {showStatus ? (
         <label className="field">
-          <span className="field-label">حالت</span>
+          <span className="field-label">{t(lang, "student.form.status")}</span>
           <select
             className="field-input"
             name="status"
             required
             defaultValue={initial?.status ?? "active"}
           >
-            <option value="active">{STUDENT_STATUS_LABELS.active}</option>
-            <option value="withdrawn">{STUDENT_STATUS_LABELS.withdrawn}</option>
+            <option value="active">{t(lang, "person.status.active")}</option>
+            <option value="withdrawn">{t(lang, "person.status.withdrawn")}</option>
           </select>
         </label>
       ) : null}
@@ -207,10 +208,10 @@ export default function StaffForm({
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : submitLabel}
+          {loading ? t(lang, "common.wait") : submitLabel}
         </button>
         <Link className="btn-ghost" href={cancelHref}>
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

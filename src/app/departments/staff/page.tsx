@@ -15,12 +15,11 @@ import {
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
-  STUDENT_STATUS_LABELS,
   type SectionId,
 } from "@/lib/students";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import type { StaffMember } from "@/lib/staff";
 
 function formatDate(value: string | null): string {
@@ -39,6 +38,7 @@ export default async function StaffPage({
   const safeQ = sanitizeSearch(q);
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
+  const langP = getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   const rawSection = params.section ?? "all";
@@ -71,81 +71,82 @@ export default async function StaffPage({
   const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
+  const lang = await langP;
 
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>عملے کا ریکارڈ</h2>
+          <h2>{t(lang, "module.staff")}</h2>
           <span className="page-count">
-            کل: {(count ?? 0).toLocaleString("ur-PK")}
+            {t(lang, "staff.count_total", { n: count ?? 0 })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/staff/new">
-            + نیا عملہ شامل کریں
+            {t(lang, "staff.add")}
           </Link>
         </div>
 
         <form className="att-controls" method="get">
           <label className="att-field">
-            <span className="att-label">تلاش کریں</span>
+            <span className="att-label">{t(lang, "students.search_label")}</span>
             <input
               className="att-input"
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="نام، والد کا نام، یا فون نمبر"
+              placeholder={t(lang, "staff.search_placeholder")}
             />
           </label>
           <label className="att-field">
-            <span className="att-label">شعبہ (بنین / بنات)</span>
+            <span className="att-label">{t(lang, "students.section_filter")}</span>
             <select
               className="att-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            تلاش کریں
+            {t(lang, "students.search_button")}
           </button>
           {q ? (
             <Link className="btn-ghost" href="/departments/staff">
-              سب دکھائیں
+              {t(lang, "students.show_all")}
             </Link>
           ) : null}
         </form>
 
         {tableMissing ? (
           <p className="empty-state">
-            عملے کی میز ابھی نہیں بنی — پہلے مرحلہ 13 کی SQL چلائیں۔
+            {t(lang, "staff.table_missing")}
           </p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : staff.length === 0 ? (
           <p className="empty-state">
-            ابھی کوئی عملہ درج نہیں ہے۔ اوپر والے بٹن سے پہلا عملہ شامل کریں۔
+            {t(lang, "staff.empty")}
           </p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>نام</th>
-                  <th>والد کا نام</th>
-                  <th>فون</th>
-                  <th>شعبہ</th>
-                  <th>بنین / بنات</th>
-                  <th>عہدہ / کام</th>
-                  <th>تقرری</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "col.father")}</th>
+                  <th>{t(lang, "col.phone")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.position_work")}</th>
+                  <th>{t(lang, "col.joining")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,15 +159,15 @@ export default async function StaffPage({
                     </td>
                     <td>{s.father_name}</td>
                     <td dir="ltr">{s.phone ?? "—"}</td>
-                    <td>{DEPARTMENT_LABELS[s.department]}</td>
-                    <td>{SECTION_LABELS[s.section]}</td>
+                    <td>{t(lang, `dept.${s.department}`)}</td>
+                    <td>{t(lang, `section.${s.section}`)}</td>
                     <td>{s.position ?? "—"}</td>
                     <td>{formatDate(s.joining_date)}</td>
                     <td>
                       <span
                         className={`badge${s.status === "withdrawn" ? " badge-withdrawn" : ""}`}
                       >
-                        {STUDENT_STATUS_LABELS[s.status]}
+                        {t(lang, `person.status.${s.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -176,7 +177,7 @@ export default async function StaffPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>
