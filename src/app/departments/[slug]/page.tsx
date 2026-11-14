@@ -12,7 +12,7 @@ export function generateStaticParams() {
   // 'admissions'، 'exams'، 'users'، 'idcards'، 'staff'، 'classes'،
   // 'academic'، 'expenses'، 'salaries'، 'monthly'، 'yearly'، 'zakat'،
   // 'ushr'، 'donations'، 'welfare'، 'student-exp'، 'fin-reports'،
-  // 'general'، 'permissions'، 'notices'، 'documents'، 'reports'،
+  // 'general'، 'permissions'، 'notices'، 'library'، 'documents'، 'reports'،
   // 'backup' اور 'settings' کے اپنے اصل صفحے ہیں — اس لیے یہاں سے
   // خارج ہیں، ورنہ build میں دو صفحے ایک ہی پتے پر بنتے۔
   return ALL_DEPARTMENTS.filter(
@@ -42,6 +42,7 @@ export function generateStaticParams() {
       m.id !== "general" &&
       m.id !== "permissions" &&
       m.id !== "notices" &&
+      m.id !== "library" &&
       m.id !== "documents" &&
       m.id !== "reports" &&
       m.id !== "backup" &&

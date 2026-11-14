@@ -26,6 +26,7 @@ export const OWN_TABLES = [
   "month_closings",
   "admissions",
   "notices",
+  "library_books",
   "documents",
   "document_files",
   "audit_log",

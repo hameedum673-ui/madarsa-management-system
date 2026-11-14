@@ -22,6 +22,7 @@ export const GROUPS: DepartmentGroup[] = [
       { id: "att-students", label: "طلبہ کی حاضری", icon: "checkCal", desc: "طلبہ کی روزانہ حاضری اور حاضری رپورٹس کا نظام یہاں تیار ہوگا۔" },
       { id: "att-teachers", label: "اساتذہ کی حاضری", icon: "clockCheck", desc: "اساتذہ کی حاضری اور تدریسی اوقات کا ریکارڈ یہاں ہوگا۔" },
       { id: "academic", label: "تعلیمی ریکارڈ", icon: "book", desc: "اسباق کی پیش رفت اور تعلیمی کارکردگی کا ریکارڈ یہاں محفوظ ہوگا۔" },
+      { id: "library", label: "لائبریری", icon: "book", desc: "مدرسے کی کتابوں کا ریکارڈ یہاں ہوگا۔" },
       { id: "exams", label: "امتحانات اور نتائج", icon: "award", desc: "امتحانات، نمبرات، درجات اور پوزیشنوں کا مکمل نظام یہاں ہوگا۔" },
     ],
   },
