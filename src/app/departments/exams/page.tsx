@@ -9,16 +9,14 @@ import { createClient } from "@/lib/supabase/server";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyLanguage } from "@/lib/language";
+import { examTypeLabelLang, t } from "@/i18n/dictionary";
 import {
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
   type SectionId,
 } from "@/lib/students";
 import {
-  examTypeLabel,
   EXAM_TYPE_IDS,
-  EXAM_TYPE_LABELS,
   type Exam,
   type ExamType,
 } from "@/lib/exams";
@@ -40,7 +38,10 @@ export default async function ExamsPage({
   const params = await searchParams;
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
-  const allowedSections = await getMyAllowedSections(supabase);
+  const [allowedSections, lang] = await Promise.all([
+    getMyAllowedSections(supabase),
+    getMyLanguage(),
+  ]);
   const rawSection = params.section ?? "all";
   const section: SectionId | "all" =
     (SECTION_IDS as string[]).includes(rawSection) &&
@@ -80,74 +81,76 @@ export default async function ExamsPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>امتحانات اور نتائج</h2>
+          <h2>{t(lang, "module.exams")}</h2>
           <span className="page-count">
-            کل: {(count ?? 0).toLocaleString("ur-PK")}
+            {t(lang, "students.count_total", {
+              n: (count ?? 0).toLocaleString("ur-PK"),
+            })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/exams/new">
-            + نیا امتحان بنائیں
+            {t(lang, "exams.new")}
           </Link>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">
+              {t(lang, "classes.section_filter")}
+            </span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, "section." + s)}
                 </option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span className="field-label">امتحان کی قسم</span>
+            <span className="field-label">
+              {t(lang, "exams.filter.type")}
+            </span>
             <select
               className="field-input"
               name="exam_type"
               defaultValue={examType}
             >
-              <option value="all">سب</option>
-              {EXAM_TYPE_IDS.map((t) => (
-                <option key={t} value={t}>
-                  {EXAM_TYPE_LABELS[t]}
+              <option value="all">{t(lang, "common.all")}</option>
+              {EXAM_TYPE_IDS.map((ty) => (
+                <option key={ty} value={ty}>
+                  {t(lang, "exam.type." + ty)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {tableMissing ? (
-          <p className="empty-state">
-            امتحانات کی میز ابھی نہیں بنی — پہلے مرحلہ 10 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "exams.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : exams.length === 0 ? (
-          <p className="empty-state">
-            ابھی کوئی امتحان نہیں بنایا گیا۔ اوپر والے بٹن سے پہلا امتحان بنائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "exams.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>امتحان</th>
-                  <th>تاریخ</th>
-                  <th>قسم</th>
-                  <th>شعبہ</th>
-                  <th>بنین / بنات</th>
-                  <th>جماعت</th>
-                  <th>مضامین</th>
+                  <th>{t(lang, "exams.col.exam")}</th>
+                  <th>{t(lang, "att.form.date")}</th>
+                  <th>{t(lang, "col.type")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "exams.col.section")}</th>
+                  <th>{t(lang, "col.class")}</th>
+                  <th>{t(lang, "exams.col.subjects")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -159,9 +162,11 @@ export default async function ExamsPage({
                       </Link>
                     </td>
                     <td>{formatDate(ex.exam_date)}</td>
-                    <td>{examTypeLabel(ex.exam_type)}</td>
-                    <td>{DEPARTMENT_LABELS[ex.department]}</td>
-                    <td>{ex.section ? SECTION_LABELS[ex.section] : "—"}</td>
+                    <td>{examTypeLabelLang(lang, ex.exam_type)}</td>
+                    <td>{t(lang, "dept." + ex.department)}</td>
+                    <td>
+                      {ex.section ? t(lang, "section." + ex.section) : "—"}
+                    </td>
                     <td>{ex.class_name ?? "—"}</td>
                     <td>{(ex.subjects ?? []).join("، ") || "—"}</td>
                   </tr>
@@ -171,7 +176,7 @@ export default async function ExamsPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

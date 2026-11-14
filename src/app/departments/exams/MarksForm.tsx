@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 
 interface StudentRow {
   id: string;
@@ -22,6 +23,7 @@ export default function MarksForm({
   subjects,
   existing,
   action,
+  lang = "ur",
 }: {
   examId: string;
   students: StudentRow[];
@@ -31,6 +33,7 @@ export default function MarksForm({
     examId: string,
     formData: FormData,
   ) => Promise<{ ok: true } | { error: string }>;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -55,12 +58,13 @@ export default function MarksForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="tbl-wrap">
         <table className="tbl">
           <thead>
             <tr>
-              <th>رجسٹریشن نمبر</th>
-              <th>نام</th>
+              <th>{t(lang, "col.reg")}</th>
+              <th>{t(lang, "col.name")}</th>
               {subjects.map((s) => (
                 <th key={s}>{s} (100)</th>
               ))}
@@ -99,12 +103,12 @@ export default function MarksForm({
 
       {error ? <p className="form-error">{error}</p> : null}
       {saved ? (
-        <p className="att-success">نمبر محفوظ ہو گئے ہیں۔</p>
+        <p className="att-success">{t(lang, "exam.marks.saved")}</p>
       ) : null}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "نمبر محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "exam.marks.save")}
         </button>
       </div>
     </form>

@@ -5,14 +5,16 @@
  */
 "use client";
 
-export default function PrintButton() {
+import { t, type Lang } from "@/i18n/dictionary";
+
+export default function PrintButton({ lang = "ur" }: { lang?: Lang }) {
   return (
     <button
       type="button"
       className="btn-primary"
       onClick={() => window.print()}
     >
-      پرنٹ کریں
+      {t(lang, "common.print")}
     </button>
   );
 }

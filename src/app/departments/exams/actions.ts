@@ -10,8 +10,8 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
   isModuleAllowedForMe,
-  MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -20,6 +20,13 @@ import {
   type SectionId,
 } from "@/lib/students";
 import { EXAM_TYPE_IDS, type ExamType } from "@/lib/exams";
+
+/** مرحلہ 109 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 type ActionResult = { ok: true } | { error: string };
 type AddResult = { ok: true; id: string } | { error: string };
@@ -72,6 +79,7 @@ async function writeAudit(
 
 /** نیا امتحان بنائیں */
 export async function addExam(formData: FormData): Promise<AddResult> {
+  const lang = formLang(formData);
   const name = clean(formData.get("name"), 200);
   const examDate = clean(formData.get("exam_date"), 10);
   const department = clean(formData.get("department"), 20);
@@ -80,34 +88,33 @@ export async function addExam(formData: FormData): Promise<AddResult> {
   const className = clean(formData.get("class_name"), 100);
   const subjects = parseSubjects(clean(formData.get("subjects"), 1000));
 
-  if (!name) return { error: "امتحان کا نام ضروری ہے۔" };
+  if (!name) return { error: t(lang, "exam.err.name_required") };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
-    return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+    return { error: t(lang, "exam.err.dept_invalid") };
   if (!SECTION_IDS.includes(section as SectionId))
-    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
+    return { error: t(lang, "exam.err.section_invalid") };
   if (!EXAM_TYPE_IDS.includes(examType as ExamType))
-    return {
-      error: "امتحان کی قسم درست منتخب کریں (سہ ماہی، شش ماہی، سالانہ یا دیگر)۔",
-    };
-  if (!validDate(examDate)) return { error: "امتحان کی تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "exam.err.type_invalid") };
+  if (!validDate(examDate))
+    return { error: t(lang, "exam.err.date_invalid") };
   if (!notFuture(examDate))
-    return { error: "امتحان کی تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "exam.err.date_future") };
   if (subjects.length === 0)
-    return { error: "کم از کم ایک مضمون لکھیں (کوما سے الگ کریں)۔" };
+    return { error: t(lang, "exam.err.subjects_empty") };
   if (subjects.length > 10)
-    return { error: "زیادہ سے زیادہ 10 مضامین ہو سکتے ہیں۔" };
+    return { error: t(lang, "exam.err.subjects_max") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "exams"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 54 — بند شعبے میں امتحان نہیں بن سکتا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(section as SectionId))
-    return { error: "اس شعبے میں امتحان بنانے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "exam.err.section_denied_add") };
 
   const { data, error } = await supabase
     .from("exams")
@@ -126,7 +133,7 @@ export async function addExam(formData: FormData): Promise<AddResult> {
     .single();
 
   if (error || !data) {
-    return { error: "امتحان نہیں بن سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "exam.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "exam_created", {
@@ -143,29 +150,29 @@ export async function updateExam(
   examId: string,
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const name = clean(formData.get("name"), 200);
   const examDate = clean(formData.get("exam_date"), 10);
   const examType = clean(formData.get("exam_type"), 20);
   const subjects = parseSubjects(clean(formData.get("subjects"), 1000));
 
-  if (!name) return { error: "امتحان کا نام ضروری ہے۔" };
+  if (!name) return { error: t(lang, "exam.err.name_required") };
   if (!EXAM_TYPE_IDS.includes(examType as ExamType))
-    return {
-      error: "امتحان کی قسم درست منتخب کریں (سہ ماہی، شش ماہی، سالانہ یا دیگر)۔",
-    };
-  if (!validDate(examDate)) return { error: "امتحان کی تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "exam.err.type_invalid") };
+  if (!validDate(examDate))
+    return { error: t(lang, "exam.err.date_invalid") };
   if (!notFuture(examDate))
-    return { error: "امتحان کی تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "exam.err.date_future") };
   if (subjects.length === 0)
-    return { error: "کم از کم ایک مضمون لکھیں (کوما سے الگ کریں)۔" };
+    return { error: t(lang, "exam.err.subjects_empty") };
   if (subjects.length > 10)
-    return { error: "زیادہ سے زیادہ 10 مضامین ہو سکتے ہیں۔" };
+    return { error: t(lang, "exam.err.subjects_max") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "exams"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // صرف اپنے مدرسے کا امتحان
@@ -176,12 +183,12 @@ export async function updateExam(
     .eq("madrasa_id", mine.madrasaId)
     .single();
   if (examError || !exam) {
-    return { error: "امتحان نہیں ملا۔" };
+    return { error: t(lang, "exam.err.not_found") };
   }
   // مرحلہ 54 — بند شعبے کا امتحان نہیں بدلا جا سکتا
   const allowedSections = await getMyAllowedSections(supabase);
   if (exam.section && !allowedSections.has(exam.section as SectionId))
-    return { error: "اس شعبے کے امتحان میں ترمیم کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "exam.err.section_denied_edit") };
 
   // ہٹائے جانے والے مضامین — جن کے نمبر درج ہوں، وہ نہیں ہٹ سکتے
   const oldSubjects = (exam.subjects as string[]) ?? [];
@@ -197,7 +204,7 @@ export async function updateExam(
     const blocked = (marked ?? [])[0]?.subject as string | undefined;
     if (blocked) {
       return {
-        error: `مضمون "${blocked}" کے نمبر درج ہیں — اسے ہٹایا نہیں جا سکتا۔`,
+        error: t(lang, "exam.err.subject_blocked", { subject: blocked }),
       };
     }
   }
@@ -213,7 +220,7 @@ export async function updateExam(
     .eq("id", examId)
     .eq("madrasa_id", mine.madrasaId);
   if (error) {
-    return { error: "امتحان میں ترمیم نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "exam.err.update_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "exam_updated", {
@@ -234,11 +241,12 @@ export async function saveMarks(
   examId: string,
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "exams"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // صرف اپنے مدرسے کا امتحان
@@ -250,17 +258,17 @@ export async function saveMarks(
     .single();
 
   if (examError || !exam) {
-    return { error: "امتحان نہیں ملا۔" };
+    return { error: t(lang, "exam.err.not_found") };
   }
 
   const subjects = (exam.subjects as string[]) ?? [];
   if (subjects.length === 0) {
-    return { error: "اس امتحان میں کوئی مضمون نہیں ہے۔" };
+    return { error: t(lang, "exam.err.no_subjects") };
   }
   // مرحلہ 54 — بند شعبے کے امتحان میں نمبر نہیں درج ہو سکتے
   const allowedSections = await getMyAllowedSections(supabase);
   if (exam.section && !allowedSections.has(exam.section as SectionId))
-    return { error: "اس شعبے کے امتحان میں نمبر درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "exam.err.section_denied_marks") };
 
   // اس امتحان کی طالبات — اسی شعبے کی فعال طالبات (جماعت لکھی ہو تو وہی جماعت)
   let studentQuery = supabase
@@ -302,7 +310,7 @@ export async function saveMarks(
     if (raw === "") continue; // خالی خانہ = نمبر نہیں بدلنا
     const marks = Number(raw);
     if (!Number.isInteger(marks) || marks < 0 || marks > 100) {
-      return { error: "نمبر 0 سے 100 تک پورا عدد ہونا چاہیے۔" };
+      return { error: t(lang, "exam.err.marks_invalid") };
     }
     rows.push({
       madrasa_id: mine.madrasaId,
@@ -314,7 +322,7 @@ export async function saveMarks(
   }
 
   if (rows.length === 0) {
-    return { error: "کوئی نمبر نہیں لکھا گیا۔" };
+    return { error: t(lang, "exam.err.marks_empty") };
   }
 
   const { error } = await supabase
@@ -322,7 +330,7 @@ export async function saveMarks(
     .upsert(rows, { onConflict: "madrasa_id,exam_id,student_id,subject" });
 
   if (error) {
-    return { error: "نمبر محفوظ نہیں ہو سکے۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "exam.err.marks_save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "marks_saved", {

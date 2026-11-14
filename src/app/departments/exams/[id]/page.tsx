@@ -8,14 +8,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyLanguage } from "@/lib/language";
+import type { Student } from "@/lib/students";
 import {
-  DEPARTMENT_LABELS,
-  SECTION_LABELS,
-  type Student,
-} from "@/lib/students";
+  examTypeLabelLang,
+  examTypeSectionLabelLang,
+  gradeKey,
+  t,
+} from "@/i18n/dictionary";
 import {
-  examTypeLabel,
-  examTypeSectionLabel,
   summarizeExamResults,
   type Exam,
   type ExamResult,
@@ -36,6 +37,7 @@ export default async function ExamDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data: examData, error: examError } = await supabase
     .from("exams")
     .select("*")
@@ -47,6 +49,7 @@ export default async function ExamDetailPage({
   }
 
   const exam = examData as Exam;
+  const lang = await langP;
   // مرحلہ 61 — پرنٹ والی شیٹ کے سرنامے کے لیے مدرسے کا نام
   const { data: madrasaData } = await supabase
     .from("madrasas")
@@ -133,9 +136,11 @@ export default async function ExamDetailPage({
           <BackButton href="/departments/exams" />
           <h2>{exam.name}</h2>
           <span className="page-count">
-            {DEPARTMENT_LABELS[exam.department]}
-            {exam.exam_type ? ` — ${examTypeLabel(exam.exam_type)}` : ""}
-            {exam.section ? ` — ${SECTION_LABELS[exam.section]}` : ""}
+            {t(lang, "dept." + exam.department)}
+            {exam.exam_type
+              ? ` — ${examTypeLabelLang(lang, exam.exam_type)}`
+              : ""}
+            {exam.section ? ` — ${t(lang, "section." + exam.section)}` : ""}
             {exam.class_name ? ` — ${exam.class_name}` : ""}
           </span>
           <span className="spacer" />
@@ -144,11 +149,11 @@ export default async function ExamDetailPage({
               className="btn-primary"
               href={`/departments/exams/${exam.id}/edit`}
             >
-              ترمیم کریں
+              {t(lang, "exam.detail.edit")}
             </Link>
           </span>
           <span className="no-print">
-            <PrintButton />
+            <PrintButton lang={lang} />
           </span>
         </div>
 
@@ -156,43 +161,50 @@ export default async function ExamDetailPage({
         <div className="print-only print-sheet-head">
           <h2>{madrasaName}</h2>
           <p>
-            {exam.name} — {DEPARTMENT_LABELS[exam.department]}
-            {exam.exam_type ? ` — ${examTypeLabel(exam.exam_type)}` : ""}
-            {exam.section ? ` — ${SECTION_LABELS[exam.section]}` : ""}
+            {exam.name} — {t(lang, "dept." + exam.department)}
+            {exam.exam_type
+              ? ` — ${examTypeLabelLang(lang, exam.exam_type)}`
+              : ""}
+            {exam.section ? ` — ${t(lang, "section." + exam.section)}` : ""}
             {exam.class_name ? ` — ${exam.class_name}` : ""}
           </p>
           <p>
-            تاریخ: {formatDate(exam.exam_date)} — کل نمبر:{" "}
-            {totalPossible.toLocaleString("ur-PK")}
+            {t(lang, "exam.detail.print_date", {
+              date: formatDate(exam.exam_date),
+              total: totalPossible.toLocaleString("ur-PK"),
+            })}
           </p>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>امتحان کی تاریخ</span>
+            <span>{t(lang, "exam.form.date")}</span>
             <span>{formatDate(exam.exam_date)}</span>
           </div>
           <div className="row">
-            <span>امتحان کی قسم</span>
+            <span>{t(lang, "exam.form.type")}</span>
             <span>
-              {examTypeSectionLabel(
+              {examTypeSectionLabelLang(
+                lang,
                 exam.exam_type,
-                exam.section ? SECTION_LABELS[exam.section] : "—",
+                exam.section ? t(lang, "section." + exam.section) : "—",
               )}
             </span>
           </div>
           <div className="row">
-            <span>مضامین</span>
+            <span>{t(lang, "exam.form.subjects")}</span>
             <span>{subjects.join("، ") || "—"}</span>
           </div>
           <div className="row">
-            <span>کل نمبر</span>
+            <span>{t(lang, "exam.detail.total")}</span>
             <span>{totalPossible.toLocaleString("ur-PK")}</span>
           </div>
           <div className="row">
-            <span>نتائج درج</span>
+            <span>{t(lang, "exam.detail.entered")}</span>
             <span>
-              {summaries.size.toLocaleString("ur-PK")} طالبات کے
+              {t(lang, "exam.detail.entered_students", {
+                n: summaries.size.toLocaleString("ur-PK"),
+              })}
             </span>
           </div>
         </div>
@@ -201,17 +213,20 @@ export default async function ExamDetailPage({
         <div className="no-print">
           {students.length === 0 ? (
             <p className="empty-state">
-              اس شعبے/جماعت میں کوئی فعال طالبہ نہیں ہے — پہلے طالبہ شامل کریں۔
+              {t(lang, "exam.detail.no_students")}
             </p>
           ) : (
             <>
-              <h3 className="form-section-title">نمبر درج کریں</h3>
+              <h3 className="form-section-title">
+                {t(lang, "exam.detail.marks_title")}
+              </h3>
               <MarksForm
                 examId={exam.id}
                 students={students}
                 subjects={subjects}
                 existing={existing}
                 action={saveMarks}
+                lang={lang}
               />
             </>
           )}
@@ -219,25 +234,33 @@ export default async function ExamDetailPage({
 
         {rankedStudents.length > 0 ? (
           <>
-            <h3 className="form-section-title">نتائج</h3>
+            <h3 className="form-section-title">
+              {t(lang, "exam.detail.results")}
+            </h3>
             {groupedResults.map((group) => (
               <div key={group.className}>
                 {groupedResults.length > 1 ? (
-                  <h4 className="form-section-title">{group.className}</h4>
+                  <h4 className="form-section-title">
+                    {group.className === "دیگر"
+                      ? t(lang, "exam.detail.other_class")
+                      : group.className}
+                  </h4>
                 ) : null}
                 <div className="tbl-wrap">
                   <table className="tbl exam-print">
                     <thead>
                       <tr>
-                        <th>پوزیشن</th>
-                        <th>نام</th>
+                        <th>{t(lang, "exam.col.position")}</th>
+                        <th>{t(lang, "col.name")}</th>
                         {subjects.map((s) => (
                           <th key={s}>{s}</th>
                         ))}
-                        <th>کل نمبر</th>
-                        <th>فیصد</th>
-                        <th>درجہ</th>
-                        <th className="no-print">نتیجہ</th>
+                        <th>{t(lang, "exam.col.total")}</th>
+                        <th>{t(lang, "exam.col.percentage")}</th>
+                        <th>{t(lang, "exam.col.grade")}</th>
+                        <th className="no-print">
+                          {t(lang, "exam.col.result")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -270,12 +293,12 @@ export default async function ExamDetailPage({
                               {sum.totalPossible.toLocaleString("ur-PK")}
                             </td>
                             <td>{sum.percentage.toFixed(1)}%</td>
-                            <td>{sum.grade}</td>
+                            <td>{t(lang, gradeKey(sum.grade))}</td>
                             <td className="no-print">
                               <Link
                                 href={`/departments/exams/${exam.id}/result/${s.id}`}
                               >
-                                دیکھیں
+                                {t(lang, "common.view")}
                               </Link>
                             </td>
                           </tr>

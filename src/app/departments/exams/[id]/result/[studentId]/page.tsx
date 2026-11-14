@@ -10,6 +10,12 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyLanguage } from "@/lib/language";
+import {
+  examTypeSectionLabelLang,
+  gradeKey,
+  t,
+} from "@/i18n/dictionary";
 import {
   DEPARTMENT_LABELS,
   SECTION_LABELS,
@@ -53,6 +59,7 @@ export default async function ExamResultPage({
 }) {
   const { id, studentId } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
 
   const { data: examData, error: examError } = await supabase
     .from("exams")
@@ -138,6 +145,7 @@ export default async function ExamResultPage({
   const madrasaName =
     (madrasaData as { name: string } | null)?.name ??
     "جامعہ منیجمنٹ سسٹم";
+  const lang = await langP;
 
   if (!mine) {
     return (
@@ -145,10 +153,10 @@ export default async function ExamResultPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href={`/departments/exams/${exam.id}`} />
-            <h2>امتحان کا نتیجہ</h2>
+            <h2>{t(lang, "exam.result.title")}</h2>
           </div>
           <p className="empty-state">
-            {student.name} کے اس امتحان میں ابھی نمبر درج نہیں ہیں۔
+            {t(lang, "exam.result.no_marks", { name: student.name })}
           </p>
         </div>
       </div>
@@ -164,8 +172,10 @@ export default async function ExamResultPage({
     marksBySubject[idx] = r.marks_obtained;
   }
 
-  const sectionLabel =
+  // تصویر (PNG) اردو ہی رہتی ہے — اس لیے اردو والے لیبل الگ رکھے ہیں
+  const sectionLabelUr =
     SECTION_LABELS[(exam.section ?? "banat") as SectionId];
+  const sectionLabel = t(lang, "section." + (exam.section ?? "banat"));
   const hijriYear = hijriYearOf(exam.exam_date);
   const gregorianYear = exam.exam_date
     ? Number(exam.exam_date.split("-")[0])
@@ -176,10 +186,23 @@ export default async function ExamResultPage({
       : gregorianYear
         ? `سال ${gregorianYear.toLocaleString("ur-PK")}ء`
         : "—";
+  const yearLineLang =
+    hijriYear && gregorianYear
+      ? t(lang, "exam.result.year_both", {
+          h: hijriYear.toLocaleString("ur-PK"),
+          g: gregorianYear.toLocaleString("ur-PK"),
+        })
+      : gregorianYear
+        ? t(lang, "exam.result.year_greg", {
+            g: gregorianYear.toLocaleString("ur-PK"),
+          })
+        : "—";
   const dobText = student.date_of_birth
     ? formatDate(student.date_of_birth)
     : "—";
   const classLabel = exam.class_name ?? "پورا شعبہ";
+  const classLabelLang =
+    exam.class_name ?? t(lang, "exam.form.whole_dept");
 
   const subjectRows = subjects.map((s, idx) => ({
     serial: (idx + 1).toLocaleString("ur-PK"),
@@ -193,8 +216,8 @@ export default async function ExamResultPage({
   const imageData: ResultCardImageData = {
     madrasaName,
     examName: exam.name,
-    sectionLabel,
-    typeSectionLabel: examTypeSectionLabel(exam.exam_type, sectionLabel),
+    sectionLabel: sectionLabelUr,
+    typeSectionLabel: examTypeSectionLabel(exam.exam_type, sectionLabelUr),
     yearLine,
     registrationNumber: student.registration_number,
     studentName: student.name,
@@ -219,7 +242,7 @@ export default async function ExamResultPage({
       <div className="page-card result-card-page">
         <div className="page-head">
           <BackButton href={`/departments/exams/${exam.id}`} />
-          <h2>امتحان کا نتیجہ</h2>
+          <h2>{t(lang, "exam.result.title")}</h2>
           <span className="page-count">{student.registration_number}</span>
         </div>
 
@@ -230,55 +253,63 @@ export default async function ExamResultPage({
             </div>
             <div className="result-head-box">{madrasaName}</div>
             <p className="result-exam">
-              امتحان — {exam.name} (
-              {examTypeSectionLabel(exam.exam_type, sectionLabel)})
+              {t(lang, "exam.result.exam_line", {
+                name: exam.name,
+                info: examTypeSectionLabelLang(
+                  lang,
+                  exam.exam_type,
+                  sectionLabel,
+                ),
+              })}
             </p>
-            <p className="result-year">{yearLine}</p>
+            <p className="result-year">{yearLineLang}</p>
 
             <div className="result-fields">
               <div className="result-field full">
-                <span className="fl">نام</span>
+                <span className="fl">{t(lang, "col.name")}</span>
                 <span className="fv">{student.name}</span>
               </div>
               <div className="result-field full">
-                <span className="fl">ولدیت</span>
+                <span className="fl">{t(lang, "exam.result.father")}</span>
                 <span className="fv">{student.father_name}</span>
               </div>
               <div className="result-field">
-                <span className="fl">رجسٹریشن نمبر</span>
+                <span className="fl">{t(lang, "col.reg")}</span>
                 <span className="fv">{student.registration_number}</span>
               </div>
               <div className="result-field">
-                <span className="fl">جماعت</span>
-                <span className="fv">{classLabel}</span>
+                <span className="fl">{t(lang, "col.class")}</span>
+                <span className="fv">{classLabelLang}</span>
               </div>
               <div className="result-field">
-                <span className="fl">تاریخ پیدائش</span>
+                <span className="fl">{t(lang, "exam.result.dob")}</span>
                 <span className="fv">{dobText}</span>
               </div>
               <div className="result-field">
-                <span className="fl">تاریخ امتحان</span>
+                <span className="fl">{t(lang, "exam.result.exam_date")}</span>
                 <span className="fv">{formatDate(exam.exam_date)}</span>
               </div>
               <div className="result-field full">
-                <span className="fl">شعبہ</span>
+                <span className="fl">{t(lang, "col.dept")}</span>
                 <span className="fv">
-                  {DEPARTMENT_LABELS[exam.department]} — {sectionLabel}
+                  {t(lang, "dept." + exam.department)} — {sectionLabel}
                 </span>
               </div>
               <div className="result-field full">
-                <span className="fl">ضلع</span>
+                <span className="fl">{t(lang, "exam.result.district")}</span>
                 <span className="fv">{student.district ?? "—"}</span>
               </div>
             </div>
 
-            <h3 className="result-title">حاصل کردہ نمبرات کی تفصیل</h3>
+            <h3 className="result-title">
+              {t(lang, "exam.result.marks_title")}
+            </h3>
             <table className="result-marks">
               <thead>
                 <tr>
-                  <th>رقم مسلسل</th>
-                  <th>کتاب</th>
-                  <th>نمبر</th>
+                  <th>{t(lang, "exam.result.serial")}</th>
+                  <th>{t(lang, "exam.result.book")}</th>
+                  <th>{t(lang, "exam.result.marks")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -292,22 +323,36 @@ export default async function ExamResultPage({
               </tbody>
             </table>
             <div className="result-totals">
-              <span>کل نمبر {totalPossible.toLocaleString("ur-PK")}</span>
-              <span>فیصد نمبر {mine.percentage.toFixed(1)}%</span>
               <span>
-                مجموعہ نمبرات {mine.totalObtained.toLocaleString("ur-PK")}
+                {t(lang, "exam.result.total", {
+                  n: totalPossible.toLocaleString("ur-PK"),
+                })}
+              </span>
+              <span>
+                {t(lang, "exam.result.percentage", {
+                  n: mine.percentage.toFixed(1),
+                })}
+              </span>
+              <span>
+                {t(lang, "exam.result.obtained", {
+                  n: mine.totalObtained.toLocaleString("ur-PK"),
+                })}
               </span>
             </div>
-            <p className="result-grade">تقدیر — {mine.grade}</p>
+            <p className="result-grade">
+              {t(lang, "exam.result.grade_line", {
+                grade: t(lang, gradeKey(mine.grade)),
+              })}
+            </p>
 
             <div className="result-signs">
               <div className="result-sign">
                 <div className="line" />
-                <span>دستخط مہتمم</span>
+                <span>{t(lang, "exam.result.sign_mohtamim")}</span>
               </div>
               <div className="result-sign">
                 <div className="line" />
-                <span>جاری کردہ</span>
+                <span>{t(lang, "exam.result.sign_issued")}</span>
               </div>
             </div>
           </div>
@@ -315,7 +360,7 @@ export default async function ExamResultPage({
 
         <div className="form-actions no-print">
           <ResultCardImageButton data={imageData} />
-          <PrintButton />
+          <PrintButton lang={lang} />
         </div>
       </div>
     </div>

@@ -9,16 +9,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ClassSelect from "@/components/ClassSelect";
 import type { ClassOption } from "@/lib/classes";
+import { t, type Lang } from "@/i18n/dictionary";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
   type SectionId,
 } from "@/lib/students";
 import {
   EXAM_TYPE_IDS,
-  EXAM_TYPE_LABELS,
   type ExamType,
 } from "@/lib/exams";
 
@@ -29,9 +27,11 @@ type FormAction = (
 export default function ExamForm({
   action,
   classes = [],
+  lang = "ur",
 }: {
   action: FormAction;
   classes?: ClassOption[];
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -62,21 +62,22 @@ export default function ExamForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">امتحان کا نام *</span>
+          <span className="field-label">{t(lang, "exam.form.name")}</span>
           <input
             className="field-input"
             name="name"
             type="text"
             required
             maxLength={200}
-            placeholder="مثلاً پہلا امتحان"
+            placeholder={t(lang, "exam.form.name_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">امتحان کی قسم *</span>
+          <span className="field-label">{t(lang, "exam.form.type")}</span>
           <select
             className="field-input"
             name="exam_type"
@@ -84,16 +85,16 @@ export default function ExamForm({
             value={examType}
             onChange={(e) => setExamType(e.target.value as ExamType)}
           >
-            {EXAM_TYPE_IDS.map((t) => (
-              <option key={t} value={t}>
-                {EXAM_TYPE_LABELS[t]}
+            {EXAM_TYPE_IDS.map((ty) => (
+              <option key={ty} value={ty}>
+                {t(lang, "exam.type." + ty)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">امتحان کی تاریخ *</span>
+          <span className="field-label">{t(lang, "exam.form.date")}</span>
           <input
             className="field-input"
             name="exam_date"
@@ -104,7 +105,7 @@ export default function ExamForm({
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ *</span>
+          <span className="field-label">{t(lang, "exam.form.dept")}</span>
           <select
             className="field-input"
             name="department"
@@ -114,14 +115,16 @@ export default function ExamForm({
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+                {t(lang, "dept." + d)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <span className="field-label">
+            {t(lang, "classes.section_filter")}
+          </span>
           <select
             className="field-input"
             name="section"
@@ -131,39 +134,36 @@ export default function ExamForm({
           >
             {SECTION_IDS.map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABELS[s]}
+                {t(lang, "section." + s)}
               </option>
             ))}
           </select>
         </label>
 
-        <ClassSelect classes={classes} department={department} section={section} />
+        <ClassSelect classes={classes} department={department} section={section} lang={lang} />
       </div>
 
       <label className="field">
-        <span className="field-label">مضامین *</span>
+        <span className="field-label">{t(lang, "exam.form.subjects")}</span>
         <textarea
           className="field-input field-textarea"
           name="subjects"
           required
           maxLength={1000}
-          placeholder="مثلاً ناظرہ، تجوید، اردو"
+          placeholder={t(lang, "exam.form.subjects_ph")}
         />
       </label>
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      <p className="form-note">
-        ہر مضمون 100 نمبر کا ہوگا۔ مضامین کوما (،) سے الگ لکھیں۔ جماعت
-        خالی ہو تو پورا شعبہ شامل ہوگا۔
-      </p>
+      <p className="form-note">{t(lang, "exam.form.note")}</p>
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "امتحان بنائیں"}
+          {loading ? t(lang, "common.wait") : t(lang, "exam.form.create")}
         </button>
         <Link className="btn-ghost" href="/departments/exams">
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

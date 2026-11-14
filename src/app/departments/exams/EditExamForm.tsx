@@ -8,13 +8,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 import {
   EXAM_TYPE_IDS,
-  EXAM_TYPE_LABELS,
   type Exam,
   type ExamType,
 } from "@/lib/exams";
-import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
 
 type FormAction = (
   formData: FormData,
@@ -23,9 +22,11 @@ type FormAction = (
 export default function EditExamForm({
   exam,
   action,
+  lang = "ur",
 }: {
   exam: Exam;
   action: FormAction;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -51,28 +52,30 @@ export default function EditExamForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="detail-rows">
         <div className="row">
-          <span>شعبہ</span>
-          <span>{DEPARTMENT_LABELS[exam.department]}</span>
+          <span>{t(lang, "col.dept")}</span>
+          <span>{t(lang, "dept." + exam.department)}</span>
         </div>
         <div className="row">
-          <span>شعبہ (بنین / بنات)</span>
-          <span>{exam.section ? SECTION_LABELS[exam.section] : "—"}</span>
+          <span>{t(lang, "classes.section_filter")}</span>
+          <span>
+            {exam.section ? t(lang, "section." + exam.section) : "—"}
+          </span>
         </div>
         <div className="row">
-          <span>جماعت</span>
-          <span>{exam.class_name ?? "پورا شعبہ"}</span>
+          <span>{t(lang, "col.class")}</span>
+          <span>
+            {exam.class_name ?? t(lang, "exam.form.whole_dept")}
+          </span>
         </div>
       </div>
-      <p className="form-note">
-        شعبہ، بنین/بنات اور جماعت نہیں بدلے جا سکتے — یہ امتحان کی
-        پہچان ہیں۔ اگر یہ غلط ہوں تو نیا امتحان بنانا ہوگا۔
-      </p>
+      <p className="form-note">{t(lang, "exam.edit.locked_note")}</p>
 
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">امتحان کا نام *</span>
+          <span className="field-label">{t(lang, "exam.form.name")}</span>
           <input
             className="field-input"
             name="name"
@@ -84,7 +87,7 @@ export default function EditExamForm({
         </label>
 
         <label className="field">
-          <span className="field-label">امتحان کی قسم *</span>
+          <span className="field-label">{t(lang, "exam.form.type")}</span>
           <select
             className="field-input"
             name="exam_type"
@@ -92,16 +95,16 @@ export default function EditExamForm({
             value={examType}
             onChange={(e) => setExamType(e.target.value as ExamType)}
           >
-            {EXAM_TYPE_IDS.map((t) => (
-              <option key={t} value={t}>
-                {EXAM_TYPE_LABELS[t]}
+            {EXAM_TYPE_IDS.map((ty) => (
+              <option key={ty} value={ty}>
+                {t(lang, "exam.type." + ty)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">امتحان کی تاریخ *</span>
+          <span className="field-label">{t(lang, "exam.form.date")}</span>
           <input
             className="field-input"
             name="exam_date"
@@ -113,7 +116,7 @@ export default function EditExamForm({
       </div>
 
       <label className="field">
-        <span className="field-label">مضامین *</span>
+        <span className="field-label">{t(lang, "exam.form.subjects")}</span>
         <textarea
           className="field-input field-textarea"
           name="subjects"
@@ -125,17 +128,14 @@ export default function EditExamForm({
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      <p className="form-note">
-        ہر مضمون 100 نمبر کا ہوگا۔ مضامین کوما (،) سے الگ لکھیں۔ جس
-        مضمون کے نمبر درج ہو چکے ہوں، اسے ہٹایا نہیں جا سکتا۔
-      </p>
+      <p className="form-note">{t(lang, "exam.edit.note")}</p>
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "ترمیم محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "student.form.update")}
         </button>
         <Link className="btn-ghost" href={`/departments/exams/${exam.id}`}>
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

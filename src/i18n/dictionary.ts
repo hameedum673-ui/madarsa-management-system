@@ -12,7 +12,8 @@
  * کا ریکارڈ بھی اسی فہرست سے عربی ہوتا ہے۔ مرحلہ 105 — درجات اور
  * جماعتیں، مرحلہ 106 — دونوں حاضریاں، مرحلہ 107 — تعلیمی ریکارڈ بھی
  * اسی فہرست سے عربی ہوتے ہیں۔ مرحلہ 108 — لائبریری بھی اسی فہرست سے
- * عربی ہوتی ہے۔ باقی ماڈیول اگلے مرحلوں میں آئیں گے۔
+ * عربی ہوتی ہے۔ مرحلہ 109 — امتحانات بھی اسی فہرست سے عربی ہوتے ہیں۔
+ * باقی ماڈیول اگلے مرحلوں میں آئیں گے۔
  */
 
 export type Lang = "ur" | "ar" | "en";
@@ -451,6 +452,7 @@ const ur: Dict = {
 
   // مرحلہ 107 — تعلیمی ریکارڈ
   "common.view": "دیکھیں",
+  "common.print": "پرنٹ کریں",
 
   "academic.empty": "ابھی کوئی فعال طالبہ درج نہیں ہے۔",
 
@@ -618,6 +620,113 @@ const ur: Dict = {
   "library.err.unavailable": "کتاب دستیاب نہیں ہے — سب نسخے دیے جا چکے ہیں۔",
   "library.err.return_failed":
     "واپسی لکھ نہیں سکی — شاید یہ کتاب پہلے ہی واپس آ چکی ہے۔",
+
+  // مرحلہ 109 — امتحانات
+  "exams.new": "+ نیا امتحان بنائیں",
+  "exams.filter.type": "امتحان کی قسم",
+  "exams.table_missing":
+    "امتحانات کی میز ابھی نہیں بنی — پہلے مرحلہ 10 کی SQL چلائیں۔",
+  "exams.empty":
+    "ابھی کوئی امتحان نہیں بنایا گیا۔ اوپر والے بٹن سے پہلا امتحان بنائیں۔",
+  "exams.col.exam": "امتحان",
+  "exams.col.section": "بنین / بنات",
+  "exams.col.subjects": "مضامین",
+
+  "exams.new_title": "نیا امتحان بنائیں",
+
+  "exam.form.name": "امتحان کا نام *",
+  "exam.form.name_ph": "مثلاً پہلا امتحان",
+  "exam.form.type": "امتحان کی قسم *",
+  "exam.form.date": "امتحان کی تاریخ *",
+  "exam.form.dept": "شعبہ *",
+  "exam.form.subjects": "مضامین *",
+  "exam.form.subjects_ph": "مثلاً ناظرہ، تجوید، اردو",
+  "exam.form.note":
+    "ہر مضمون 100 نمبر کا ہوگا۔ مضامین کوما (،) سے الگ لکھیں۔ جماعت خالی ہو تو پورا شعبہ شامل ہوگا۔",
+  "exam.form.create": "امتحان بنائیں",
+  "exam.form.whole_dept": "پورا شعبہ",
+
+  "exam.edit.title": "امتحان میں ترمیم",
+  "exam.edit.locked_note":
+    "شعبہ، بنین/بنات اور جماعت نہیں بدلے جا سکتے — یہ امتحان کی پہچان ہیں۔ اگر یہ غلط ہوں تو نیا امتحان بنانا ہوگا۔",
+  "exam.edit.note":
+    "ہر مضمون 100 نمبر کا ہوگا۔ مضامین کوما (،) سے الگ لکھیں۔ جس مضمون کے نمبر درج ہو چکے ہوں، اسے ہٹایا نہیں جا سکتا۔",
+
+  "exam.grade.excellent": "ممتاز",
+  "exam.grade.very_good": "جید جدا",
+  "exam.grade.good": "جید",
+  "exam.grade.acceptable": "مقبول",
+  "exam.grade.fail": "راسب",
+
+  "exam.detail.edit": "ترمیم کریں",
+  "exam.detail.print_date": "تاریخ: {date} — کل نمبر: {total}",
+  "exam.detail.total": "کل نمبر",
+  "exam.detail.entered": "نتائج درج",
+  "exam.detail.entered_students": "{n} طالبات کے",
+  "exam.detail.marks_title": "نمبر درج کریں",
+  "exam.detail.no_students":
+    "اس شعبے/جماعت میں کوئی فعال طالبہ نہیں ہے — پہلے طالبہ شامل کریں۔",
+  "exam.detail.results": "نتائج",
+  "exam.detail.other_class": "دیگر",
+
+  "exam.col.position": "پوزیشن",
+  "exam.col.total": "کل نمبر",
+  "exam.col.percentage": "فیصد",
+  "exam.col.grade": "درجہ",
+  "exam.col.result": "نتیجہ",
+
+  "exam.marks.save": "نمبر محفوظ کریں",
+  "exam.marks.saved": "نمبر محفوظ ہو گئے ہیں۔",
+
+  "exam.result.title": "امتحان کا نتیجہ",
+  "exam.result.no_marks":
+    "{name} کے اس امتحان میں ابھی نمبر درج نہیں ہیں۔",
+  "exam.result.exam_line": "امتحان — {name} ({info})",
+  "exam.result.year_both": "سال {h}ھ بمطابق {g}ء",
+  "exam.result.year_greg": "سال {g}ء",
+  "exam.result.father": "ولدیت",
+  "exam.result.dob": "تاریخ پیدائش",
+  "exam.result.exam_date": "تاریخ امتحان",
+  "exam.result.district": "ضلع",
+  "exam.result.marks_title": "حاصل کردہ نمبرات کی تفصیل",
+  "exam.result.serial": "رقم مسلسل",
+  "exam.result.book": "کتاب",
+  "exam.result.marks": "نمبر",
+  "exam.result.total": "کل نمبر {n}",
+  "exam.result.percentage": "فیصد نمبر {n}%",
+  "exam.result.obtained": "مجموعہ نمبرات {n}",
+  "exam.result.grade_line": "تقدیر — {grade}",
+  "exam.result.sign_mohtamim": "دستخط مہتمم",
+  "exam.result.sign_issued": "جاری کردہ",
+
+  "exam.err.name_required": "امتحان کا نام ضروری ہے۔",
+  "exam.err.dept_invalid":
+    "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔",
+  "exam.err.section_invalid": "شعبہ (بنین / بنات) درست منتخب کریں۔",
+  "exam.err.type_invalid":
+    "امتحان کی قسم درست منتخب کریں (سہ ماہی، شش ماہی، سالانہ یا دیگر)۔",
+  "exam.err.date_invalid": "امتحان کی تاریخ درست نہیں ہے۔",
+  "exam.err.date_future": "امتحان کی تاریخ آج سے آگے نہیں ہو سکتی۔",
+  "exam.err.subjects_empty":
+    "کم از کم ایک مضمون لکھیں (کوما سے الگ کریں)۔",
+  "exam.err.subjects_max": "زیادہ سے زیادہ 10 مضامین ہو سکتے ہیں۔",
+  "exam.err.save_failed": "امتحان نہیں بن سکا۔ دوبارہ کوشش کریں۔",
+  "exam.err.update_failed":
+    "امتحان میں ترمیم نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "exam.err.not_found": "امتحان نہیں ملا۔",
+  "exam.err.section_denied_add":
+    "اس شعبے میں امتحان بنانے کی اجازت نہیں ہے۔",
+  "exam.err.section_denied_edit":
+    "اس شعبے کے امتحان میں ترمیم کی اجازت نہیں ہے۔",
+  "exam.err.section_denied_marks":
+    "اس شعبے کے امتحان میں نمبر درج کرنے کی اجازت نہیں ہے۔",
+  "exam.err.subject_blocked":
+    "مضمون \"{subject}\" کے نمبر درج ہیں — اسے ہٹایا نہیں جا سکتا۔",
+  "exam.err.no_subjects": "اس امتحان میں کوئی مضمون نہیں ہے۔",
+  "exam.err.marks_invalid": "نمبر 0 سے 100 تک پورا عدد ہونا چاہیے۔",
+  "exam.err.marks_empty": "کوئی نمبر نہیں لکھا گیا۔",
+  "exam.err.marks_save_failed":
+    "نمبر محفوظ نہیں ہو سکے۔ دوبارہ کوشش کریں۔",
 };
 
 const ar: Dict = {
@@ -1034,6 +1143,7 @@ const ar: Dict = {
 
   // المرحلة 107 — السجل التعليمي
   "common.view": "عرض",
+  "common.print": "طباعة",
 
   "academic.empty": "لا توجد أي طالبة نشطة مسجلة بعد.",
 
@@ -1201,6 +1311,109 @@ const ar: Dict = {
   "library.err.unavailable": "الكتاب غير متاح — جميع النسخ مُعارة.",
   "library.err.return_failed":
     "تعذّر تسجيل الإرجاع — ربما أُرجع هذا الكتاب من قبل.",
+
+  // المرحلة 109 — الامتحانات
+  "exams.new": "+ إنشاء امتحان جديد",
+  "exams.filter.type": "نوع الامتحان",
+  "exams.table_missing":
+    "جدول الامتحانات غير موجود بعد — نفّذ SQL المرحلة 10 أولًا.",
+  "exams.empty":
+    "لم يُنشأ أي امتحان بعد. أنشئ أول امتحان من الزر أعلاه.",
+  "exams.col.exam": "الامتحان",
+  "exams.col.section": "بنون / بنات",
+  "exams.col.subjects": "المواد",
+
+  "exams.new_title": "إنشاء امتحان جديد",
+
+  "exam.form.name": "اسم الامتحان *",
+  "exam.form.name_ph": "مثال: الامتحان الأول",
+  "exam.form.type": "نوع الامتحان *",
+  "exam.form.date": "تاريخ الامتحان *",
+  "exam.form.dept": "القسم *",
+  "exam.form.subjects": "المواد *",
+  "exam.form.subjects_ph": "مثال: الناظرة، التجويد، الأردية",
+  "exam.form.note":
+    "كل مادة من 100 درجة. افصل المواد بفاصلة (،). إذا تُركت الشعبة فارغة شمل القسم كله.",
+  "exam.form.create": "إنشاء الامتحان",
+  "exam.form.whole_dept": "القسم كله",
+
+  "exam.edit.title": "تعديل الامتحان",
+  "exam.edit.locked_note":
+    "لا يمكن تغيير القسم أو البنين/البنات أو الشعبة — فهي هوية الامتحان. إذا كانت خاطئة فأنشئ امتحانًا جديدًا.",
+  "exam.edit.note":
+    "كل مادة من 100 درجة. افصل المواد بفاصلة (،). لا يمكن حذف مادة أُدخلت درجاتها.",
+
+  "exam.grade.excellent": "ممتاز",
+  "exam.grade.very_good": "جيد جدا",
+  "exam.grade.good": "جيد",
+  "exam.grade.acceptable": "مقبول",
+  "exam.grade.fail": "راسب",
+
+  "exam.detail.edit": "تعديل",
+  "exam.detail.print_date": "التاريخ: {date} — مجموع الدرجات: {total}",
+  "exam.detail.total": "مجموع الدرجات",
+  "exam.detail.entered": "النتائج المُدخلة",
+  "exam.detail.entered_students": "الطالبات: {n}",
+  "exam.detail.marks_title": "إدخال الدرجات",
+  "exam.detail.no_students":
+    "لا توجد طالبة نشطة في هذا القسم/الشعبة — أضف طالبة أولًا.",
+  "exam.detail.results": "النتائج",
+  "exam.detail.other_class": "أخرى",
+
+  "exam.col.position": "المرتبة",
+  "exam.col.total": "المجموع",
+  "exam.col.percentage": "النسبة المئوية",
+  "exam.col.grade": "التقدير",
+  "exam.col.result": "النتيجة",
+
+  "exam.marks.save": "حفظ الدرجات",
+  "exam.marks.saved": "تم حفظ الدرجات.",
+
+  "exam.result.title": "نتيجة الامتحان",
+  "exam.result.no_marks":
+    "لم تُدخل درجات {name} في هذا الامتحان بعد.",
+  "exam.result.exam_line": "الامتحان — {name} ({info})",
+  "exam.result.year_both": "السنة {h}هـ الموافق {g}م",
+  "exam.result.year_greg": "السنة {g}م",
+  "exam.result.father": "اسم الأب",
+  "exam.result.dob": "تاريخ الميلاد",
+  "exam.result.exam_date": "تاريخ الامتحان",
+  "exam.result.district": "المنطقة",
+  "exam.result.marks_title": "تفاصيل الدرجات المُحرزة",
+  "exam.result.serial": "الرقم",
+  "exam.result.book": "المادة",
+  "exam.result.marks": "الدرجة",
+  "exam.result.total": "المجموع {n}",
+  "exam.result.percentage": "النسبة المئوية {n}%",
+  "exam.result.obtained": "مجموع الدرجات {n}",
+  "exam.result.grade_line": "التقدير — {grade}",
+  "exam.result.sign_mohtamim": "توقيع المهتمم",
+  "exam.result.sign_issued": "صادر",
+
+  "exam.err.name_required": "اسم الامتحان إلزامي.",
+  "exam.err.dept_invalid":
+    "اختر القسم الصحيح (الحفظ أو الناظرة أو الدرس النظامي).",
+  "exam.err.section_invalid": "اختر القسم الصحيح (بنون / بنات).",
+  "exam.err.type_invalid":
+    "اختر نوع الامتحان الصحيح (فصلي أو نصف سنوي أو سنوي أو أخرى).",
+  "exam.err.date_invalid": "تاريخ الامتحان غير صحيح.",
+  "exam.err.date_future": "لا يمكن أن يكون تاريخ الامتحان بعد اليوم.",
+  "exam.err.subjects_empty":
+    "اكتب مادة واحدة على الأقل (افصل بينها بفاصلة).",
+  "exam.err.subjects_max": "الحد الأقصى 10 مواد.",
+  "exam.err.save_failed": "تعذّر إنشاء الامتحان. حاول مرة أخرى.",
+  "exam.err.update_failed": "تعذّر تعديل الامتحان. حاول مرة أخرى.",
+  "exam.err.not_found": "لم يُعثر على الامتحان.",
+  "exam.err.section_denied_add": "لا يسمح بإنشاء امتحان في هذا القسم.",
+  "exam.err.section_denied_edit": "لا يسمح بتعديل امتحان هذا القسم.",
+  "exam.err.section_denied_marks":
+    "لا يسمح بإدخال درجات امتحان هذا القسم.",
+  "exam.err.subject_blocked":
+    "أُدخلت درجات المادة \"{subject}\" — لا يمكن حذفها.",
+  "exam.err.no_subjects": "لا توجد مواد في هذا الامتحان.",
+  "exam.err.marks_invalid": "يجب أن تكون الدرجة عددًا صحيحًا من 0 إلى 100.",
+  "exam.err.marks_empty": "لم تُكتب أي درجة.",
+  "exam.err.marks_save_failed": "تعذّر حفظ الدرجات. حاول مرة أخرى.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */
@@ -1224,6 +1437,48 @@ export function t(
     }
   }
   return out;
+}
+
+/** امتحان کی قسم کا لیبل — lib/exams.ts والے examTypeLabel جیسا، مگر زبان کے ساتھ */
+export function examTypeLabelLang(
+  lang: Lang,
+  value: string | null | undefined,
+): string {
+  if (!value) return "—";
+  const keys: Record<string, string> = {
+    quarterly: "exam.type.quarterly",
+    half_yearly: "exam.type.half_yearly",
+    annual: "exam.type.annual",
+    other: "exam.type.other",
+  };
+  const key = keys[value];
+  return key ? t(lang, key) : "—";
+}
+
+/** قسم + شعبہ — مثلاً "سہ ماہی — بنین" (lib/exams.ts والے examTypeSectionLabel جیسا) */
+export function examTypeSectionLabelLang(
+  lang: Lang,
+  examType: string | null | undefined,
+  sectionLabel: string,
+): string {
+  const typeLabel = examTypeLabelLang(lang, examType);
+  return typeLabel === "—" ? sectionLabel : `${typeLabel} — ${sectionLabel}`;
+}
+
+/** درجے کا اردو لفظ → فہرست کی کلید (درجہ ڈیٹا میں اردو لفظ کی شکل میں محفوظ ہے) */
+export function gradeKey(grade: string): string {
+  switch (grade) {
+    case "ممتاز":
+      return "exam.grade.excellent";
+    case "جید جدا":
+      return "exam.grade.very_good";
+    case "جید":
+      return "exam.grade.good";
+    case "مقبول":
+      return "exam.grade.acceptable";
+    default:
+      return "exam.grade.fail";
+  }
 }
 
 /** اعداد کی شکل — اردو اور عربی دونوں میں مشرقی ہندسے (جیسے پہلے تھے) */
