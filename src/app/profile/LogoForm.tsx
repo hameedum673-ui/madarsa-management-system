@@ -62,34 +62,45 @@ export default function LogoForm({
     setError("");
     setSaved(false);
     setLoading(true);
-    const formData = new FormData();
-    formData.set("logo", file);
-    const result = await uploadMadrasaLogo(formData);
-    setLoading(false);
-    if ("error" in result) {
-      setError(result.error);
-      return;
+    try {
+      const formData = new FormData();
+      formData.set("logo", file);
+      const result = await uploadMadrasaLogo(formData);
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+      setPreview(null);
+      setFileName("");
+      if (inputRef.current) inputRef.current.value = "";
+      setSaved(true);
+      router.refresh();
+    } catch {
+      // کچھ بھی ناکام ہو تو بٹن رکا رہے، "انتظار کریں" پر پھنسے نہیں
+      setError("لوگو اپلوڈ نہیں ہو سکا۔ دوبارہ کوشش کریں۔");
+    } finally {
+      setLoading(false);
     }
-    setPreview(null);
-    setFileName("");
-    if (inputRef.current) inputRef.current.value = "";
-    setSaved(true);
-    router.refresh();
   }
 
   async function handleRemove() {
     setError("");
     setSaved(false);
     setLoading(true);
-    const result = await removeMadrasaLogo();
-    setLoading(false);
-    if ("error" in result) {
-      setError(result.error);
-      return;
+    try {
+      const result = await removeMadrasaLogo();
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+      setPreview(null);
+      setSaved(true);
+      router.refresh();
+    } catch {
+      setError("لوگو ہٹایا نہیں جا سکا۔ دوبارہ کوشش کریں۔");
+    } finally {
+      setLoading(false);
     }
-    setPreview(null);
-    setSaved(true);
-    router.refresh();
   }
 
   return (
