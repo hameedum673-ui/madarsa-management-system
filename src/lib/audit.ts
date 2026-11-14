@@ -197,7 +197,8 @@ const DETAIL_LABELS: Record<string, string> = {
   present: "حاضر",
   absent: "غیر حاضر",
   leave: "رخصت",
-  late: "تاخیر",
+  sick: "مریض",
+  late: "تاخیر", // پرانی اندراج — مرحلہ 110 سے پہلے کی تاریخ کے لیے
 };
 
 /**

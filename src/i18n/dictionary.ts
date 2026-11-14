@@ -13,6 +13,8 @@
  * جماعتیں، مرحلہ 106 — دونوں حاضریاں، مرحلہ 107 — تعلیمی ریکارڈ بھی
  * اسی فہرست سے عربی ہوتے ہیں۔ مرحلہ 108 — لائبریری بھی اسی فہرست سے
  * عربی ہوتی ہے۔ مرحلہ 109 — امتحانات بھی اسی فہرست سے عربی ہوتے ہیں۔
+ * مرحلہ 110 — حاضری کی حالت 'تاخیر' کی جگہ 'مریض' بھی اسی فہرست سے
+ * عربی ہوتی ہے۔
  * باقی ماڈیول اگلے مرحلوں میں آئیں گے۔
  */
 
@@ -419,7 +421,7 @@ const ur: Dict = {
   "att.status.present": "حاضر",
   "att.status.absent": "غیر حاضر",
   "att.status.leave": "رخصت",
-  "att.status.late": "تاخیر",
+  "att.status.sick": "مریض",
 
   "att.form.date": "تاریخ",
   "att.form.all_depts": "سب شعبے",
@@ -428,7 +430,7 @@ const ur: Dict = {
   "att.summary.remaining": "باقی",
   "att.save": "حاضری محفوظ کریں",
   "att.saved":
-    "حاضری محفوظ ہو گئی — حاضر: {present}، غیر حاضر: {absent}، رخصت: {leave}، تاخیر: {late}",
+    "حاضری محفوظ ہو گئی — حاضر: {present}، غیر حاضر: {absent}، رخصت: {leave}، مریض: {sick}",
 
   "att.table_missing.students":
     "حاضری کی میز ابھی نہیں بنی — پہلے مرحلہ 6 کی SQL چلائیں۔",
@@ -463,7 +465,7 @@ const ur: Dict = {
   "academic.sec.admission": "داخلہ",
 
   "academic.att.total_days": "کل دن",
-  "academic.att.percentage": "حاضری کا فیصد (حاضر + تاخیر)",
+  "academic.att.percentage": "حاضری کا فیصد",
   "academic.att.empty": "ابھی کوئی حاضری درج نہیں ہے۔",
 
   "academic.exams.empty": "ابھی کوئی امتحان نہیں دیا۔",
@@ -1110,7 +1112,7 @@ const ar: Dict = {
   "att.status.present": "حاضر",
   "att.status.absent": "غائب",
   "att.status.leave": "إجازة",
-  "att.status.late": "متأخر",
+  "att.status.sick": "عليل",
 
   "att.form.date": "التاريخ",
   "att.form.all_depts": "كل الأقسام",
@@ -1119,7 +1121,7 @@ const ar: Dict = {
   "att.summary.remaining": "المتبقي",
   "att.save": "حفظ الحضور",
   "att.saved":
-    "تم حفظ الحضور — حاضر: {present}، غائب: {absent}، إجازة: {leave}، متأخر: {late}",
+    "تم حفظ الحضور — حاضر: {present}، غائب: {absent}، إجازة: {leave}، عليل: {sick}",
 
   "att.table_missing.students":
     "لم يتم إنشاء جدول الحضور بعد — شغّل SQL للمرحلة 6 أولًا.",
@@ -1154,7 +1156,7 @@ const ar: Dict = {
   "academic.sec.admission": "القبول",
 
   "academic.att.total_days": "مجموع الأيام",
-  "academic.att.percentage": "نسبة الحضور (حاضر + متأخر)",
+  "academic.att.percentage": "نسبة الحضور",
   "academic.att.empty": "لم يُسجَّل أي حضور بعد.",
 
   "academic.exams.empty": "لم تؤدِّ أي امتحان بعد.",

@@ -3,20 +3,20 @@
  * تاریخ ہمیشہ پاکستان (Asia/Karachi) کے حساب سے لی جاتی ہے،
  * کیونکہ سرور کا وقت UTC ہو سکتا ہے اور حاضری "آج" پاکستان کا دن ہے۔
  */
-export type AttendanceStatus = "present" | "absent" | "leave" | "late";
+export type AttendanceStatus = "present" | "absent" | "leave" | "sick";
 
 export const ATTENDANCE_STATUSES: AttendanceStatus[] = [
   "present",
   "absent",
   "leave",
-  "late",
+  "sick",
 ];
 
 export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
   present: "حاضر",
   absent: "غیر حاضر",
   leave: "رخصت",
-  late: "تاخیر",
+  sick: "مریض",
 };
 
 export interface AttendanceRecord {

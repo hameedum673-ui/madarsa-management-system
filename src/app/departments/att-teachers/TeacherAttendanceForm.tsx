@@ -54,7 +54,7 @@ export default function TeacherAttendanceForm({
   const [loading, setLoading] = useState(false);
 
   const counts = useMemo(() => {
-    const c = { present: 0, absent: 0, leave: 0, late: 0, unmarked: 0 };
+    const c = { present: 0, absent: 0, leave: 0, sick: 0, unmarked: 0 };
     for (const tr of teachers) {
       const m = marks[tr.id];
       if (!m) c.unmarked += 1;
@@ -103,7 +103,7 @@ export default function TeacherAttendanceForm({
         present: s.present,
         absent: s.absent,
         leave: s.leave,
-        late: s.late,
+        sick: s.sick,
       }),
     );
     router.refresh();
@@ -184,8 +184,8 @@ export default function TeacherAttendanceForm({
         <span className="att-chip att-chip-leave">
           {t(lang, "att.status.leave")}: {counts.leave.toLocaleString("ur-PK")}
         </span>
-        <span className="att-chip att-chip-late">
-          {t(lang, "att.status.late")}: {counts.late.toLocaleString("ur-PK")}
+        <span className="att-chip att-chip-sick">
+          {t(lang, "att.status.sick")}: {counts.sick.toLocaleString("ur-PK")}
         </span>
         <span className="att-chip">
           {t(lang, "att.summary.remaining")}: {counts.unmarked.toLocaleString("ur-PK")}

@@ -31,7 +31,7 @@ function formLang(formData: FormData): Lang {
 type SaveResult =
   | {
       ok: true;
-      summary: { present: number; absent: number; leave: number; late: number };
+      summary: { present: number; absent: number; leave: number; sick: number };
     }
   | { error: string };
 
@@ -102,7 +102,7 @@ export async function saveAttendance(
     return { error: t(lang, "att.err.save_failed") };
   }
 
-  const summary = { present: 0, absent: 0, leave: 0, late: 0 };
+  const summary = { present: 0, absent: 0, leave: 0, sick: 0 };
   for (const r of rows) summary[r.status] += 1;
 
   // آڈٹ لاگ میں ایک اندراج — پورے دن کی حاضری کے لیے
@@ -116,7 +116,7 @@ export async function saveAttendance(
         present: String(summary.present),
         absent: String(summary.absent),
         leave: String(summary.leave),
-        late: String(summary.late),
+        sick: String(summary.sick),
         total: String(rows.length),
       },
     });

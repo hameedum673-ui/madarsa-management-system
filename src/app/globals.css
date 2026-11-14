@@ -336,7 +336,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .att-chip-present{background:#e6f2e6;color:#1e5c2a}
 .att-chip-absent{background:#fdecea;color:#8a1f16}
 .att-chip-leave{background:var(--gold-soft);color:var(--text)}
-.att-chip-late{background:#fdf0dd;color:#8a4d08}
+.att-chip-sick{background:#fdf0dd;color:#8a4d08}
 .att-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .att-name{flex:1;min-width:150px}
 .att-name .sub{color:var(--muted);font-size:.82rem}
@@ -346,7 +346,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .att-btn.sel-present{background:#1e5c2a;color:#fff;border-color:#1e5c2a}
 .att-btn.sel-absent{background:#8a1f16;color:#fff;border-color:#8a1f16}
 .att-btn.sel-leave{background:var(--gold);color:#231a02;border-color:var(--gold)}
-.att-btn.sel-late{background:#b25e09;color:#fff;border-color:#b25e09}
+.att-btn.sel-sick{background:#b25e09;color:#fff;border-color:#b25e09}
 .att-success{background:#e6f2e6;color:#1e5c2a;border:1px solid #bcd8bc;border-radius:10px;padding:10px 12px;font-size:.9rem;margin:12px 0 0}
 
 /* مرحلہ 8 — فیس اور رسیدیں */

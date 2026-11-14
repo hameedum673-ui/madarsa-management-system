@@ -355,8 +355,8 @@ export default async function ReportsPage({
                 <strong>{countStatus(attStudents, "leave")}</strong>
               </div>
               <div className="row">
-                <span>طلبہ — تاخیر</span>
-                <strong>{countStatus(attStudents, "late")}</strong>
+                <span>طلبہ — مریض</span>
+                <strong>{countStatus(attStudents, "sick")}</strong>
               </div>
               <div className="row">
                 <span>اساتذہ — حاضر</span>

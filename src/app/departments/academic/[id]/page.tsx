@@ -73,16 +73,14 @@ export default async function AcademicRecordPage({
     present: 0,
     absent: 0,
     leave: 0,
-    late: 0,
+    sick: 0,
   };
   for (const a of attendance) {
     attCount[a.status] = (attCount[a.status] ?? 0) + 1;
   }
   const attTotal = attendance.length;
   const attPercentage =
-    attTotal > 0
-      ? ((attCount.present + attCount.late) / attTotal) * 100
-      : null;
+    attTotal > 0 ? (attCount.present / attTotal) * 100 : null;
 
   // امتحانات — مدرسے کے تمام امتحان + اس طالبہ کے نمبر + پوزیشن کے لیے
   // اس امتحان میں شریک تمام طلبہ کے نمبر
@@ -211,8 +209,8 @@ export default async function AcademicRecordPage({
               <span>{attCount.present.toLocaleString("ur-PK")}</span>
             </div>
             <div className="row">
-              <span>{t(lang, "att.status.late")}</span>
-              <span>{attCount.late.toLocaleString("ur-PK")}</span>
+              <span>{t(lang, "att.status.sick")}</span>
+              <span>{attCount.sick.toLocaleString("ur-PK")}</span>
             </div>
             <div className="row">
               <span>{t(lang, "att.status.absent")}</span>
