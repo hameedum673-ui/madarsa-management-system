@@ -87,5 +87,5 @@ export const STATS: StatCard[] = [
   { label: "کل طلبہ", icon: "users", note: "ریکارڈ ابھی خالی ہے" },
   { label: "کل اساتذہ", icon: "teacher", note: "ریکارڈ ابھی خالی ہے" },
   { label: "آج کی حاضری", icon: "checkCal", note: "حاضری ابھی درج نہیں" },
-  { label: "موجودہ مالی بیلنس", icon: "wallet", note: "حساب ابھی خالی ہے" },
+  { label: "کل جماعتیں", icon: "classes", note: "جماعت ابھی نہیں بنی" },
 ];

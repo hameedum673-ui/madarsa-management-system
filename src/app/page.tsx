@@ -11,11 +11,6 @@ import {
 import { ROLE_LABELS, isMadrasaOwner } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { todayInKarachi } from "@/lib/attendance";
-import { GROUPS } from "@/data/departments";
-
-// حصہ 4 — مالیاتی گروپ کے ماڈیول (بیلنس کارڈ صرف ان میں سے کوئی ایک کھلا ہو تو)
-const FIN_MODULE_IDS: string[] =
-  GROUPS.find((g) => g.id === "fin")?.modules.map((m) => m.id) ?? [];
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
 export default async function DashboardPage() {
@@ -121,6 +116,47 @@ export default async function DashboardPage() {
     }
   })();
 
+  // مرحلہ 96 — جماعتوں کی گنتی (چوتھا خانہ) — فعال جماعتیں، بنین/بنات الگ
+  const classesCountP = (async () => {
+    try {
+      let q = supabase
+        .from("classes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active");
+      if (sectionEq) q = q.eq("section", sectionEq);
+      const { count } = await q;
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const classesBaninP = (async () => {
+    try {
+      const { count } = await supabase
+        .from("classes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("section", "banin");
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const classesBanatP = (async () => {
+    try {
+      const { count } = await supabase
+        .from("classes")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+        .eq("section", "banat");
+      return count ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
+
   // آج کی حاضری — پاکستان کی تاریخ کے حساب سے
   // (مرحلہ 54 — محدود صارف کو صرف اجازت والے شعبے کی حاضری دکھے)
   const attendanceP = (async (): Promise<{
@@ -165,108 +201,6 @@ export default async function DashboardPage() {
         present: presentRes.count ?? 0,
         marked: markedRes.count ?? 0,
       };
-    } catch {
-      return null;
-    }
-  })();
-
-  // مرحلہ 8 + مرحلہ 16 + مرحلہ 20 + مرحلہ 48 (وکالت کا اصول) — مالی بیلنس:
-  // فعال فیس + فعال عطیات + زکوٰۃ (وصولی) + عشر (وصولی) مائنس فعال
-  // اخراجات۔ منسوخ ریکارڈ نہیں گنے جاتے۔
-  // (مرحلہ 49 — تقسیم ختم، صرف وصولی گنی جاتی ہے)
-  const feeRowsP = (async () => {
-    try {
-      const { data: payments } = await supabase
-        .from("fee_payments")
-        .select("amount, students(section)")
-        .eq("status", "active");
-      // مرحلہ 54 — بیلنس میں فیس صرف اجازت والے شعبے کی
-      return (
-        (payments ?? []) as unknown as {
-          amount: number;
-          students: { section: string } | null;
-        }[]
-      ).filter((p) =>
-        allowedSections.has((p.students?.section ?? "banat") as SectionId),
-      );
-    } catch {
-      // پھینکی گئی خرابی (نیٹ کٹ جائے) تو بیلنس بالکل نہیں دکھانا —
-      // آدھا بیلنس غلط عدد دکھائے گا (پہلے بھی یہی اصول تھا)
-      return null;
-    }
-  })();
-
-  const donationRowsP = (async () => {
-    try {
-      const { data: given } = await supabase
-        .from("donations")
-        .select("amount, section")
-        .eq("status", "active");
-      // مرحلہ 62 — عطیات بھی صرف اجازت والے شعبے کے
-      return (
-        (given ?? []) as { amount: number; section: string | null }[]
-      ).filter((d) =>
-        allowedSections.has((d.section ?? "banat") as SectionId),
-      );
-    } catch {
-      return null;
-    }
-  })();
-
-  const expenseRowsP = (async () => {
-    try {
-      const { data: spent } = await supabase
-        .from("expenses")
-        .select("amount, section")
-        .eq("status", "active");
-      // مرحلہ 62 — اخراجات بھی صرف اجازت والے شعبے کے
-      return (
-        (spent ?? []) as { amount: number; section: string | null }[]
-      ).filter((e) =>
-        allowedSections.has((e.section ?? "banat") as SectionId),
-      );
-    } catch {
-      return null;
-    }
-  })();
-
-  const zakatRowsP = (async () => {
-    try {
-      const { data: zakatData } = await supabase
-        .from("zakat_records")
-        .select("kind, amount, section")
-        .eq("status", "active");
-      // مرحلہ 62 — زکوٰۃ بھی صرف اجازت والے شعبے کی
-      return (
-        (zakatData ?? []) as {
-          kind: string;
-          amount: number;
-          section: string | null;
-        }[]
-      ).filter((r) =>
-        allowedSections.has((r.section ?? "banat") as SectionId),
-      );
-    } catch {
-      return null;
-    }
-  })();
-
-  const ushrRowsP = (async () => {
-    try {
-      const { data: ushrData } = await supabase
-        .from("ushr_records")
-        .select("kind, amount, section")
-        .eq("status", "active");
-      // مرحلہ 62 — عشر بھی صرف اجازت والے شعبے کا
-      return (
-        (ushrData ?? []) as {
-          kind: string;
-          amount: number;
-          section: string | null;
-        }[]
-      ).filter((r) =>
-        allowedSections.has((r.section ?? "banat") as SectionId),
-      );
     } catch {
       return null;
     }
@@ -439,11 +373,9 @@ export default async function DashboardPage() {
     teachersBaninRaw,
     teachersBanatRaw,
     attendanceRaw,
-    feeRows,
-    donationRows,
-    expenseRows,
-    zakatRows,
-    ushrRows,
+    classesCountRaw,
+    classesBaninRaw,
+    classesBanatRaw,
     madrasaName,
     madrasaAddress,
     myProfile,
@@ -460,11 +392,9 @@ export default async function DashboardPage() {
     teachersBaninP,
     teachersBanatP,
     attendanceP,
-    feeRowsP,
-    donationRowsP,
-    expenseRowsP,
-    zakatRowsP,
-    ushrRowsP,
+    classesCountP,
+    classesBaninP,
+    classesBanatP,
     madrasaNameP,
     madrasaAddressP,
     myProfileP,
@@ -479,6 +409,8 @@ export default async function DashboardPage() {
   const studentsBanat = allowedSections.has("banat") ? studentsBanatRaw : 0;
   const teachersBanin = allowedSections.has("banin") ? teachersBaninRaw : 0;
   const teachersBanat = allowedSections.has("banat") ? teachersBanatRaw : 0;
+  const classesBanin = allowedSections.has("banin") ? classesBaninRaw : 0;
+  const classesBanat = allowedSections.has("banat") ? classesBanatRaw : 0;
 
   const attendanceToday: {
     present: number;
@@ -491,30 +423,6 @@ export default async function DashboardPage() {
         marked: attendanceRaw.marked,
       }
     : null;
-
-  // بیلنس — وہی فارمولہ (مرحلہ 49: زکوٰۃ/عشر صرف "وصولی")؛
-  // پانچ میں سے ایک سوال بھی پھینکی خرابی دے تو بیلنس null (پہلے بھی یہی تھا)
-  const balance: { value: number; hasPayments: boolean } | null =
-    feeRows && donationRows && expenseRows && zakatRows && ushrRows
-      ? {
-          value:
-            feeRows.reduce((sum, p) => sum + (p.amount ?? 0), 0) +
-            donationRows.reduce((sum, d) => sum + (d.amount ?? 0), 0) +
-            zakatRows
-              .filter((r) => r.kind === "received")
-              .reduce((sum, r) => sum + (r.amount ?? 0), 0) +
-            ushrRows
-              .filter((r) => r.kind === "received")
-              .reduce((sum, r) => sum + (r.amount ?? 0), 0) -
-            expenseRows.reduce((sum, e) => sum + (e.amount ?? 0), 0),
-          hasPayments:
-            feeRows.length > 0 ||
-            donationRows.length > 0 ||
-            expenseRows.length > 0 ||
-            zakatRows.length > 0 ||
-            ushrRows.length > 0,
-        }
-      : null;
 
   // مرحلہ 25/67 — صارف کا نام/کردار، مہمان کا باقی وقت
   const userName = myProfile?.name ?? null;
@@ -588,21 +496,21 @@ export default async function DashboardPage() {
       <StatsRow
         studentsCount={totalStudents}
         teachersCount={totalTeachers}
+        classesCount={classesCountRaw}
         studentsBanin={studentsBanin}
         studentsBanat={studentsBanat}
         teachersBanin={teachersBanin}
         teachersBanat={teachersBanat}
+        classesBanin={classesBanin}
+        classesBanat={classesBanat}
         attendanceToday={attendanceToday}
-        balance={balance}
         showStudents={!deniedModules.includes("students")}
         showTeachers={!deniedModules.includes("teachers")}
+        showClasses={!deniedModules.includes("classes")}
         showAttendance={
           !deniedModules.includes("att-students") ||
           !deniedModules.includes("att-teachers")
         }
-        showBalance={FIN_MODULE_IDS.some(
-          (m) => !deniedModules.includes(m),
-        )}
       />
       {/* حصہ 4 کی درستگی — مالک کو بھی صارفین/تنخواہوں کے بٹن دکھیں */}
       <DepartmentGroups
