@@ -77,6 +77,9 @@ export async function updateSession(request: NextRequest) {
   // مہمان کو منظوری کی ضرورت نہیں — اس کی جگہ وقت کی حد ہے۔
   let approved = false;
   let isAdmin = false;
+  // مرحلہ 97 — مالک کی جانچ (snapshot سے ملے تو دوبارہ نہیں پوچھتے)
+  let isOwner = false;
+  let snapshotOk = false;
   if (user.is_anonymous) {
     await supabase.rpc("ensure_my_guest_profile");
     const { data: guestStatus } = await supabase.rpc("my_guest_status");
@@ -95,34 +98,72 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   } else {
-    // منظوری کی جانچ — پہلے ایڈمن کا کردار (اس کے لیے نئے فنکشن کی ضرورت نہیں)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    if ((profile as { role?: string } | null)?.role === "super_admin") {
-      approved = true;
-      isAdmin = true;
-    } else {
-      const { data: status, error } = await supabase.rpc(
-        "my_approval_status",
-      );
-      if (!error && status === "approved") {
+    // مرحلہ 97 — منظوری + کردار + مالک ایک سوال میں (my_access_snapshot)۔
+    // پرانا رستہ حفاظتی جال کے طور پر نیچے باقی ہے — snapshot نہ چلے
+    // (migration 050 ابھی نہیں چلی) تو وہی پرانا فیصلہ کرے گا، سسٹم
+    // ویسے ہی چلے گا۔ فیصلے بالکل ویسے ہی ہیں جیسے پہلے تھے۔
+    const { data: snap, error: snapError } =
+      await supabase.rpc("my_access_snapshot");
+    if (!snapError && snap && typeof snap === "object") {
+      const s = snap as {
+        role?: string | null;
+        approval?: string;
+        is_owner?: boolean;
+        profile_exists?: boolean;
+        madrasa_profile_count?: number;
+      };
+      snapshotOk = true;
+      isOwner = s.is_owner === true;
+      if (s.role === "super_admin") {
         approved = true;
-        // منظور شدہ صارف کا profile نہ ہو تو خود بنا لیں (غلطی ہو تو نظر انداز)
-        await supabase.rpc("ensure_my_profile");
+        isAdmin = true;
+      } else if (s.approval === "approved") {
+        approved = true;
+        // منظور شدہ صارف کا profile نہ ہو تو خود بنا لیں
+        if (!s.profile_exists) await supabase.rpc("ensure_my_profile");
         // مرحلہ 25 — اگر صارف کا مدرسہ کسی اور سے جڑا ہوا ہے تو اسے اپنا
         // الگ مدرسہ مل جائے (غلطی ہو تو نظر انداز — پرانا کام نہیں رکتا)
-        await supabase.rpc("ensure_my_workspace");
-      } else if (!error && status === "none") {
+        if ((s.madrasa_profile_count ?? 0) > 1)
+          await supabase.rpc("ensure_my_workspace");
+      } else if (s.approval === "none") {
         // پہلی بار آیا ہے — "زیرِ منظوری" درج کر دیں تاکہ ایڈمن دیکھ سکے
         await supabase.rpc("request_access");
         approved = false;
       } else {
-        // 'pending' / 'disabled' — یا فنکشن نہ چلا (migration ابھی نہیں چلی)
-        // دونوں صورتوں میں غیر ایڈمن صارف بند رہے گا (محفوظ رخ)
+        // 'pending' / 'disabled' — غیر ایڈمن صارف بند رہے گا (محفوظ رخ)
         approved = false;
+      }
+    }
+    if (!snapshotOk) {
+      // پرانا رستہ (مرحلہ 11/25) — فیصلے اوپر والے جیسے ہی
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      if ((profile as { role?: string } | null)?.role === "super_admin") {
+        approved = true;
+        isAdmin = true;
+      } else {
+        const { data: status, error } = await supabase.rpc(
+          "my_approval_status",
+        );
+        if (!error && status === "approved") {
+          approved = true;
+          // منظور شدہ صارف کا profile نہ ہو تو خود بنا لیں (غلطی ہو تو نظر انداز)
+          await supabase.rpc("ensure_my_profile");
+          // مرحلہ 25 — اگر صارف کا مدرسہ کسی اور سے جڑا ہوا ہے تو اسے اپنا
+          // الگ مدرسہ مل جائے (غلطی ہو تو نظر انداز — پرانا کام نہیں رکتا)
+          await supabase.rpc("ensure_my_workspace");
+        } else if (!error && status === "none") {
+          // پہلی بار آیا ہے — "زیرِ منظوری" درج کر دیں تاکہ ایڈمن دیکھ سکے
+          await supabase.rpc("request_access");
+          approved = false;
+        } else {
+          // 'pending' / 'disabled' — یا فنکشن نہ چلا (migration ابھی نہیں چلی)
+          // دونوں صورتوں میں غیر ایڈمن صارف بند رہے گا (محفوظ رخ)
+          approved = false;
+        }
       }
     }
   }
@@ -167,8 +208,11 @@ export async function updateSession(request: NextRequest) {
     // "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" صرف نظام کے ایڈمن
     // کے لیے ہیں؛ ان کا حب، "تنخواہیں" اور "عملے کے ارکان" مدرسے کے مالک
     // کے لیے بھی کھلے ہیں (حصہ 4 کی درستگی — مالک سپر ایڈمن نہیں ہوتا)
-    const { data: ownerData } = await supabase.rpc("am_i_madrasa_owner");
-    const isOwner = ownerData === true;
+    // مرحلہ 97 — مالک کی جانچ snapshot سے مل گئی ہو تو دوبارہ نہیں پوچھتے
+    if (!snapshotOk) {
+      const { data: ownerData } = await supabase.rpc("am_i_madrasa_owner");
+      isOwner = ownerData === true;
+    }
     if (
       slug === "users" ||
       slug === "permissions" ||

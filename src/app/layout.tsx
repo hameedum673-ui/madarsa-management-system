@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Noto_Naskh_Arabic, Noto_Nastaliq_Urdu } from "next/font/google";
 import "./globals.css";
 import AutoLogout from "@/components/AutoLogout";
 import NavigationLoader from "@/components/NavigationLoader";
@@ -7,7 +8,23 @@ import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 /**
  * بنیادی ڈھانچہ — زبان اردو، سمت RTL، وہی عنوان اور وہی اردو فونٹ،
  * جیسے مرحلہ 1 کی منظور شدہ فائل میں تھے۔
+ * مرحلہ 97 — فونٹ اب Google سے نہیں، سائٹ کے ساتھ اپنے سرور (ممبئی)
+ * سے ملیں گے (next/font — بناتے وقت ڈاؤن لوڈ، کیش شدہ)۔ فونٹ کی
+ * شکل وہی ہے (نستعلیق + نسخ) — صرف جگہ بدلی ہے، اس لیے نقطے/اعراب
+ * ویسے ہی رہیں گے۔
  */
+const naskhArabic = Noto_Naskh_Arabic({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-naskh",
+  display: "swap",
+});
+const nastaliqUrdu = Noto_Nastaliq_Urdu({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-nastaliq",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "جامعہ منیجمنٹ سسٹم — مین ڈیش بورڈ",
@@ -40,15 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ur" dir="rtl">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="ur" dir="rtl" className={`${naskhArabic.variable} ${nastaliqUrdu.variable}`}>
       <body>
         <AutoLogout />
         <NavigationLoader />

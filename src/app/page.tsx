@@ -34,128 +34,102 @@ export default async function DashboardPage() {
       : null;
 
   // --- ہر سوال اپنی کوشش میں: ناکام ہو تو طے شدہ جواب، باقی نہیں رکتے ---
-  const studentsCountP = (async () => {
+  // مرحلہ 97 — گنتیاں ایک سوال میں (get_dashboard_counts)۔ پرانے 9 سوال
+  // حفاظتی جال کے طور پر legacyCounts میں باقی ہیں — RPC نہ چلے
+  // (migration 050 ابھی نہیں چلی) تو وہی چلیں گے، عدد بالکل ویسے ہی رہیں گے۔
+  const countsP = (async (): Promise<{
+    students: { total: number; banin: number; banat: number };
+    teachers: { total: number; banin: number; banat: number };
+    classes: { total: number; banin: number; banat: number };
+  } | null> => {
     try {
-      let q = supabase
-        .from("students")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active");
-      if (sectionEq) q = q.eq("section", sectionEq);
-      const { count } = await q;
-      return count ?? 0;
+      const { data, error } = await supabase.rpc("get_dashboard_counts");
+      if (error || !data || typeof data !== "object") return null;
+      return data as {
+        students: { total: number; banin: number; banat: number };
+        teachers: { total: number; banin: number; banat: number };
+        classes: { total: number; banin: number; banat: number };
+      };
     } catch {
-      return 0;
+      return null;
     }
   })();
 
-  const teachersCountP = (async () => {
-    try {
-      let q = supabase
-        .from("teachers")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active");
-      if (sectionEq) q = q.eq("section", sectionEq);
-      const { count } = await q;
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
-
-  // مرحلہ 51 — بنین / بنات کی الگ گنتی (میز میں section والا کالم نہ ہو
-  // تو گنتی صفر رہتی ہے)
-  const studentsBaninP = (async () => {
-    try {
-      const { count } = await supabase
-        .from("students")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active")
-        .eq("section", "banin");
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
-
-  const studentsBanatP = (async () => {
-    try {
-      const { count } = await supabase
-        .from("students")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active")
-        .eq("section", "banat");
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
-
-  const teachersBaninP = (async () => {
-    try {
-      const { count } = await supabase
-        .from("teachers")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active")
-        .eq("section", "banin");
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
-
-  const teachersBanatP = (async () => {
-    try {
-      const { count } = await supabase
-        .from("teachers")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active")
-        .eq("section", "banat");
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
-
-  // مرحلہ 96 — جماعتوں کی گنتی (چوتھا خانہ) — فعال جماعتیں، بنین/بنات الگ
-  const classesCountP = (async () => {
-    try {
-      let q = supabase
-        .from("classes")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active");
-      if (sectionEq) q = q.eq("section", sectionEq);
-      const { count } = await q;
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
-
-  const classesBaninP = (async () => {
-    try {
-      const { count } = await supabase
-        .from("classes")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active")
-        .eq("section", "banin");
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
-
-  const classesBanatP = (async () => {
-    try {
-      const { count } = await supabase
-        .from("classes")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active")
-        .eq("section", "banat");
-      return count ?? 0;
-    } catch {
-      return 0;
-    }
-  })();
+  const legacyCounts = async (): Promise<{
+    totalStudents: number;
+    totalTeachers: number;
+    classesCountRaw: number;
+    studentsBaninRaw: number;
+    studentsBanatRaw: number;
+    teachersBaninRaw: number;
+    teachersBanatRaw: number;
+    classesBaninRaw: number;
+    classesBanatRaw: number;
+  }> => {
+    const countActive = async (
+      table: "students" | "teachers" | "classes",
+      section?: string,
+    ) => {
+      try {
+        let q = supabase
+          .from(table)
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active");
+        if (section) q = q.eq("section", section);
+        const { count } = await q;
+        return count ?? 0;
+      } catch {
+        return 0;
+      }
+    };
+    const countActiveSection = async (
+      table: "students" | "teachers" | "classes",
+    ) => {
+      try {
+        let q = supabase
+          .from(table)
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active");
+        if (sectionEq) q = q.eq("section", sectionEq);
+        const { count } = await q;
+        return count ?? 0;
+      } catch {
+        return 0;
+      }
+    };
+    const [
+      totalStudents,
+      totalTeachers,
+      classesCountRaw,
+      studentsBaninRaw,
+      studentsBanatRaw,
+      teachersBaninRaw,
+      teachersBanatRaw,
+      classesBaninRaw,
+      classesBanatRaw,
+    ] = await Promise.all([
+      countActiveSection("students"),
+      countActiveSection("teachers"),
+      countActiveSection("classes"),
+      countActive("students", "banin"),
+      countActive("students", "banat"),
+      countActive("teachers", "banin"),
+      countActive("teachers", "banat"),
+      countActive("classes", "banin"),
+      countActive("classes", "banat"),
+    ]);
+    return {
+      totalStudents,
+      totalTeachers,
+      classesCountRaw,
+      studentsBaninRaw,
+      studentsBanatRaw,
+      teachersBaninRaw,
+      teachersBanatRaw,
+      classesBaninRaw,
+      classesBanatRaw,
+    };
+  };
 
   // آج کی حاضری — پاکستان کی تاریخ کے حساب سے
   // (مرحلہ 54 — محدود صارف کو صرف اجازت والے شعبے کی حاضری دکھے)
@@ -366,16 +340,8 @@ export default async function DashboardPage() {
 
   // --- سب سوال ایک ساتھ پوچھے جاتے ہیں، جواب یہاں ملتا ہے ---
   const [
-    totalStudents,
-    totalTeachers,
-    studentsBaninRaw,
-    studentsBanatRaw,
-    teachersBaninRaw,
-    teachersBanatRaw,
+    counts,
     attendanceRaw,
-    classesCountRaw,
-    classesBaninRaw,
-    classesBanatRaw,
     madrasaName,
     madrasaAddress,
     myProfile,
@@ -385,16 +351,8 @@ export default async function DashboardPage() {
     recentNotices,
     activeNoticesCount,
   ] = await Promise.all([
-    studentsCountP,
-    teachersCountP,
-    studentsBaninP,
-    studentsBanatP,
-    teachersBaninP,
-    teachersBanatP,
+    countsP,
     attendanceP,
-    classesCountP,
-    classesBaninP,
-    classesBanatP,
     madrasaNameP,
     madrasaAddressP,
     myProfileP,
@@ -404,6 +362,40 @@ export default async function DashboardPage() {
     noticesP,
     noticesCountP,
   ]);
+
+  // مرحلہ 97 — گنتیاں: RPC سے ملیں تو وہی، ورنہ پرانا رستہ (9 سوال)۔
+  // دونوں کا جواب ایک جیسا ہے — عدد بالکل ویسے ہی رہیں گے۔
+  let totalStudents = 0;
+  let totalTeachers = 0;
+  let classesCountRaw = 0;
+  let studentsBaninRaw = 0;
+  let studentsBanatRaw = 0;
+  let teachersBaninRaw = 0;
+  let teachersBanatRaw = 0;
+  let classesBaninRaw = 0;
+  let classesBanatRaw = 0;
+  if (counts) {
+    totalStudents = counts.students.total;
+    totalTeachers = counts.teachers.total;
+    classesCountRaw = counts.classes.total;
+    studentsBaninRaw = counts.students.banin;
+    studentsBanatRaw = counts.students.banat;
+    teachersBaninRaw = counts.teachers.banin;
+    teachersBanatRaw = counts.teachers.banat;
+    classesBaninRaw = counts.classes.banin;
+    classesBanatRaw = counts.classes.banat;
+  } else {
+    const legacy = await legacyCounts();
+    totalStudents = legacy.totalStudents;
+    totalTeachers = legacy.totalTeachers;
+    classesCountRaw = legacy.classesCountRaw;
+    studentsBaninRaw = legacy.studentsBaninRaw;
+    studentsBanatRaw = legacy.studentsBanatRaw;
+    teachersBaninRaw = legacy.teachersBaninRaw;
+    teachersBanatRaw = legacy.teachersBanatRaw;
+    classesBaninRaw = legacy.classesBaninRaw;
+    classesBanatRaw = legacy.classesBanatRaw;
+  }
 
   const studentsBanin = allowedSections.has("banin") ? studentsBaninRaw : 0;
   const studentsBanat = allowedSections.has("banat") ? studentsBanatRaw : 0;
