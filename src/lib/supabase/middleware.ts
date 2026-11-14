@@ -184,14 +184,12 @@ export async function updateSession(request: NextRequest) {
     // مرحلہ 47 — ملا ہوا بٹن: طلبہ یا داخلے میں سے ایک کی بھی اجازت
     // ہو تو کھلتا ہے؛ دونوں بند ہوں تو ڈیش بورڈ پر واپس۔
     if (slug === "admissions-students") {
-      const { data: studentsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "students" },
-      );
-      const { data: admissionsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "admissions" },
-      );
+      // مرحلہ 93 — دونوں سوال ایک ساتھ (پہلے ایک کے بعد ایک تھے)
+      const [{ data: studentsAllowed }, { data: admissionsAllowed }] =
+        await Promise.all([
+          supabase.rpc("my_module_allowed", { p_module: "students" }),
+          supabase.rpc("my_module_allowed", { p_module: "admissions" }),
+        ]);
       if (studentsAllowed === false && admissionsAllowed === false) {
         const url = request.nextUrl.clone();
         url.pathname = "/";
@@ -202,18 +200,16 @@ export async function updateSession(request: NextRequest) {
     // یا شناختی کارڈ میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛ تینوں
     // بند ہوں تو ڈیش بورڈ پر واپس۔
     if (slug === "students-idcards") {
-      const { data: studentsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "students" },
-      );
-      const { data: admissionsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "admissions" },
-      );
-      const { data: idcardsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "idcards" },
-      );
+      // مرحلہ 93 — تینوں سوال ایک ساتھ
+      const [
+        { data: studentsAllowed },
+        { data: admissionsAllowed },
+        { data: idcardsAllowed },
+      ] = await Promise.all([
+        supabase.rpc("my_module_allowed", { p_module: "students" }),
+        supabase.rpc("my_module_allowed", { p_module: "admissions" }),
+        supabase.rpc("my_module_allowed", { p_module: "idcards" }),
+      ]);
       if (
         studentsAllowed === false &&
         admissionsAllowed === false &&
@@ -228,14 +224,12 @@ export async function updateSession(request: NextRequest) {
     // کی بھی اجازت ہو تو کھلتا ہے؛ دونوں بند ہوں تو ڈیش بورڈ پر
     // واپس۔
     if (slug === "attendance") {
-      const { data: attStudentsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "att-students" },
-      );
-      const { data: attTeachersAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "att-teachers" },
-      );
+      // مرحلہ 93 — دونوں سوال ایک ساتھ
+      const [{ data: attStudentsAllowed }, { data: attTeachersAllowed }] =
+        await Promise.all([
+          supabase.rpc("my_module_allowed", { p_module: "att-students" }),
+          supabase.rpc("my_module_allowed", { p_module: "att-teachers" }),
+        ]);
       if (attStudentsAllowed === false && attTeachersAllowed === false) {
         const url = request.nextUrl.clone();
         url.pathname = "/";
@@ -246,14 +240,12 @@ export async function updateSession(request: NextRequest) {
     // کی بھی اجازت ہو تو کھلتا ہے؛ دونوں بند ہوں تو ڈیش بورڈ پر
     // واپس۔
     if (slug === "welfare-expenses") {
-      const { data: welfareAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "welfare" },
-      );
-      const { data: studentExpAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "student-exp" },
-      );
+      // مرحلہ 93 — دونوں سوال ایک ساتھ
+      const [{ data: welfareAllowed }, { data: studentExpAllowed }] =
+        await Promise.all([
+          supabase.rpc("my_module_allowed", { p_module: "welfare" }),
+          supabase.rpc("my_module_allowed", { p_module: "student-exp" }),
+        ]);
       if (welfareAllowed === false && studentExpAllowed === false) {
         const url = request.nextUrl.clone();
         url.pathname = "/";
@@ -264,22 +256,18 @@ export async function updateSession(request: NextRequest) {
     // رپورٹس میں سے ایک کی بھی اجازت ہو تو کھلتا ہے؛ چاروں بند
     // ہوں تو ڈیش بورڈ پر واپس۔
     if (slug === "reports-hub") {
-      const { data: monthlyAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "monthly" },
-      );
-      const { data: yearlyAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "yearly" },
-      );
-      const { data: finReportsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "fin-reports" },
-      );
-      const { data: reportsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "reports" },
-      );
+      // مرحلہ 93 — چاروں سوال ایک ساتھ
+      const [
+        { data: monthlyAllowed },
+        { data: yearlyAllowed },
+        { data: finReportsAllowed },
+        { data: reportsAllowed },
+      ] = await Promise.all([
+        supabase.rpc("my_module_allowed", { p_module: "monthly" }),
+        supabase.rpc("my_module_allowed", { p_module: "yearly" }),
+        supabase.rpc("my_module_allowed", { p_module: "fin-reports" }),
+        supabase.rpc("my_module_allowed", { p_module: "reports" }),
+      ]);
       if (
         monthlyAllowed === false &&
         yearlyAllowed === false &&
@@ -296,22 +284,18 @@ export async function updateSession(request: NextRequest) {
     // نیچے والے صفحے (/departments/income/fees وغیرہ) پر صرف فیس
     // کی اجازت چاہیے — اس لیے حب کے لیے عام جانچ نہیں چلتی۔
     if (slug === "income" && pathname === "/departments/income") {
-      const { data: incomeAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "income" },
-      );
-      const { data: zakatAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "zakat" },
-      );
-      const { data: ushrAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "ushr" },
-      );
-      const { data: donationsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "donations" },
-      );
+      // مرحلہ 93 — چاروں سوال ایک ساتھ
+      const [
+        { data: incomeAllowed },
+        { data: zakatAllowed },
+        { data: ushrAllowed },
+        { data: donationsAllowed },
+      ] = await Promise.all([
+        supabase.rpc("my_module_allowed", { p_module: "income" }),
+        supabase.rpc("my_module_allowed", { p_module: "zakat" }),
+        supabase.rpc("my_module_allowed", { p_module: "ushr" }),
+        supabase.rpc("my_module_allowed", { p_module: "donations" }),
+      ]);
       if (
         incomeAllowed === false &&
         zakatAllowed === false &&
@@ -329,18 +313,16 @@ export async function updateSession(request: NextRequest) {
       slug === "income" &&
       pathname.startsWith("/departments/income/funds")
     ) {
-      const { data: zakatAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "zakat" },
-      );
-      const { data: ushrAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "ushr" },
-      );
-      const { data: donationsAllowed } = await supabase.rpc(
-        "my_module_allowed",
-        { p_module: "donations" },
-      );
+      // مرحلہ 93 — تینوں سوال ایک ساتھ
+      const [
+        { data: zakatAllowed },
+        { data: ushrAllowed },
+        { data: donationsAllowed },
+      ] = await Promise.all([
+        supabase.rpc("my_module_allowed", { p_module: "zakat" }),
+        supabase.rpc("my_module_allowed", { p_module: "ushr" }),
+        supabase.rpc("my_module_allowed", { p_module: "donations" }),
+      ]);
       if (
         zakatAllowed === false &&
         ushrAllowed === false &&
