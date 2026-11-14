@@ -12,7 +12,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
   isModuleAllowedForMe,
-  MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
 import { ADMISSION_TYPE_IDS } from "@/lib/admissions";
 import {
@@ -23,6 +22,13 @@ import {
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
+
+/** مرحلہ 103 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v = typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 type ActionResult = { ok: true } | { error: string };
 type AddResult =
@@ -68,9 +74,10 @@ interface AdmissionFields {
   note: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت (زبان کے مطابق) */
 function validateFields(
   formData: FormData,
+  lang: Lang,
 ): { fields: AdmissionFields } | { error: string } {
   const applicantName = clean(formData.get("applicant_name"), 100);
   const fatherName = clean(formData.get("father_name"), 100);
@@ -89,27 +96,27 @@ function validateFields(
   const note = clean(formData.get("note"), 500);
 
   if (!ADMISSION_TYPE_IDS.includes(admissionType as AdmissionType))
-    return { error: "داخلے کی قسم درست منتخب کریں (جدید یا قدیم)۔" };
+    return { error: t(lang, "admission.err.type_invalid") };
   if (admissionType === "returning" && !studentId)
-    return { error: "قدیم داخلے کے لیے پرانی طالبہ چننا ضروری ہے۔" };
-  if (!applicantName) return { error: "طالبہ کا نام ضروری ہے۔" };
-  if (!fatherName) return { error: "والد کا نام ضروری ہے۔" };
+    return { error: t(lang, "admission.err.old_required") };
+  if (!applicantName) return { error: t(lang, "student.err.name_required") };
+  if (!fatherName) return { error: t(lang, "student.err.father_required") };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
-    return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+    return { error: t(lang, "student.err.dept_invalid") };
   if (!SECTION_IDS.includes(section as SectionId))
-    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
+    return { error: t(lang, "student.err.section_invalid") };
   if (!validDate(admissionDate))
-    return { error: "داخلہ کی تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.admission_date_invalid") };
   if (!notFuture(admissionDate))
-    return { error: "داخلہ کی تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "student.err.admission_date_future") };
   if (dateOfBirth && !validDate(dateOfBirth))
-    return { error: "تاریخِ پیدائش درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.dob_invalid") };
   if (dateOfBirth && !notFuture(dateOfBirth))
-    return { error: "تاریخِ پیدائش آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "student.err.dob_future") };
   if (!validPhone(guardianPhone))
-    return { error: "رابطہ نمبر درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.phone_invalid") };
   if (!validPhone(whatsappNumber))
-    return { error: "واٹس ایپ نمبر درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.whatsapp_invalid") };
 
   return {
     fields: {
@@ -154,21 +161,22 @@ async function writeAudit(
 
 /** نئی داخلہ درخواست درج کریں — حالت «زیرِ غور» سے شروع ہوتی ہے */
 export async function addAdmission(formData: FormData): Promise<AddResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "admissions"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(f.section))
-    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "student.err.section_denied") };
 
   // مرحلہ 74 — قدیم داخلہ: نام/والد وغیرہ طالبہ کے ریکارڈ سے
   // (فارم کی لکھی ہوئی قیمتوں پر بھروسا نہیں — ریکارڈ ہی سچ ہے)
@@ -188,7 +196,7 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
       .eq("madrasa_id", mine.madrasaId)
       .single();
     if (linkedError || !linked) {
-      return { error: "پرانی طالبہ نہیں ملی — دوبارہ چنیں۔" };
+      return { error: t(lang, "admission.err.old_not_found") };
     }
     applicantName = linked.name as string;
     fatherName = linked.father_name as string;
@@ -224,7 +232,7 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
     .single();
 
   if (error || !data) {
-    return { error: "درخواست محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "admission.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "admission_created", {
@@ -237,12 +245,15 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
 }
 
 /** داخلہ منظور کریں — طالبہ کا ریکارڈ خود بنتا ہے اور داخلہ اس سے جڑ جاتا ہے */
-export async function approveAdmission(id: string): Promise<ActionResult> {
+export async function approveAdmission(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "admissions"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // صرف اپنے مدرسے کی زیرِ غور درخواست منظور ہو سکتی ہے
@@ -254,10 +265,10 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
     .single();
 
   if (fetchError || !admission) {
-    return { error: "درخواست نہیں ملی۔" };
+    return { error: t(lang, "admission.err.not_found") };
   }
   if (admission.status !== "pending") {
-    return { error: "یہ درخواست پہلے ہی منظور یا مسترد ہو چکی ہے۔" };
+    return { error: t(lang, "admission.err.already_decided") };
   }
   // مرحلہ 54 — بند شعبے کا داخلہ منظور نہیں ہو سکتا
   const allowedSections = await getMyAllowedSections(supabase);
@@ -266,14 +277,14 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       ((admission.section as string) || "banat") as SectionId,
     )
   )
-    return { error: "اس شعبے کا داخلہ منظور کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "admission.err.section_denied_approve") };
 
   // مرحلہ 74 — قدیم داخلہ: نیا ریکارڈ نہیں، پرانی طالبہ کا ریکارڈ بدلے گا
   const admissionType = ((admission.admission_type as string) || "new") as AdmissionType;
   if (admissionType === "returning") {
     const returningStudentId = admission.student_id as string | null;
     if (!returningStudentId) {
-      return { error: "اس قدیم داخلے سے کوئی طالبہ جڑی ہوئی نہیں ہے۔" };
+      return { error: t(lang, "admission.err.no_student_linked") };
     }
     const { data: linked, error: linkedError } = await supabase
       .from("students")
@@ -282,7 +293,7 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       .eq("madrasa_id", mine.madrasaId)
       .single();
     if (linkedError || !linked) {
-      return { error: "جڑی ہوئی طالبہ نہیں ملی۔" };
+      return { error: t(lang, "admission.err.linked_not_found") };
     }
     // مرحلہ 75 — ضلع صرف تب بدلے جب داخلے میں لکھا ہو (خالی ہو تو
     // پرانی طالبہ کا ضلع ویسا ہی رہے — مٹے نہیں)
@@ -302,7 +313,7 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       .eq("id", returningStudentId)
       .eq("madrasa_id", mine.madrasaId);
     if (updateError) {
-      return { error: "طالبہ کا ریکارڈ نہیں بدلا جا سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "admission.err.student_update_failed") };
     }
     const { error: approveError } = await supabase
       .from("admissions")
@@ -313,7 +324,7 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
       .eq("id", id)
       .eq("madrasa_id", mine.madrasaId);
     if (approveError) {
-      return { error: "داخلہ منظور نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "admission.err.approve_failed") };
     }
     await writeAudit(
       supabase,
@@ -366,8 +377,8 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
 
   if (studentError || !student) {
     if ((studentError as { code?: string } | null)?.code === "23505")
-      return { error: "رجسٹریشن نمبر ٹکرا گیا — دوبارہ کوشش کریں۔" };
-    return { error: "طالبہ کا ریکارڈ نہیں بن سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "student.err.reg_conflict") };
+    return { error: t(lang, "admission.err.student_create_failed") };
   }
 
   const { error: linkError } = await supabase
@@ -381,10 +392,9 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
     .eq("madrasa_id", mine.madrasaId);
 
   if (linkError) {
-    // طالبہ بن گئی مگر داخلہ جڑ نہ سکا — صاف اردو پیغام (طالبہ کا ریکارڈ محفوظ ہے)
+    // طالبہ بن گئی مگر داخلہ جڑ نہ سکا — صاف پیغام (طالبہ کا ریکارڈ محفوظ ہے)
     return {
-      error:
-        "طالبہ کا ریکارڈ بن گیا ہے، مگر داخلہ اس سے جڑ نہیں سکا — فہرست میں جا کر طالبہ کا ریکارڈ دیکھ لیں۔",
+      error: t(lang, "admission.err.link_failed"),
     };
   }
 
@@ -408,12 +418,15 @@ export async function approveAdmission(id: string): Promise<ActionResult> {
 }
 
 /** داخلہ مسترد کریں — کوئی طالبہ نہیں بنے گی، درخواست «مسترد» رہ جائے گی */
-export async function rejectAdmission(id: string): Promise<ActionResult> {
+export async function rejectAdmission(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "admissions"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -429,7 +442,7 @@ export async function rejectAdmission(id: string): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "مسترد نہیں ہو سکی — شاید یہ درخواست پہلے ہی منظور یا مسترد ہو چکی ہے۔" };
+    return { error: t(lang, "admission.err.reject_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "admission_rejected", {

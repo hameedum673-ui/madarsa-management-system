@@ -10,9 +10,12 @@ import { getActiveClasses } from "@/lib/classes";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import type { SectionId } from "@/lib/students";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function NewAdmissionPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const classes = await getActiveClasses(supabase);
   // مرحلہ 74 — قدیم داخلے کے لیے پرانی طالبات (فعال + خارج — واپس
   // آنے والی خارج طالبہ بھی چنی جا سکے)؛ صرف اجازت والے شعبے کی
@@ -26,18 +29,20 @@ export default async function NewAdmissionPage() {
   const students = ((data ?? []) as AdmissionStudent[]).filter((s) =>
     allowedSections.has(s.section as SectionId),
   );
+  const lang = await langP;
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/admissions" />
-          <h2>نئی داخلہ درخواست</h2>
+          <h2>{t(lang, "admissions.new_title")}</h2>
         </div>
 
         <AdmissionForm
           action={addAdmission}
           classes={classes}
           students={students}
+          lang={lang}
         />
       </div>
     </div>

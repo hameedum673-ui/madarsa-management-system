@@ -10,14 +10,12 @@ import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
-  STUDENT_STATUS_LABELS,
   type SectionId,
   type Student,
 } from "@/lib/students";
-import { admissionTypeLabel } from "@/lib/admissions";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -36,8 +34,10 @@ export default async function StudentsPage({
   const safeQ = q.replace(/[%_,\\]/g, " ").replace(/\s+/g, " ").trim();
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
+  const langP = getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
+  const lang = await langP;
   const rawSection = sp.section ?? "all";
   const section: SectionId | "all" =
     (SECTION_IDS as string[]).includes(rawSection) &&
@@ -74,15 +74,19 @@ export default async function StudentsPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/admissions-students" />
-          <h2>طلبہ کا ریکارڈ</h2>
+          <h2>{t(lang, "module.students")}</h2>
           <span className="page-count">
             {q
-              ? `تلاش کا نتیجہ: ${(count ?? 0).toLocaleString("ur-PK")}`
-              : `کل: ${(count ?? 0).toLocaleString("ur-PK")}`}
+              ? t(lang, "students.count_search", {
+                  n: (count ?? 0).toLocaleString("ur-PK"),
+                })
+              : t(lang, "students.count_total", {
+                  n: (count ?? 0).toLocaleString("ur-PK"),
+                })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/students/new">
-            + نئی طالبہ شامل کریں
+            {t(lang, "students.add")}
           </Link>
         </div>
 
@@ -92,70 +96,63 @@ export default async function StudentsPage({
           className="att-controls"
         >
           <label className="field">
-            <span className="field-label">تلاش کریں</span>
+            <span className="field-label">{t(lang, "students.search_label")}</span>
             <input
               className="field-input"
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="نام، والد کا نام، یا رجسٹریشن نمبر"
+              placeholder={t(lang, "students.search_placeholder")}
             />
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            تلاش کریں
+            {t(lang, "students.search_button")}
           </button>
           {q ? (
             <Link className="btn-ghost" href="/departments/students">
-              سب دکھائیں
+              {t(lang, "students.show_all")}
             </Link>
           ) : null}
         </form>
-        <p className="sub">
-          پہلے خانے میں نام، والد کا نام، یا رجسٹریشن نمبر لکھیں، یا
-          شعبہ (بنین / بنات) چنیں، پھر &quot;تلاش کریں&quot; دبائیں۔
-        </p>
+        <p className="sub">{t(lang, "students.hint")}</p>
 
         {tableMissing ? (
-          <p className="empty-state">
-            طلبہ کی میز ابھی نہیں بنی — پہلے مرحلہ 4 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "students.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : students.length === 0 ? (
           <p className="empty-state">
-            {q
-              ? "اس تلاش سے کوئی طالبہ نہیں ملی — لفظ بدل کر دوبارہ تلاش کریں، یا سب دکھائیں۔"
-              : "ابھی کوئی طالبہ درج نہیں ہے۔ اوپر والے بٹن سے پہلی طالبہ شامل کریں۔"}
+            {q ? t(lang, "students.empty_search") : t(lang, "students.empty")}
           </p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>رجسٹریشن نمبر</th>
-                  <th>نام</th>
-                  <th>والد کا نام</th>
-                  <th>شعبہ</th>
-                  <th>بنین / بنات</th>
-                  <th>جماعت</th>
-                  <th>قسم</th>
-                  <th>داخلہ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.reg")}</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "col.father")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.class")}</th>
+                  <th>{t(lang, "col.type")}</th>
+                  <th>{t(lang, "col.admission_date")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -172,16 +169,16 @@ export default async function StudentsPage({
                       </Link>
                     </td>
                     <td>{s.father_name}</td>
-                    <td>{DEPARTMENT_LABELS[s.department]}</td>
-                    <td>{SECTION_LABELS[s.section]}</td>
+                    <td>{t(lang, `dept.${s.department}`)}</td>
+                    <td>{t(lang, `section.${s.section}`)}</td>
                     <td>{s.class_name ?? "—"}</td>
-                    <td>{admissionTypeLabel(s.admission_type)}</td>
+                    <td>{t(lang, `admission.type.${s.admission_type}`)}</td>
                     <td>{formatDate(s.admission_date)}</td>
                     <td>
                       <span
                         className={`badge${s.status === "withdrawn" ? " badge-withdrawn" : ""}`}
                       >
-                        {STUDENT_STATUS_LABELS[s.status]}
+                        {t(lang, `student.status.${s.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -191,7 +188,7 @@ export default async function StudentsPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={sp} />
+        <Pagination page={page} totalPages={pages} params={sp} lang={lang} />
 
       </div>
     </div>

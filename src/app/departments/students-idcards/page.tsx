@@ -13,10 +13,14 @@ import { redirect } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { isAppAdmin } from "@/lib/approval";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function StudentsIdcardsHubPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const admin = await isAppAdmin(supabase);
+  const lang = await langP;
 
   let studentsAllowed = true;
   let admissionsAllowed = true;
@@ -64,20 +68,17 @@ export default async function StudentsIdcardsHubPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>داخلے، طلبہ اور شناختی کارڈ</h2>
+          <h2>{t(lang, "hub.students.title")}</h2>
         </div>
 
         {studentsAllowed || admissionsAllowed ? (
           <>
-            <h3 className="form-section-title">داخلے اور طلبہ</h3>
-            <p className="sub">
-              نئے داخلے درج کریں، درخواستوں کا فیصلہ کریں اور طلبہ کا
-              مکمل ریکارڈ دیکھیں۔
-            </p>
+            <h3 className="form-section-title">{t(lang, "hub.students.sec1")}</h3>
+            <p className="sub">{t(lang, "hub.students.sec1_desc")}</p>
             <div className="detail-rows">
               {admissionsAllowed ? (
                 <div className="row">
-                  <span>زیرِ غور درخواستیں</span>
+                  <span>{t(lang, "hub.students.pending")}</span>
                   <strong>
                     {pendingAdmissions === null
                       ? "—"
@@ -87,7 +88,7 @@ export default async function StudentsIdcardsHubPage() {
               ) : null}
               {studentsAllowed ? (
                 <div className="row">
-                  <span>فعال طلبہ</span>
+                  <span>{t(lang, "hub.students.active")}</span>
                   <strong>
                     {activeStudents === null
                       ? "—"
@@ -101,7 +102,7 @@ export default async function StudentsIdcardsHubPage() {
                 className="btn-primary"
                 href="/departments/admissions-students"
               >
-                داخلے اور طلبہ کھولیں
+                {t(lang, "hub.students.open1")}
               </Link>
             </div>
           </>
@@ -109,13 +110,11 @@ export default async function StudentsIdcardsHubPage() {
 
         {idcardsAllowed ? (
           <>
-            <h3 className="form-section-title">شناختی کارڈ</h3>
-            <p className="sub">
-              فعال طلبہ کے شناختی کارڈ دیکھیں اور تصویر محفوظ کریں۔
-            </p>
+            <h3 className="form-section-title">{t(lang, "hub.students.sec2")}</h3>
+            <p className="sub">{t(lang, "hub.students.sec2_desc")}</p>
             <div className="detail-rows">
               <div className="row">
-                <span>فعال طلبہ (جن کے کارڈ بن سکتے ہیں)</span>
+                <span>{t(lang, "hub.students.active_cards")}</span>
                 <strong>
                   {activeStudents === null
                     ? "—"
@@ -125,7 +124,7 @@ export default async function StudentsIdcardsHubPage() {
             </div>
             <div className="form-actions">
               <Link className="btn-primary" href="/departments/idcards">
-                شناختی کارڈ کھولیں
+                {t(lang, "hub.students.open2")}
               </Link>
             </div>
           </>

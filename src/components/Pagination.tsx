@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type PageParams = Record<string, string | string[] | undefined>;
 
@@ -6,15 +7,18 @@ type PageParams = Record<string, string | string[] | undefined>;
  * مرحلہ 58 — صفحہ بندی کے بٹن (سرور جزو)۔
  * موجودہ فلٹر (تلاش، شعبہ، مہینہ…) برقرار رکھتے ہوئے صفحہ بدلتا ہے۔
  * ایک ہی صفحہ ہو تو کچھ نہیں دکھاتا۔
+ * مرحلہ 103 — زبان نہ دی جائے تو اردو (دوسرے ماڈیول ویسے ہی رہتے ہیں)۔
  */
 export default function Pagination({
   page,
   totalPages,
   params,
+  lang = "ur",
 }: {
   page: number;
   totalPages: number;
   params: PageParams;
+  lang?: Lang;
 }) {
   if (totalPages <= 1) return null;
 
@@ -38,12 +42,14 @@ export default function Pagination({
   return (
     <div className="pagination">
       <span className="page-count">
-        صفحہ {page.toLocaleString("ur-PK")} از{" "}
-        {totalPages.toLocaleString("ur-PK")}
+        {t(lang, "pagination.page", {
+          p: page.toLocaleString("ur-PK"),
+          total: totalPages.toLocaleString("ur-PK"),
+        })}
       </span>
       {page > 1 ? (
         <Link className="btn-ghost" href={hrefFor(page - 1)}>
-          پچھلا
+          {t(lang, "pagination.prev")}
         </Link>
       ) : null}
       {pages.map((p) => (
@@ -57,7 +63,7 @@ export default function Pagination({
       ))}
       {page < totalPages ? (
         <Link className="btn-ghost" href={hrefFor(page + 1)}>
-          اگلا
+          {t(lang, "pagination.next")}
         </Link>
       ) : null}
     </div>

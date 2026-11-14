@@ -8,12 +8,8 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
-import { DEPARTMENT_LABELS, SECTION_LABELS } from "@/lib/students";
-import {
-  ADMISSION_STATUS_LABELS,
-  admissionTypeLabel,
-  type Admission,
-} from "@/lib/admissions";
+import { DEPARTMENT_LABELS } from "@/lib/students";
+import { type Admission } from "@/lib/admissions";
 import AdmissionActions from "@/app/departments/admissions/[id]/AdmissionActions";
 import {
   approveAdmission,
@@ -25,6 +21,8 @@ import {
   messagePhone,
   whatsappLink,
 } from "@/lib/whatsapp";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -38,6 +36,7 @@ export default async function AdmissionDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data, error } = await supabase
     .from("admissions")
     .select("*, students(registration_number)")
@@ -56,6 +55,7 @@ export default async function AdmissionDetailPage({
   if (!allowedSections.has(admission.section)) notFound();
 
   const madrasaName = await getMadrasaNameForMessage(supabase);
+  const lang = await langP;
 
   // مرحلہ 44 — داخلہ منظور ہونے کا WhatsApp پیغام (صرف منظور شدہ پر)
   const approvedLink =
@@ -82,73 +82,73 @@ export default async function AdmissionDetailPage({
           <span
             className={`badge${admission.status === "rejected" ? " badge-withdrawn" : ""}`}
           >
-            {ADMISSION_STATUS_LABELS[admission.status]}
+            {t(lang, `admission.status.${admission.status}`)}
           </span>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>والد کا نام</span>
+            <span>{t(lang, "col.father")}</span>
             <span>{admission.father_name}</span>
           </div>
           <div className="row">
-            <span>شعبہ</span>
-            <span>{DEPARTMENT_LABELS[admission.department]}</span>
+            <span>{t(lang, "col.dept")}</span>
+            <span>{t(lang, `dept.${admission.department}`)}</span>
           </div>
           <div className="row">
-            <span>شعبہ (بنین / بنات)</span>
-            <span>{SECTION_LABELS[admission.section]}</span>
+            <span>{t(lang, "students.section_filter")}</span>
+            <span>{t(lang, `section.${admission.section}`)}</span>
           </div>
           <div className="row">
-            <span>جماعت</span>
+            <span>{t(lang, "col.class")}</span>
             <span>{admission.class_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>داخلے کی قسم</span>
-            <span>{admissionTypeLabel(admission.admission_type)}</span>
+            <span>{t(lang, "student.detail.admission_type")}</span>
+            <span>{t(lang, `admission.type.${admission.admission_type}`)}</span>
           </div>
           <div className="row">
-            <span>داخلہ کی تاریخ</span>
+            <span>{t(lang, "student.detail.admission_date")}</span>
             <span>{formatDate(admission.admission_date)}</span>
           </div>
           <div className="row">
-            <span>تاریخِ پیدائش</span>
+            <span>{t(lang, "student.form.dob")}</span>
             <span>{formatDate(admission.date_of_birth)}</span>
           </div>
           <div className="row">
-            <span>سرپرست</span>
+            <span>{t(lang, "student.detail.guardian")}</span>
             <span>{admission.guardian_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>رابطہ نمبر</span>
+            <span>{t(lang, "student.form.phone")}</span>
             <span dir="ltr">{admission.guardian_phone ?? "—"}</span>
           </div>
           <div className="row">
-            <span>واٹس ایپ نمبر</span>
+            <span>{t(lang, "student.form.whatsapp")}</span>
             <span dir="ltr">{admission.whatsapp_number ?? "—"}</span>
           </div>
           <div className="row">
-            <span>پچھلا مدرسہ</span>
+            <span>{t(lang, "admission.detail.prev_madrasa")}</span>
             <span>{admission.previous_madrasa ?? "—"}</span>
           </div>
           <div className="row">
-            <span>درخواست کی تاریخ</span>
+            <span>{t(lang, "admission.detail.request_date")}</span>
             <span>{formatDate(admission.created_at)}</span>
           </div>
           {admission.note ? (
             <div className="row">
-              <span>نوٹ</span>
+              <span>{t(lang, "admission.form.note_label")}</span>
               <span>{admission.note}</span>
             </div>
           ) : null}
           {admission.status === "approved" && admission.student_id ? (
             <div className="row">
-              <span>طالبہ کا ریکارڈ</span>
+              <span>{t(lang, "admission.detail.student_record")}</span>
               <span>
                 <Link href={`/departments/students/${admission.student_id}`}>
-                  رجسٹریشن نمبر{" "}
-                  {admission.students?.registration_number ?? "—"} — ریکارڈ
-                  دیکھیں
+                  {t(lang, "admission.detail.reg_link", {
+                    reg: admission.students?.registration_number ?? "—",
+                  })}
                 </Link>
               </span>
             </div>
@@ -157,7 +157,7 @@ export default async function AdmissionDetailPage({
 
         {admission.status === "approved" ? (
           <>
-            <h3 className="form-section-title">والدین کو اطلاع دیں</h3>
+            <h3 className="form-section-title">{t(lang, "admission.detail.notify_title")}</h3>
             {approvedLink ? (
               <div className="form-actions">
                 <a
@@ -166,35 +166,25 @@ export default async function AdmissionDetailPage({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  داخلہ منظور ہونے کا پیغام بھیجیں
+                  {t(lang, "admission.detail.send_msg")}
                 </a>
               </div>
             ) : (
-              <p className="empty-state">
-                سرپرست کا فون نمبر درج نہیں ہے، اس لیے WhatsApp پیغام نہیں
-                بھیجا جا سکتا۔
-              </p>
+              <p className="empty-state">{t(lang, "admission.detail.no_phone")}</p>
             )}
-            <p className="sub">
-              بٹن دبانے سے WhatsApp کھل جائے گا، نمبر اور پیغام پہلے سے لکھا
-              ہوگا؛ بھیجنے کا بٹن آپ خود WhatsApp میں دبائیں گے۔
-            </p>
+            <p className="sub">{t(lang, "admission.detail.wa_note")}</p>
           </>
         ) : null}
 
         {admission.status === "pending" ? (
           <>
-            <h3 className="form-section-title">فیصلہ کریں</h3>
-            <p className="form-note">
-              جدید داخلہ منظور کرنے پر نیا طالبہ ریکارڈ بن جائے گا
-              (رجسٹریشن نمبر خودکار)؛ قدیم داخلہ منظور کرنے پر پرانی
-              طالبہ کا ریکارڈ بدلے گا (نیا ریکارڈ نہیں بنے گا)۔ مسترد
-              کرنے پر کوئی طالبہ نہیں بنے گی۔
-            </p>
+            <h3 className="form-section-title">{t(lang, "admission.detail.decide")}</h3>
+            <p className="form-note">{t(lang, "admission.detail.decide_note")}</p>
             <AdmissionActions
               id={admission.id}
               approve={approveAdmission}
               reject={rejectAdmission}
+              lang={lang}
             />
           </>
         ) : null}

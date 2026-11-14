@@ -9,10 +9,11 @@ import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   type DepartmentId,
   type Student,
 } from "@/lib/students";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -33,6 +34,7 @@ export default async function IdCardsPage({
     : "all";
 
   const supabase = await createClient();
+  const langP = getMyLanguage();
   let query = supabase
     .from("students")
     .select("*")
@@ -44,66 +46,62 @@ export default async function IdCardsPage({
   const students = (data ?? []) as Student[];
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
+  const lang = await langP;
 
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/students-idcards" />
-          <h2>طلبہ کے شناختی کارڈ</h2>
+          <h2>{t(lang, "module.idcards")}</h2>
           <span className="page-count">
-            کل فعال: {students.length.toLocaleString("ur-PK")}
+            {t(lang, "idcards.count_active", {
+              n: students.length.toLocaleString("ur-PK"),
+            })}
           </span>
         </div>
 
-        <p className="form-note">
-          کارڈ پرچی جیسا چھوٹا ہوگا — کارڈ والے صفحے پر "تصویر محفوظ کریں" سے
-          کارڈ تصویر کے طور پر محفوظ ہو جائے گا۔
-        </p>
+        <p className="form-note">{t(lang, "idcards.note")}</p>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">شعبہ</span>
+            <span className="field-label">{t(lang, "idcards.filter_dept")}</span>
             <select
               className="field-input"
               name="department"
               defaultValue={department}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {DEPARTMENT_IDS.map((d) => (
                 <option key={d} value={d}>
-                  {DEPARTMENT_LABELS[d]}
+                  {t(lang, `dept.${d}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {tableMissing ? (
-          <p className="empty-state">
-            طلبہ کی میز ابھی نہیں بنی — پہلے مرحلہ 4 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "students.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : students.length === 0 ? (
-          <p className="empty-state">
-            اس شعبے میں ابھی کوئی فعال طالبہ درج نہیں ہے۔
-          </p>
+          <p className="empty-state">{t(lang, "idcards.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>رجسٹریشن نمبر</th>
-                  <th>نام</th>
-                  <th>والد کا نام</th>
-                  <th>شعبہ</th>
-                  <th>جماعت</th>
-                  <th>داخلہ</th>
-                  <th>کارڈ</th>
+                  <th>{t(lang, "col.reg")}</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "col.father")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "col.class")}</th>
+                  <th>{t(lang, "col.admission_date")}</th>
+                  <th>{t(lang, "idcards.col.card")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -120,12 +118,12 @@ export default async function IdCardsPage({
                       </Link>
                     </td>
                     <td>{s.father_name}</td>
-                    <td>{DEPARTMENT_LABELS[s.department]}</td>
+                    <td>{t(lang, `dept.${s.department}`)}</td>
                     <td>{s.class_name ?? "—"}</td>
                     <td>{formatDate(s.admission_date)}</td>
                     <td>
                       <Link href={`/departments/idcards/${s.id}`}>
-                        کارڈ دیکھیں
+                        {t(lang, "idcards.view_card")}
                       </Link>
                     </td>
                   </tr>

@@ -11,20 +11,17 @@ import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   ADMISSION_STATUS_IDS,
-  ADMISSION_STATUS_LABELS,
   ADMISSION_TYPE_IDS,
-  ADMISSION_TYPE_LABELS,
-  admissionTypeLabel,
   type Admission,
   type AdmissionStatus,
 } from "@/lib/admissions";
 import type { AdmissionType } from "@/lib/students";
 import {
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
   type SectionId,
 } from "@/lib/students";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -59,8 +56,10 @@ export default async function AdmissionsPage({
 
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
+  const langP = getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
+  const lang = await langP;
   const rawSection = params.section ?? "all";
   const section: SectionId | "all" =
     (SECTION_IDS as string[]).includes(rawSection) &&
@@ -105,93 +104,91 @@ export default async function AdmissionsPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/admissions-students" />
-          <h2>نئے داخلے</h2>
+          <h2>{t(lang, "module.admissions")}</h2>
           <span className="page-count">
-            کل: {counts.all.toLocaleString("ur-PK")} — زیرِ غور:{" "}
-            {counts.pending.toLocaleString("ur-PK")} — منظور:{" "}
-            {counts.approved.toLocaleString("ur-PK")} — مسترد:{" "}
-            {counts.rejected.toLocaleString("ur-PK")}
+            {t(lang, "admissions.count", {
+              all: counts.all.toLocaleString("ur-PK"),
+              pending: counts.pending.toLocaleString("ur-PK"),
+              approved: counts.approved.toLocaleString("ur-PK"),
+              rejected: counts.rejected.toLocaleString("ur-PK"),
+            })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/admissions/new">
-            + نئی درخواست درج کریں
+            {t(lang, "admissions.add")}
           </Link>
         </div>
 
         <form className="att-controls" method="get">
           <label className="att-field">
-            <span className="att-label">حالت</span>
+            <span className="att-label">{t(lang, "admissions.filter_status")}</span>
             <select
               className="att-input"
               name="status"
               defaultValue={status}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {ADMISSION_STATUS_IDS.map((s) => (
                 <option key={s} value={s}>
-                  {ADMISSION_STATUS_LABELS[s]}
+                  {t(lang, `admission.status.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <label className="att-field">
-            <span className="att-label">داخلے کی قسم</span>
+            <span className="att-label">{t(lang, "admissions.filter_type")}</span>
             <select
               className="att-input"
               name="admission_type"
               defaultValue={admissionType}
             >
-              <option value="all">سب</option>
-              {ADMISSION_TYPE_IDS.map((t) => (
-                <option key={t} value={t}>
-                  {ADMISSION_TYPE_LABELS[t]}
+              <option value="all">{t(lang, "common.all")}</option>
+              {ADMISSION_TYPE_IDS.map((t2) => (
+                <option key={t2} value={t2}>
+                  {t(lang, `admission.type.${t2}`)}
                 </option>
               ))}
             </select>
           </label>
           <label className="att-field">
-            <span className="att-label">شعبہ (بنین / بنات)</span>
+            <span className="att-label">{t(lang, "admissions.filter_section")}</span>
             <select
               className="att-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {tableMissing ? (
-          <p className="empty-state">
-            داخلوں کی میز ابھی نہیں بنی — پہلے مرحلہ 9 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "admissions.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : admissions.length === 0 ? (
-          <p className="empty-state">
-            ابھی کوئی درخواست درج نہیں ہے۔ اوپر والے بٹن سے پہلی درخواست درج کریں۔
-          </p>
+          <p className="empty-state">{t(lang, "admissions.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>نام</th>
-                  <th>والد کا نام</th>
-                  <th>شعبہ</th>
-                  <th>بنین / بنات</th>
-                  <th>جماعت</th>
-                  <th>قسم</th>
-                  <th>درخواست کی تاریخ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "col.father")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.class")}</th>
+                  <th>{t(lang, "col.type")}</th>
+                  <th>{t(lang, "col.request_date")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -203,16 +200,16 @@ export default async function AdmissionsPage({
                       </Link>
                     </td>
                     <td>{a.father_name}</td>
-                    <td>{DEPARTMENT_LABELS[a.department]}</td>
-                    <td>{SECTION_LABELS[a.section]}</td>
+                    <td>{t(lang, `dept.${a.department}`)}</td>
+                    <td>{t(lang, `section.${a.section}`)}</td>
                     <td>{a.class_name ?? "—"}</td>
-                    <td>{admissionTypeLabel(a.admission_type)}</td>
+                    <td>{t(lang, `admission.type.${a.admission_type}`)}</td>
                     <td>{formatDate(a.created_at)}</td>
                     <td>
                       <span
                         className={`badge${a.status === "rejected" ? " badge-withdrawn" : ""}`}
                       >
-                        {ADMISSION_STATUS_LABELS[a.status]}
+                        {t(lang, `admission.status.${a.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -222,7 +219,7 @@ export default async function AdmissionsPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

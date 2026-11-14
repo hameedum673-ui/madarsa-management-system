@@ -8,6 +8,7 @@
 "use client";
 
 import { useState } from "react";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export interface CardImageData {
   madrasaName: string;
@@ -47,7 +48,13 @@ function fitFont(
   }
 }
 
-export default function SaveImageButton({ data }: { data: CardImageData }) {
+export default function SaveImageButton({
+  data,
+  lang = "ur",
+}: {
+  data: CardImageData;
+  lang?: Lang;
+}) {
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -172,9 +179,9 @@ export default function SaveImageButton({ data }: { data: CardImageData }) {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-      setStatus("تصویر محفوظ ہو گئی ہے — فون کی گیلری میں Downloads میں دیکھیں۔");
+      setStatus(t(lang, "idcard.saved"));
     } catch {
-      setStatus("تصویر محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔");
+      setStatus(t(lang, "idcard.save_failed"));
     } finally {
       setSaving(false);
     }
@@ -188,7 +195,7 @@ export default function SaveImageButton({ data }: { data: CardImageData }) {
         onClick={handleSave}
         disabled={saving}
       >
-        {saving ? "براہِ کرم انتظار کریں…" : "تصویر محفوظ کریں"}
+        {saving ? t(lang, "common.wait") : t(lang, "idcard.save_image")}
       </button>
       {status ? <p className="form-note">{status}</p> : null}
     </div>

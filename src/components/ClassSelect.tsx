@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { ClassOption } from "@/lib/classes";
+import { t, type Lang } from "@/i18n/dictionary";
 
 const OTHER = "__other__";
 
@@ -22,6 +23,7 @@ export default function ClassSelect({
   department,
   section,
   initialClassName,
+  lang = "ur",
 }: {
   classes: ClassOption[];
   department: string;
@@ -29,6 +31,8 @@ export default function ClassSelect({
   // جائے (امتحان والا فارم) تو دونوں شعبوں کی جماعتیں دکھائیں۔
   section?: string;
   initialClassName?: string | null;
+  // مرحلہ 103 — زبان نہ دی جائے تو اردو (دوسرے ماڈیول ویسے ہی رہتے ہیں)
+  lang?: Lang;
 }) {
   const inList = initialClassName
     ? classes.some((c) => c.name === initialClassName)
@@ -64,14 +68,14 @@ export default function ClassSelect({
   if (classes.length === 0) {
     return (
       <label className="field">
-        <span className="field-label">جماعت</span>
+        <span className="field-label">{t(lang, "col.class")}</span>
         <input
           className="field-input"
           name="class_name"
           type="text"
           maxLength={100}
           defaultValue={initialClassName ?? ""}
-          placeholder="مثلاً درجہ اول"
+          placeholder={t(lang, "class.select.name_ph")}
         />
         <span
           style={{
@@ -81,9 +85,9 @@ export default function ClassSelect({
             color: "var(--muted)",
           }}
         >
-          کوئی جماعت درج نہیں —{" "}
+          {t(lang, "class.select.none")}{" "}
           <Link href="/departments/classes/new">
-            پہلے درجات میں جماعت شامل کریں
+            {t(lang, "class.select.add_first")}
           </Link>
         </span>
       </label>
@@ -92,19 +96,19 @@ export default function ClassSelect({
 
   return (
     <label className="field">
-      <span className="field-label">جماعت</span>
+      <span className="field-label">{t(lang, "col.class")}</span>
       <select
         className="field-input"
         value={selected}
         onChange={(e) => setSelected(e.target.value)}
       >
-        <option value="">— جماعت چنیں —</option>
+        <option value="">{t(lang, "class.select.choose")}</option>
         {deptClasses.map((c) => (
           <option key={`${c.department}-${c.name}`} value={c.name}>
             {c.name}
           </option>
         ))}
-        <option value={OTHER}>دیگر (ہاتھ سے لکھیں)</option>
+        <option value={OTHER}>{t(lang, "class.select.other")}</option>
       </select>
       {selected === OTHER ? (
         <input
@@ -114,7 +118,7 @@ export default function ClassSelect({
           maxLength={100}
           value={otherText}
           onChange={(e) => setOtherText(e.target.value)}
-          placeholder="جماعت کا نام لکھیں"
+          placeholder={t(lang, "class.select.other_ph")}
           style={{ marginTop: 8 }}
         />
       ) : (

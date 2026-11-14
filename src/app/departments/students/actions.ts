@@ -11,7 +11,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
   isModuleAllowedForMe,
-  MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
@@ -21,6 +20,13 @@ import {
   type SectionId,
   type StudentStatus,
 } from "@/lib/students";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
+
+/** مرحلہ 103 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v = typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -60,9 +66,10 @@ interface StudentFields {
   district: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت (زبان کے مطابق) */
 function validateFields(
   formData: FormData,
+  lang: Lang,
 ): { fields: StudentFields } | { error: string } {
   const name = clean(formData.get("name"), 100);
   const fatherName = clean(formData.get("father_name"), 100);
@@ -77,24 +84,24 @@ function validateFields(
   const address = clean(formData.get("address"), 500);
   const district = clean(formData.get("district"), 100);
 
-  if (!name) return { error: "طالبہ کا نام ضروری ہے۔" };
-  if (!fatherName) return { error: "والد کا نام ضروری ہے۔" };
+  if (!name) return { error: t(lang, "student.err.name_required") };
+  if (!fatherName) return { error: t(lang, "student.err.father_required") };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
-    return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+    return { error: t(lang, "student.err.dept_invalid") };
   if (!SECTION_IDS.includes(section as SectionId))
-    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
+    return { error: t(lang, "student.err.section_invalid") };
   if (!validDate(admissionDate))
-    return { error: "داخلہ کی تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.admission_date_invalid") };
   if (!notFuture(admissionDate))
-    return { error: "داخلہ کی تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "student.err.admission_date_future") };
   if (dateOfBirth && !validDate(dateOfBirth))
-    return { error: "تاریخِ پیدائش درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.dob_invalid") };
   if (dateOfBirth && !notFuture(dateOfBirth))
-    return { error: "تاریخِ پیدائش آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "student.err.dob_future") };
   if (!validPhone(guardianPhone))
-    return { error: "رابطہ نمبر درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.phone_invalid") };
   if (!validPhone(whatsappNumber))
-    return { error: "واٹس ایپ نمبر درست نہیں ہے۔" };
+    return { error: t(lang, "student.err.whatsapp_invalid") };
 
   return {
     fields: {
@@ -136,21 +143,22 @@ async function writeAudit(
 
 /** نئی طالبہ شامل کریں */
 export async function addStudent(formData: FormData): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "students"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(f.section))
-    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "student.err.section_denied") };
 
   // اگلا رجسٹریشن نمبر: اپنے مدرسے کی طالبات کی گنتی + 1
   const { count } = await supabase
@@ -184,8 +192,8 @@ export async function addStudent(formData: FormData): Promise<ActionResult> {
   if (error || !data) {
     // نمبر ٹکرا جائے (دو لوگ ایک ساتھ لکھیں) تو دوبارہ کوشش کا کہیں
     if ((error as { code?: string } | null)?.code === "23505")
-      return { error: "رجسٹریشن نمبر ٹکرا گیا — دوبارہ کوشش کریں۔" };
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "student.err.reg_conflict") };
+    return { error: t(lang, "student.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "student_created", {
@@ -204,25 +212,26 @@ export async function updateStudent(
   id: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const status = clean(formData.get("status"), 20);
   if (status !== "active" && status !== "withdrawn")
-    return { error: "حالت درست منتخب کریں (فعال یا خارج)۔" };
+    return { error: t(lang, "student.err.status_invalid") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "students"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 54 — بند شعبے میں ریکارڈ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(f.section))
-    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "student.err.section_denied") };
 
   // RLS خود یقین دلاتی ہے کہ یہ طالبہ اسی مدرسے کی ہے
   const { data, error } = await supabase
@@ -249,7 +258,7 @@ export async function updateStudent(
     .single();
 
   if (error || !data) {
-    return { error: "تبدیلی محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "student.err.update_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "student_updated", {

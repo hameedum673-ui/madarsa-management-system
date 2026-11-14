@@ -17,6 +17,8 @@ import {
 } from "@/lib/students";
 import { todayInKarachi } from "@/lib/attendance";
 import SaveImageButton from "@/app/departments/idcards/[id]/SaveImageButton";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -30,6 +32,7 @@ export default async function IdCardPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
 
   const { data, error } = await supabase
     .from("students")
@@ -39,6 +42,7 @@ export default async function IdCardPage({
 
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
+  const lang = await langP;
   if (tableMissing) {
     return (
       <div className="module-view open">
@@ -46,9 +50,7 @@ export default async function IdCardPage({
           <div className="back-arrow-row">
             <BackButton href="/departments/idcards" />
           </div>
-          <p className="empty-state">
-            طلبہ کی میز ابھی نہیں بنی — پہلے مرحلہ 4 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "students.table_missing")}</p>
         </div>
       </div>
     );
@@ -66,11 +68,9 @@ export default async function IdCardPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/idcards" />
-            <h2>طالبہ کا شناختی کارڈ</h2>
+            <h2>{t(lang, "idcard.title")}</h2>
           </div>
-          <p className="empty-state">
-            یہ طالبہ خارج ہے — اس کا شناختی کارڈ نہیں بنے گا۔
-          </p>
+          <p className="empty-state">{t(lang, "idcard.withdrawn")}</p>
         </div>
       </div>
     );
@@ -95,7 +95,7 @@ export default async function IdCardPage({
       <div className="page-card idcard-page">
         <div className="page-head no-print">
           <BackButton href="/departments/idcards" className="no-print" />
-          <h2>طالبہ کا شناختی کارڈ</h2>
+          <h2>{t(lang, "idcard.title")}</h2>
           <span className="page-count">{student.registration_number}</span>
         </div>
 
@@ -154,6 +154,7 @@ export default async function IdCardPage({
 
         <div className="form-actions no-print">
           <SaveImageButton
+            lang={lang}
             data={{
               madrasaName,
               name: student.name,

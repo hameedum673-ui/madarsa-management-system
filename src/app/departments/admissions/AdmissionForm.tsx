@@ -14,17 +14,15 @@ import ClassSelect from "@/components/ClassSelect";
 import type { ClassOption } from "@/lib/classes";
 import {
   ADMISSION_TYPE_IDS,
-  ADMISSION_TYPE_LABELS,
 } from "@/lib/admissions";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
   type AdmissionType,
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -50,10 +48,12 @@ export default function AdmissionForm({
   action,
   classes = [],
   students = [],
+  lang = "ur",
 }: {
   action: FormAction;
   classes?: ClassOption[];
   students?: AdmissionStudent[];
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -133,9 +133,10 @@ export default function AdmissionForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">داخلے کی قسم *</span>
+          <span className="field-label">{t(lang, "admission.form.type")}</span>
           <select
             className="field-input"
             name="admission_type"
@@ -145,9 +146,9 @@ export default function AdmissionForm({
               handleTypeChange(e.target.value as AdmissionType)
             }
           >
-            {ADMISSION_TYPE_IDS.map((t) => (
-              <option key={t} value={t}>
-                {ADMISSION_TYPE_LABELS[t]}
+            {ADMISSION_TYPE_IDS.map((t2) => (
+              <option key={t2} value={t2}>
+                {t(lang, `admission.type.${t2}`)}
               </option>
             ))}
           </select>
@@ -155,20 +156,20 @@ export default function AdmissionForm({
 
         {admissionType === "returning" ? (
           <label className="field">
-            <span className="field-label">پرانی طالبہ چنیں *</span>
+            <span className="field-label">{t(lang, "admission.form.pick_old")}</span>
             <select
               className="field-input"
               value={studentId}
               onChange={(e) => handleStudentChange(e.target.value)}
               required
             >
-              <option value="">طالبہ منتخب کریں</option>
+              <option value="">{t(lang, "admission.form.pick_placeholder")}</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} — {s.father_name} (رجسٹریشن{" "}
+                  {s.name} — {s.father_name} ({t(lang, "admission.form.reg_word")}{" "}
                   {s.registration_number})
                   {s.class_name ? ` — ${s.class_name}` : ""}
-                  {s.status === "withdrawn" ? " — خارج" : ""}
+                  {s.status === "withdrawn" ? ` — ${t(lang, "student.status.withdrawn")}` : ""}
                 </option>
               ))}
             </select>
@@ -182,14 +183,14 @@ export default function AdmissionForm({
         />
 
         <label className="field">
-          <span className="field-label">طالبہ کا نام *</span>
+          <span className="field-label">{t(lang, "student.form.name")}</span>
           <input
             className="field-input"
             name="applicant_name"
             type="text"
             required
             maxLength={100}
-            placeholder="مثلاً فاطمہ"
+            placeholder={t(lang, "student.form.name_ph")}
             value={applicantName}
             onChange={(e) => setApplicantName(e.target.value)}
             readOnly={readOnlyDetails}
@@ -197,14 +198,14 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">والد کا نام *</span>
+          <span className="field-label">{t(lang, "student.form.father")}</span>
           <input
             className="field-input"
             name="father_name"
             type="text"
             required
             maxLength={100}
-            placeholder="مثلاً محمد احمد"
+            placeholder={t(lang, "student.form.father_ph")}
             value={fatherName}
             onChange={(e) => setFatherName(e.target.value)}
             readOnly={readOnlyDetails}
@@ -212,7 +213,7 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ *</span>
+          <span className="field-label">{t(lang, "student.form.dept")}</span>
           <select
             className="field-input"
             name="department"
@@ -222,14 +223,14 @@ export default function AdmissionForm({
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+                {t(lang, `dept.${d}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <span className="field-label">{t(lang, "student.form.section")}</span>
           <select
             className="field-input"
             name="section"
@@ -239,7 +240,7 @@ export default function AdmissionForm({
           >
             {SECTION_IDS.map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABELS[s]}
+                {t(lang, `section.${s}`)}
               </option>
             ))}
           </select>
@@ -251,10 +252,11 @@ export default function AdmissionForm({
           department={department}
           section={section}
           initialClassName={selectedStudent?.class_name ?? null}
+          lang={lang}
         />
 
         <label className="field">
-          <span className="field-label">داخلہ کی تاریخ *</span>
+          <span className="field-label">{t(lang, "student.form.admission_date")}</span>
           <input
             className="field-input"
             name="admission_date"
@@ -265,7 +267,7 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">تاریخِ پیدائش</span>
+          <span className="field-label">{t(lang, "student.form.dob")}</span>
           <input
             className="field-input"
             name="date_of_birth"
@@ -277,13 +279,13 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">سرپرست کا نام</span>
+          <span className="field-label">{t(lang, "student.form.guardian")}</span>
           <input
             className="field-input"
             name="guardian_name"
             type="text"
             maxLength={100}
-            placeholder="مثلاً والدہ یا ولی"
+            placeholder={t(lang, "student.form.guardian_ph")}
             value={guardianName}
             onChange={(e) => setGuardianName(e.target.value)}
             readOnly={readOnlyDetails}
@@ -291,7 +293,7 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">رابطہ نمبر</span>
+          <span className="field-label">{t(lang, "student.form.phone")}</span>
           <input
             className="field-input"
             name="guardian_phone"
@@ -306,7 +308,7 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">واٹس ایپ نمبر</span>
+          <span className="field-label">{t(lang, "student.form.whatsapp")}</span>
           <input
             className="field-input"
             name="whatsapp_number"
@@ -321,13 +323,13 @@ export default function AdmissionForm({
         </label>
 
         <label className="field">
-          <span className="field-label">ضلع</span>
+          <span className="field-label">{t(lang, "student.form.district")}</span>
           <input
             className="field-input"
             name="district"
             type="text"
             maxLength={100}
-            placeholder="مثلاً بدین"
+            placeholder={t(lang, "student.form.district_ph")}
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
           />
@@ -335,46 +337,42 @@ export default function AdmissionForm({
 
         {admissionType === "new" ? (
           <label className="field">
-            <span className="field-label">پچھلا مدرسہ (اگر کوئی ہو)</span>
+            <span className="field-label">{t(lang, "admission.form.prev_madrasa")}</span>
             <input
               className="field-input"
               name="previous_madrasa"
               type="text"
               maxLength={200}
-              placeholder="مثلاً —"
+              placeholder={t(lang, "admission.form.prev_ph")}
             />
           </label>
         ) : null}
       </div>
 
       <label className="field">
-        <span className="field-label">نوٹ</span>
+        <span className="field-label">{t(lang, "admission.form.note_label")}</span>
         <textarea
           className="field-input field-textarea"
           name="note"
           maxLength={500}
-          placeholder="کوئی خاص بات ہو تو لکھیں"
+          placeholder={t(lang, "admission.form.note_ph")}
         />
       </label>
 
       {error ? <p className="form-error">{error}</p> : null}
 
       {admissionType === "returning" ? (
-        <p className="form-note">
-          قدیم داخلے کی منظوری پر نیا ریکارڈ نہیں بنے گا — پرانی طالبہ
-          کا ریکارڈ بدلے گا (جماعت/شعبہ نئے سال کے حساب سے) اور اس کی
-          قسم "قدیم" ہو جائے گی۔
-        </p>
+        <p className="form-note">{t(lang, "admission.form.note_returning")}</p>
       ) : (
-        <p className="form-note">درخواست «زیرِ غور» کے طور پر محفوظ ہوگی؛ منظوری تفصیل والے صفحے سے ہوگی۔</p>
+        <p className="form-note">{t(lang, "admission.form.note_new")}</p>
       )}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "درخواست محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "admission.form.submit")}
         </button>
         <Link className="btn-ghost" href="/departments/admissions">
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

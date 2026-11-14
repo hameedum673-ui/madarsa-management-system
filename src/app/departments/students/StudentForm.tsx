@@ -11,14 +11,12 @@ import ClassSelect from "@/components/ClassSelect";
 import type { ClassOption } from "@/lib/classes";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
-  STUDENT_STATUS_LABELS,
   type DepartmentId,
   type SectionId,
   type Student,
 } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -31,6 +29,7 @@ export default function StudentForm({
   cancelHref,
   showStatus,
   classes = [],
+  lang = "ur",
 }: {
   initial?: Partial<Student>;
   action: FormAction;
@@ -38,6 +37,7 @@ export default function StudentForm({
   cancelHref: string;
   showStatus?: boolean;
   classes?: ClassOption[];
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -70,9 +70,10 @@ export default function StudentForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">طالبہ کا نام *</span>
+          <span className="field-label">{t(lang, "student.form.name")}</span>
           <input
             className="field-input"
             name="name"
@@ -80,12 +81,12 @@ export default function StudentForm({
             required
             maxLength={100}
             defaultValue={initial?.name ?? ""}
-            placeholder="مثلاً فاطمہ"
+            placeholder={t(lang, "student.form.name_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">والد کا نام *</span>
+          <span className="field-label">{t(lang, "student.form.father")}</span>
           <input
             className="field-input"
             name="father_name"
@@ -93,12 +94,12 @@ export default function StudentForm({
             required
             maxLength={100}
             defaultValue={initial?.father_name ?? ""}
-            placeholder="مثلاً محمد احمد"
+            placeholder={t(lang, "student.form.father_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ *</span>
+          <span className="field-label">{t(lang, "student.form.dept")}</span>
           <select
             className="field-input"
             name="department"
@@ -108,14 +109,14 @@ export default function StudentForm({
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+                {t(lang, `dept.${d}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">شعبہ (بنین / بنات) *</span>
+          <span className="field-label">{t(lang, "student.form.section")}</span>
           <select
             className="field-input"
             name="section"
@@ -125,7 +126,7 @@ export default function StudentForm({
           >
             {SECTION_IDS.map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABELS[s]}
+                {t(lang, `section.${s}`)}
               </option>
             ))}
           </select>
@@ -136,10 +137,11 @@ export default function StudentForm({
           department={department}
           section={section}
           initialClassName={initial?.class_name ?? null}
+          lang={lang}
         />
 
         <label className="field">
-          <span className="field-label">داخلہ کی تاریخ *</span>
+          <span className="field-label">{t(lang, "student.form.admission_date")}</span>
           <input
             className="field-input"
             name="admission_date"
@@ -150,7 +152,7 @@ export default function StudentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">تاریخِ پیدائش</span>
+          <span className="field-label">{t(lang, "student.form.dob")}</span>
           <input
             className="field-input"
             name="date_of_birth"
@@ -160,19 +162,19 @@ export default function StudentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">سرپرست کا نام</span>
+          <span className="field-label">{t(lang, "student.form.guardian")}</span>
           <input
             className="field-input"
             name="guardian_name"
             type="text"
             maxLength={100}
             defaultValue={initial?.guardian_name ?? ""}
-            placeholder="مثلاً والدہ یا ولی"
+            placeholder={t(lang, "student.form.guardian_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">رابطہ نمبر</span>
+          <span className="field-label">{t(lang, "student.form.phone")}</span>
           <input
             className="field-input"
             name="guardian_phone"
@@ -185,7 +187,7 @@ export default function StudentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">واٹس ایپ نمبر</span>
+          <span className="field-label">{t(lang, "student.form.whatsapp")}</span>
           <input
             className="field-input"
             name="whatsapp_number"
@@ -199,53 +201,53 @@ export default function StudentForm({
       </div>
 
       <label className="field">
-        <span className="field-label">پتہ</span>
+        <span className="field-label">{t(lang, "student.form.address")}</span>
         <textarea
           className="field-input field-textarea"
           name="address"
           maxLength={500}
           defaultValue={initial?.address ?? ""}
-          placeholder="مکمل پتہ"
+          placeholder={t(lang, "student.form.address_ph")}
         />
       </label>
 
       <label className="field">
-        <span className="field-label">ضلع</span>
+        <span className="field-label">{t(lang, "student.form.district")}</span>
         <input
           className="field-input"
           name="district"
           type="text"
           maxLength={100}
           defaultValue={initial?.district ?? ""}
-          placeholder="مثلاً بدین"
+          placeholder={t(lang, "student.form.district_ph")}
         />
       </label>
 
       {showStatus ? (
         <label className="field">
-          <span className="field-label">حالت</span>
+          <span className="field-label">{t(lang, "student.form.status")}</span>
           <select
             className="field-input"
             name="status"
             required
             defaultValue={initial?.status ?? "active"}
           >
-            <option value="active">{STUDENT_STATUS_LABELS.active}</option>
-            <option value="withdrawn">{STUDENT_STATUS_LABELS.withdrawn}</option>
+            <option value="active">{t(lang, "student.status.active")}</option>
+            <option value="withdrawn">{t(lang, "student.status.withdrawn")}</option>
           </select>
         </label>
       ) : null}
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      <p className="form-note">رجسٹریشن نمبر خودکار طور پر لگے گا۔</p>
+      <p className="form-note">{t(lang, "student.form.note")}</p>
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : submitLabel}
+          {loading ? t(lang, "common.wait") : submitLabel}
         </button>
         <Link className="btn-ghost" href={cancelHref}>
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

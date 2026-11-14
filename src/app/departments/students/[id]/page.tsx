@@ -7,15 +7,13 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
-  DEPARTMENT_LABELS,
-  SECTION_LABELS,
-  STUDENT_STATUS_LABELS,
   type Student,
 } from "@/lib/students";
-import { admissionTypeLabel } from "@/lib/admissions";
 import StudentForm from "@/app/departments/students/StudentForm";
 import { updateStudent } from "@/app/departments/students/actions";
 import { getActiveClasses } from "@/lib/classes";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -29,6 +27,7 @@ export default async function StudentDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data, error } = await supabase
     .from("students")
     .select("*")
@@ -44,6 +43,7 @@ export default async function StudentDetailPage({
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(student.section)) notFound();
   const classes = await getActiveClasses(supabase);
+  const lang = await langP;
 
   return (
     <div className="module-view open">
@@ -56,73 +56,74 @@ export default async function StudentDetailPage({
           <span
             className={`badge${student.status === "withdrawn" ? " badge-withdrawn" : ""}`}
           >
-            {STUDENT_STATUS_LABELS[student.status]}
+            {t(lang, `student.status.${student.status}`)}
           </span>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>رجسٹریشن نمبر</span>
+            <span>{t(lang, "col.reg")}</span>
             <span>{student.registration_number}</span>
           </div>
           <div className="row">
-            <span>والد کا نام</span>
+            <span>{t(lang, "col.father")}</span>
             <span>{student.father_name}</span>
           </div>
           <div className="row">
-            <span>شعبہ</span>
-            <span>{DEPARTMENT_LABELS[student.department]}</span>
+            <span>{t(lang, "col.dept")}</span>
+            <span>{t(lang, `dept.${student.department}`)}</span>
           </div>
           <div className="row">
-            <span>شعبہ (بنین / بنات)</span>
-            <span>{SECTION_LABELS[student.section]}</span>
+            <span>{t(lang, "students.section_filter")}</span>
+            <span>{t(lang, `section.${student.section}`)}</span>
           </div>
           <div className="row">
-            <span>جماعت</span>
+            <span>{t(lang, "col.class")}</span>
             <span>{student.class_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>داخلے کی قسم</span>
-            <span>{admissionTypeLabel(student.admission_type)}</span>
+            <span>{t(lang, "student.detail.admission_type")}</span>
+            <span>{t(lang, `admission.type.${student.admission_type}`)}</span>
           </div>
           <div className="row">
-            <span>داخلہ کی تاریخ</span>
+            <span>{t(lang, "student.detail.admission_date")}</span>
             <span>{formatDate(student.admission_date)}</span>
           </div>
           <div className="row">
-            <span>تاریخِ پیدائش</span>
+            <span>{t(lang, "student.form.dob")}</span>
             <span>{formatDate(student.date_of_birth)}</span>
           </div>
           <div className="row">
-            <span>سرپرست</span>
+            <span>{t(lang, "student.detail.guardian")}</span>
             <span>{student.guardian_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>رابطہ نمبر</span>
+            <span>{t(lang, "student.form.phone")}</span>
             <span dir="ltr">{student.guardian_phone ?? "—"}</span>
           </div>
           <div className="row">
-            <span>واٹس ایپ نمبر</span>
+            <span>{t(lang, "student.form.whatsapp")}</span>
             <span dir="ltr">{student.whatsapp_number ?? "—"}</span>
           </div>
           <div className="row">
-            <span>پتہ</span>
+            <span>{t(lang, "student.form.address")}</span>
             <span>{student.address ?? "—"}</span>
           </div>
           <div className="row">
-            <span>ضلع</span>
+            <span>{t(lang, "student.form.district")}</span>
             <span>{student.district ?? "—"}</span>
           </div>
         </div>
 
-        <h3 className="form-section-title">ریکارڈ تبدیل کریں</h3>
+        <h3 className="form-section-title">{t(lang, "student.detail.edit_title")}</h3>
         <StudentForm
           initial={student}
           action={updateStudent.bind(null, student.id)}
-          submitLabel="تبدیلی محفوظ کریں"
+          submitLabel={t(lang, "student.form.update")}
           cancelHref="/departments/students"
           showStatus
           classes={classes}
+          lang={lang}
         />
 
       </div>
