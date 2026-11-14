@@ -9,8 +9,9 @@
  * کارڈ، گھنٹی، مینیو) + پروفائل میں زبان والا حصہ + عام الفاظ۔
  * مرحلہ 103 — طلبہ کے داخلے اور ریکارڈ (طلبہ / داخلے / شناختی کارڈ)
  * کے صفحے بھی اسی فہرست سے عربی ہوتے ہیں۔ مرحلہ 104 — اساتذہ اور عملے
- * کا ریکارڈ بھی اسی فہرست سے عربی ہوتا ہے۔ باقی ماڈیول اگلے مرحلوں
- * میں آئیں گے۔
+ * کا ریکارڈ بھی اسی فہرست سے عربی ہوتا ہے۔ مرحلہ 105 — درجات اور
+ * جماعتیں، مرحلہ 106 — دونوں حاضریاں، مرحلہ 107 — تعلیمی ریکارڈ بھی
+ * اسی فہرست سے عربی ہوتے ہیں۔ باقی ماڈیول اگلے مرحلوں میں آئیں گے۔
  */
 
 export type Lang = "ur" | "ar" | "en";
@@ -446,6 +447,84 @@ const ur: Dict = {
   "att.err.verify.students": "طالبات کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "att.err.verify.teachers": "اساتذہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "att.err.save_failed": "حاضری محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+
+  // مرحلہ 107 — تعلیمی ریکارڈ
+  "common.view": "دیکھیں",
+
+  "academic.empty": "ابھی کوئی فعال طالبہ درج نہیں ہے۔",
+
+  "academic.sec.personal": "ذاتی تفصیل",
+  "academic.sec.attendance": "حاضری کا خلاصہ",
+  "academic.sec.exams": "امتحانات",
+  "academic.sec.hifz": "حفظ کی پیش رفت",
+  "academic.sec.admission": "داخلہ",
+
+  "academic.att.total_days": "کل دن",
+  "academic.att.percentage": "حاضری کا فیصد (حاضر + تاخیر)",
+  "academic.att.empty": "ابھی کوئی حاضری درج نہیں ہے۔",
+
+  "academic.exams.empty": "ابھی کوئی امتحان نہیں دیا۔",
+  "academic.exam.col_exam": "امتحان",
+  "academic.exam.col_total": "کل نمبر",
+  "academic.exam.col_percent": "فیصد",
+  "academic.exam.col_grade": "درجہ",
+  "academic.exam.col_position": "پوزیشن",
+  "academic.exam.col_message": "پیغام",
+  "academic.exam.col_result": "نتیجہ",
+  "academic.exam.send_whatsapp": "WhatsApp پر بھیجیں",
+  "academic.exam.no_phone": "فون نمبر درج نہیں ہے",
+
+  "academic.hifz.table_missing":
+    "حفظ کی پیش رفت کی میز ابھی نہیں بنی — پہلے مرحلہ 38 کی SQL چلائیں۔",
+  "academic.hifz.empty":
+    "ابھی کوئی پیش رفت درج نہیں ہے — اوپر والے فارم سے پہلا اندراج شامل کریں۔",
+  "academic.hifz.col_portion": "حصہ",
+  "academic.hifz.col_quality": "کیفیت",
+  "academic.hifz.col_listener": "سننے والا",
+  "academic.hifz.col_action": "کارروائی",
+
+  "academic.admission.empty":
+    "یہ طالبہ داخلے کے ریکارڈ سے نہیں آئی — براہِ راست شامل کی گئی تھی۔",
+  "academic.view_student": "طالبہ کا ریکارڈ دیکھیں",
+
+  "exam.type.quarterly": "سہ ماہی",
+  "exam.type.half_yearly": "شش ماہی",
+  "exam.type.annual": "سالانہ",
+  "exam.type.other": "دیگر",
+
+  "hifz.kind.sabaq": "سبق",
+  "hifz.kind.sabqi": "سبقی",
+  "hifz.kind.manzil": "منزل",
+  "hifz.quality.excellent": "اچھا",
+  "hifz.quality.good": "اوسط",
+  "hifz.quality.weak": "کمزور",
+  "hifz.status.active": "فعال",
+  "hifz.status.voided": "منسوخ",
+
+  "hifz.form.portion": "حصہ",
+  "hifz.form.portion_ph": "مثلاً پارہ 5 یا سورۃ یٰسین",
+  "hifz.form.quality": "کیفیت",
+  "hifz.form.listened_by": "سننے والا استاد",
+  "hifz.form.note": "نوٹ",
+  "hifz.form.note_ph": "اختیاری",
+  "hifz.form.no_teacher": "— کوئی نہیں —",
+  "hifz.form.save": "پیش رفت محفوظ کریں",
+  "hifz.form.saved": "پیش رفت محفوظ ہو گئی ہے۔",
+
+  "hifz.void.confirm": "پکا منسوخ کریں؟",
+
+  "hifz.err.student_unknown": "طالبہ معلوم نہیں ہوئی۔",
+  "hifz.err.date_invalid": "تاریخ درست لکھیں۔",
+  "hifz.err.date_future": "تاریخ آج سے آگے نہیں ہو سکتی۔",
+  "hifz.err.kind_invalid": "قسم درست منتخب کریں (سبق، سبقی یا منزل)۔",
+  "hifz.err.portion_required": "حصہ لکھنا ضروری ہے — مثلاً پارہ 5۔",
+  "hifz.err.quality_invalid": "کیفیت درست منتخب کریں (اچھا، اوسط یا کمزور)۔",
+  "hifz.err.student_not_found": "طالبہ نہیں ملی — پہلے طلبہ کے ریکارڈ میں دیکھیں۔",
+  "hifz.err.not_hifz": "حفظ کی پیش رفت صرف حفظ شعبے کی طالبات کے لیے ہے۔",
+  "hifz.err.section_denied": "اس شعبے کی طالبہ کی پیش رفت درج کرنے کی اجازت نہیں ہے۔",
+  "hifz.err.teacher_invalid": "سننے والا استاد درست منتخب کریں۔",
+  "hifz.err.save_failed": "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+  "hifz.err.void_failed": "منسوخ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
 };
 
 const ar: Dict = {
@@ -859,6 +938,84 @@ const ar: Dict = {
   "att.err.verify.students": "تعذّر التحقق من الطالبات. حاول مرة أخرى.",
   "att.err.verify.teachers": "تعذّر التحقق من المعلمين. حاول مرة أخرى.",
   "att.err.save_failed": "تعذّر حفظ الحضور. حاول مرة أخرى.",
+
+  // المرحلة 107 — السجل التعليمي
+  "common.view": "عرض",
+
+  "academic.empty": "لا توجد أي طالبة نشطة مسجلة بعد.",
+
+  "academic.sec.personal": "التفاصيل الشخصية",
+  "academic.sec.attendance": "ملخص الحضور",
+  "academic.sec.exams": "الامتحانات",
+  "academic.sec.hifz": "تقدم الحفظ",
+  "academic.sec.admission": "القبول",
+
+  "academic.att.total_days": "مجموع الأيام",
+  "academic.att.percentage": "نسبة الحضور (حاضر + متأخر)",
+  "academic.att.empty": "لم يُسجَّل أي حضور بعد.",
+
+  "academic.exams.empty": "لم تؤدِّ أي امتحان بعد.",
+  "academic.exam.col_exam": "الامتحان",
+  "academic.exam.col_total": "المجموع الكلي",
+  "academic.exam.col_percent": "النسبة المئوية",
+  "academic.exam.col_grade": "التقدير",
+  "academic.exam.col_position": "الترتيب",
+  "academic.exam.col_message": "الرسالة",
+  "academic.exam.col_result": "النتيجة",
+  "academic.exam.send_whatsapp": "إرسال عبر واتساب",
+  "academic.exam.no_phone": "لم يُسجَّل رقم الهاتف",
+
+  "academic.hifz.table_missing":
+    "لم يُنشأ جدول تقدم الحفظ بعد — نفّذ أولًا SQL المرحلة 38.",
+  "academic.hifz.empty":
+    "لم يُسجَّل أي تقدم بعد — أضف أول إدخال من الاستمارة أعلاه.",
+  "academic.hifz.col_portion": "الجزء",
+  "academic.hifz.col_quality": "الجودة",
+  "academic.hifz.col_listener": "المستمع",
+  "academic.hifz.col_action": "الإجراء",
+
+  "academic.admission.empty":
+    "لم تأتِ هذه الطالبة من سجل القبول — بل أُضيفت مباشرة.",
+  "academic.view_student": "عرض سجل الطالبة",
+
+  "exam.type.quarterly": "فصلي",
+  "exam.type.half_yearly": "نصف سنوي",
+  "exam.type.annual": "سنوي",
+  "exam.type.other": "أخرى",
+
+  "hifz.kind.sabaq": "السبق",
+  "hifz.kind.sabqi": "السبقي",
+  "hifz.kind.manzil": "المنزل",
+  "hifz.quality.excellent": "جيد",
+  "hifz.quality.good": "متوسط",
+  "hifz.quality.weak": "ضعيف",
+  "hifz.status.active": "نشط",
+  "hifz.status.voided": "ملغى",
+
+  "hifz.form.portion": "الجزء",
+  "hifz.form.portion_ph": "مثلًا الجزء 5 أو سورة يس",
+  "hifz.form.quality": "الجودة",
+  "hifz.form.listened_by": "المعلم المستمع",
+  "hifz.form.note": "ملاحظة",
+  "hifz.form.note_ph": "اختياري",
+  "hifz.form.no_teacher": "— لا أحد —",
+  "hifz.form.save": "حفظ التقدم",
+  "hifz.form.saved": "تم حفظ التقدم.",
+
+  "hifz.void.confirm": "هل أنت متأكد من الإلغاء؟",
+
+  "hifz.err.student_unknown": "لم تُعرف الطالبة.",
+  "hifz.err.date_invalid": "اكتب التاريخ الصحيح.",
+  "hifz.err.date_future": "لا يمكن أن يكون التاريخ بعد اليوم.",
+  "hifz.err.kind_invalid": "اختر النوع الصحيح (السبق أو السبقي أو المنزل).",
+  "hifz.err.portion_required": "كتابة الجزء إلزامية — مثلًا الجزء 5.",
+  "hifz.err.quality_invalid": "اختر الجودة الصحيحة (جيد أو متوسط أو ضعيف).",
+  "hifz.err.student_not_found": "لم تُعثر على الطالبة — انظر أولًا إلى سجل الطلاب.",
+  "hifz.err.not_hifz": "تقدم الحفظ مخصص لطالبات قسم الحفظ فقط.",
+  "hifz.err.section_denied": "ليس لديك إذن لتسجيل تقدم طالبة هذا القسم.",
+  "hifz.err.teacher_invalid": "اختر المعلم المستمع الصحيح.",
+  "hifz.err.save_failed": "تعذّر الحفظ. حاول مرة أخرى.",
+  "hifz.err.void_failed": "تعذّر الإلغاء. حاول مرة أخرى.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

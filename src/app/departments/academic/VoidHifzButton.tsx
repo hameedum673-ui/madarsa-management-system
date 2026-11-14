@@ -7,13 +7,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { voidHifzProgress } from "@/app/departments/academic/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export default function VoidHifzButton({
   id,
   studentId,
+  lang,
 }: {
   id: string;
   studentId: string;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -27,7 +30,7 @@ export default function VoidHifzButton({
     }
     setError("");
     setLoading(true);
-    const res = await voidHifzProgress(id, studentId);
+    const res = await voidHifzProgress(id, studentId, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
@@ -46,10 +49,10 @@ export default function VoidHifzButton({
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.wait")
           : confirming
-            ? "پکا منسوخ کریں؟"
-            : "منسوخ کریں"}
+            ? t(lang, "hifz.void.confirm")
+            : t(lang, "common.cancel")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </span>

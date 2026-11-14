@@ -9,10 +9,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   type DepartmentId,
   type Student,
 } from "@/lib/students";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -34,7 +35,10 @@ export default async function AcademicPage({
 
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
-  const allowedSections = await getMyAllowedSections(supabase);
+  const [allowedSections, lang] = await Promise.all([
+    getMyAllowedSections(supabase),
+    getMyLanguage(),
+  ]);
   let query = supabase
     .from("students")
     .select("*")
@@ -52,50 +56,52 @@ export default async function AcademicPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>تعلیمی ریکارڈ</h2>
+          <h2>{t(lang, "module.academic")}</h2>
           <span className="page-count">
-            کل: {students.length.toLocaleString("ur-PK")}
+            {t(lang, "students.count_total", {
+              n: students.length.toLocaleString("ur-PK"),
+            })}
           </span>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">شعبہ</span>
+            <span className="field-label">{t(lang, "col.dept")}</span>
             <select
               className="field-input"
               name="department"
               defaultValue={department}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {DEPARTMENT_IDS.map((d) => (
                 <option key={d} value={d}>
-                  {DEPARTMENT_LABELS[d]}
+                  {t(lang, `dept.${d}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : students.length === 0 ? (
           <p className="empty-state">
-            ابھی کوئی فعال طالبہ درج نہیں ہے۔
+            {t(lang, "academic.empty")}
           </p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>رجسٹریشن نمبر</th>
-                  <th>نام</th>
-                  <th>والد کا نام</th>
-                  <th>شعبہ</th>
-                  <th>جماعت</th>
-                  <th>داخلے کی تاریخ</th>
+                  <th>{t(lang, "col.reg")}</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "col.father")}</th>
+                  <th>{t(lang, "col.dept")}</th>
+                  <th>{t(lang, "col.class")}</th>
+                  <th>{t(lang, "student.detail.admission_date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -112,7 +118,7 @@ export default async function AcademicPage({
                       </Link>
                     </td>
                     <td>{s.father_name}</td>
-                    <td>{DEPARTMENT_LABELS[s.department]}</td>
+                    <td>{t(lang, `dept.${s.department}`)}</td>
                     <td>{s.class_name || "—"}</td>
                     <td>{formatDate(s.admission_date)}</td>
                   </tr>

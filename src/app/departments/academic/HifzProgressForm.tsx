@@ -7,13 +7,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
-import {
-  HIFZ_KINDS,
-  HIFZ_KIND_LABELS,
-  HIFZ_QUALITIES,
-  HIFZ_QUALITY_LABELS,
-} from "@/lib/hifz";
+import { HIFZ_KINDS, HIFZ_QUALITIES } from "@/lib/hifz";
 import { addHifzProgress } from "@/app/departments/academic/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export interface HifzTeacher {
   id: string;
@@ -25,9 +21,11 @@ export interface HifzTeacher {
 export default function HifzProgressForm({
   studentId,
   teachers,
+  lang,
 }: {
   studentId: string;
   teachers: HifzTeacher[];
+  lang: Lang;
 }) {
   const router = useRouter();
   const [progressDate, setProgressDate] = useState(todayInKarachi());
@@ -46,6 +44,7 @@ export default function HifzProgressForm({
     setSuccess("");
     setLoading(true);
     const formData = new FormData();
+    formData.set("lang", lang);
     formData.set("student_id", studentId);
     formData.set("progress_date", progressDate);
     formData.set("kind", kind);
@@ -59,7 +58,7 @@ export default function HifzProgressForm({
       setError(res.error);
       return;
     }
-    setSuccess("پیش رفت محفوظ ہو گئی ہے۔");
+    setSuccess(t(lang, "hifz.form.saved"));
     setPortion("");
     setNote("");
     router.refresh();
@@ -69,7 +68,7 @@ export default function HifzProgressForm({
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">تاریخ *</span>
+          <span className="field-label">{t(lang, "att.form.date")} *</span>
           <input
             className="field-input"
             type="date"
@@ -79,7 +78,7 @@ export default function HifzProgressForm({
           />
         </label>
         <label className="field">
-          <span className="field-label">قسم *</span>
+          <span className="field-label">{t(lang, "col.type")} *</span>
           <select
             className="field-input"
             value={kind}
@@ -88,25 +87,25 @@ export default function HifzProgressForm({
           >
             {HIFZ_KINDS.map((k) => (
               <option key={k} value={k}>
-                {HIFZ_KIND_LABELS[k]}
+                {t(lang, `hifz.kind.${k}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          <span className="field-label">حصہ *</span>
+          <span className="field-label">{t(lang, "hifz.form.portion")} *</span>
           <input
             className="field-input"
             type="text"
             value={portion}
             onChange={(e) => setPortion(e.target.value)}
             maxLength={200}
-            placeholder="مثلاً پارہ 5 یا سورۃ یٰسین"
+            placeholder={t(lang, "hifz.form.portion_ph")}
             required
           />
         </label>
         <label className="field">
-          <span className="field-label">کیفیت *</span>
+          <span className="field-label">{t(lang, "hifz.form.quality")} *</span>
           <select
             className="field-input"
             value={quality}
@@ -115,36 +114,36 @@ export default function HifzProgressForm({
           >
             {HIFZ_QUALITIES.map((q) => (
               <option key={q} value={q}>
-                {HIFZ_QUALITY_LABELS[q]}
+                {t(lang, `hifz.quality.${q}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          <span className="field-label">سننے والا استاد</span>
+          <span className="field-label">{t(lang, "hifz.form.listened_by")}</span>
           <select
             className="field-input"
             value={listenedBy}
             onChange={(e) => setListenedBy(e.target.value)}
           >
-            <option value="">— کوئی نہیں —</option>
-            {teachers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} — {t.father_name}
-                {t.position ? ` (${t.position})` : ""}
+            <option value="">{t(lang, "hifz.form.no_teacher")}</option>
+            {teachers.map((tr) => (
+              <option key={tr.id} value={tr.id}>
+                {tr.name} — {tr.father_name}
+                {tr.position ? ` (${tr.position})` : ""}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          <span className="field-label">نوٹ</span>
+          <span className="field-label">{t(lang, "hifz.form.note")}</span>
           <input
             className="field-input"
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={500}
-            placeholder="اختیاری"
+            placeholder={t(lang, "hifz.form.note_ph")}
           />
         </label>
       </div>
@@ -158,7 +157,7 @@ export default function HifzProgressForm({
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "پیش رفت محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "hifz.form.save")}
         </button>
       </div>
     </form>

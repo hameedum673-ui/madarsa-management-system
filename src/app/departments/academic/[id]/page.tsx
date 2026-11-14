@@ -12,28 +12,19 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
-import {
-  DEPARTMENT_LABELS,
-  STUDENT_STATUS_LABELS,
-  type Student,
-} from "@/lib/students";
-import {
-  ATTENDANCE_LABELS,
-  type AttendanceRecord,
-  type AttendanceStatus,
+import type { Student } from "@/lib/students";
+import type {
+  AttendanceRecord,
+  AttendanceStatus,
 } from "@/lib/attendance";
 import {
   summarizeExamResults,
   type Exam,
   type ExamResult,
-  examTypeLabel,
 } from "@/lib/exams";
-import {
-  HIFZ_KIND_LABELS,
-  HIFZ_PROGRESS_STATUS_LABELS,
-  HIFZ_QUALITY_LABELS,
-  type HifzProgress,
-} from "@/lib/hifz";
+import type { HifzProgress } from "@/lib/hifz";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import HifzProgressForm, {
   type HifzTeacher,
 } from "@/app/departments/academic/HifzProgressForm";
@@ -57,6 +48,7 @@ export default async function AcademicRecordPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
 
   const { data: studentData, error: studentError } = await supabase
     .from("students")
@@ -162,6 +154,8 @@ export default async function AcademicRecordPage({
     hifzTeachers = (teachersData ?? []) as HifzTeacher[];
   }
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -171,65 +165,65 @@ export default async function AcademicRecordPage({
           <span
             className={`badge${student.status === "withdrawn" ? " badge-withdrawn" : ""}`}
           >
-            {STUDENT_STATUS_LABELS[student.status]}
+            {t(lang, `student.status.${student.status}`)}
           </span>
         </div>
 
-        <h3 className="form-section-title">ذاتی تفصیل</h3>
+        <h3 className="form-section-title">{t(lang, "academic.sec.personal")}</h3>
         <div className="detail-rows">
           <div className="row">
-            <span>رجسٹریشن نمبر</span>
+            <span>{t(lang, "col.reg")}</span>
             <span>{student.registration_number}</span>
           </div>
           <div className="row">
-            <span>والد کا نام</span>
+            <span>{t(lang, "col.father")}</span>
             <span>{student.father_name}</span>
           </div>
           <div className="row">
-            <span>شعبہ</span>
-            <span>{DEPARTMENT_LABELS[student.department]}</span>
+            <span>{t(lang, "col.dept")}</span>
+            <span>{t(lang, `dept.${student.department}`)}</span>
           </div>
           <div className="row">
-            <span>جماعت</span>
+            <span>{t(lang, "col.class")}</span>
             <span>{student.class_name || "—"}</span>
           </div>
           <div className="row">
-            <span>داخلے کی تاریخ</span>
+            <span>{t(lang, "student.detail.admission_date")}</span>
             <span>{formatDate(student.admission_date)}</span>
           </div>
           <div className="row">
-            <span>سرپرست</span>
+            <span>{t(lang, "student.detail.guardian")}</span>
             <span>{student.guardian_name || "—"}</span>
           </div>
         </div>
 
-        <h3 className="form-section-title">حاضری کا خلاصہ</h3>
+        <h3 className="form-section-title">{t(lang, "academic.sec.attendance")}</h3>
         {attTotal === 0 ? (
-          <p className="empty-state">ابھی کوئی حاضری درج نہیں ہے۔</p>
+          <p className="empty-state">{t(lang, "academic.att.empty")}</p>
         ) : (
           <div className="detail-rows">
             <div className="row">
-              <span>کل دن</span>
+              <span>{t(lang, "academic.att.total_days")}</span>
               <span>{attTotal.toLocaleString("ur-PK")}</span>
             </div>
             <div className="row">
-              <span>{ATTENDANCE_LABELS.present}</span>
+              <span>{t(lang, "att.status.present")}</span>
               <span>{attCount.present.toLocaleString("ur-PK")}</span>
             </div>
             <div className="row">
-              <span>{ATTENDANCE_LABELS.late}</span>
+              <span>{t(lang, "att.status.late")}</span>
               <span>{attCount.late.toLocaleString("ur-PK")}</span>
             </div>
             <div className="row">
-              <span>{ATTENDANCE_LABELS.absent}</span>
+              <span>{t(lang, "att.status.absent")}</span>
               <span>{attCount.absent.toLocaleString("ur-PK")}</span>
             </div>
             <div className="row">
-              <span>{ATTENDANCE_LABELS.leave}</span>
+              <span>{t(lang, "att.status.leave")}</span>
               <span>{attCount.leave.toLocaleString("ur-PK")}</span>
             </div>
             <div className="row">
-              <span>حاضری کا فیصد (حاضر + تاخیر)</span>
+              <span>{t(lang, "academic.att.percentage")}</span>
               <span>
                 {attPercentage === null
                   ? "—"
@@ -239,22 +233,22 @@ export default async function AcademicRecordPage({
           </div>
         )}
 
-        <h3 className="form-section-title">امتحانات</h3>
+        <h3 className="form-section-title">{t(lang, "academic.sec.exams")}</h3>
         {examRows.length === 0 ? (
-          <p className="empty-state">ابھی کوئی امتحان نہیں دیا۔</p>
+          <p className="empty-state">{t(lang, "academic.exams.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>امتحان</th>
-                  <th>تاریخ</th>
-                  <th>کل نمبر</th>
-                  <th>فیصد</th>
-                  <th>درجہ</th>
-                  <th>پوزیشن</th>
-                  <th>پیغام</th>
-                  <th>نتیجہ</th>
+                  <th>{t(lang, "academic.exam.col_exam")}</th>
+                  <th>{t(lang, "att.form.date")}</th>
+                  <th>{t(lang, "academic.exam.col_total")}</th>
+                  <th>{t(lang, "academic.exam.col_percent")}</th>
+                  <th>{t(lang, "academic.exam.col_grade")}</th>
+                  <th>{t(lang, "academic.exam.col_position")}</th>
+                  <th>{t(lang, "academic.exam.col_message")}</th>
+                  <th>{t(lang, "academic.exam.col_result")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -284,7 +278,7 @@ export default async function AcademicRecordPage({
                           {exam.name}
                         </Link>
                         {exam.exam_type
-                          ? ` (${examTypeLabel(exam.exam_type)})`
+                          ? ` (${t(lang, `exam.type.${exam.exam_type}`)})`
                           : ""}
                       </td>
                       <td>{formatDate(exam.exam_date)}</td>
@@ -313,10 +307,10 @@ export default async function AcademicRecordPage({
                               target="_blank"
                               rel="noreferrer"
                             >
-                              WhatsApp پر بھیجیں
+                              {t(lang, "academic.exam.send_whatsapp")}
                             </a>
                           ) : (
-                            "فون نمبر درج نہیں ہے"
+                            t(lang, "academic.exam.no_phone")
                           )
                         ) : (
                           "—"
@@ -327,7 +321,7 @@ export default async function AcademicRecordPage({
                           <Link
                             href={`/departments/exams/${exam.id}/result/${id}`}
                           >
-                            دیکھیں
+                            {t(lang, "common.view")}
                           </Link>
                         ) : (
                           "—"
@@ -343,39 +337,39 @@ export default async function AcademicRecordPage({
 
         {student.department === "hifz" ? (
           <>
-            <h3 className="form-section-title">حفظ کی پیش رفت</h3>
+            <h3 className="form-section-title">{t(lang, "academic.sec.hifz")}</h3>
             {hifzTableMissing ? (
               <p className="empty-state">
-                حفظ کی پیش رفت کی میز ابھی نہیں بنی — پہلے مرحلہ 38 کی SQL چلائیں۔
+                {t(lang, "academic.hifz.table_missing")}
               </p>
             ) : (
               <>
-                <HifzProgressForm studentId={student.id} teachers={hifzTeachers} />
+                <HifzProgressForm studentId={student.id} teachers={hifzTeachers} lang={lang} />
                 {hifzRows.length === 0 ? (
                   <p className="empty-state">
-                    ابھی کوئی پیش رفت درج نہیں ہے — اوپر والے فارم سے پہلا اندراج شامل کریں۔
+                    {t(lang, "academic.hifz.empty")}
                   </p>
                 ) : (
                   <div className="tbl-wrap">
                     <table className="tbl">
                       <thead>
                         <tr>
-                          <th>تاریخ</th>
-                          <th>قسم</th>
-                          <th>حصہ</th>
-                          <th>کیفیت</th>
-                          <th>سننے والا</th>
-                          <th>حالت</th>
-                          <th>کارروائی</th>
+                          <th>{t(lang, "att.form.date")}</th>
+                          <th>{t(lang, "col.type")}</th>
+                          <th>{t(lang, "academic.hifz.col_portion")}</th>
+                          <th>{t(lang, "academic.hifz.col_quality")}</th>
+                          <th>{t(lang, "academic.hifz.col_listener")}</th>
+                          <th>{t(lang, "col.status")}</th>
+                          <th>{t(lang, "academic.hifz.col_action")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {hifzRows.map((r) => (
                           <tr key={r.id}>
                             <td>{formatDate(r.progress_date)}</td>
-                            <td>{HIFZ_KIND_LABELS[r.kind]}</td>
+                            <td>{t(lang, `hifz.kind.${r.kind}`)}</td>
                             <td>{r.portion}</td>
-                            <td>{HIFZ_QUALITY_LABELS[r.quality]}</td>
+                            <td>{t(lang, `hifz.quality.${r.quality}`)}</td>
                             <td>
                               {r.teachers
                                 ? `${r.teachers.name} — ${r.teachers.father_name}`
@@ -385,7 +379,7 @@ export default async function AcademicRecordPage({
                               <span
                                 className={`badge${r.status === "voided" ? " badge-withdrawn" : ""}`}
                               >
-                                {HIFZ_PROGRESS_STATUS_LABELS[r.status]}
+                                {t(lang, `hifz.status.${r.status}`)}
                               </span>
                             </td>
                             <td>
@@ -393,6 +387,7 @@ export default async function AcademicRecordPage({
                                 <VoidHifzButton
                                   id={r.id}
                                   studentId={student.id}
+                                  lang={lang}
                                 />
                               ) : (
                                 "—"
@@ -409,27 +404,27 @@ export default async function AcademicRecordPage({
           </>
         ) : null}
 
-        <h3 className="form-section-title">داخلہ</h3>
+        <h3 className="form-section-title">{t(lang, "academic.sec.admission")}</h3>
         {admission ? (
           <div className="detail-rows">
             <div className="row">
-              <span>داخلے کی تاریخ</span>
+              <span>{t(lang, "student.detail.admission_date")}</span>
               <span>{formatDate(admission.admission_date)}</span>
             </div>
             <div className="row">
-              <span>پچھلا مدرسہ</span>
+              <span>{t(lang, "admission.detail.prev_madrasa")}</span>
               <span>{admission.previous_madrasa || "—"}</span>
             </div>
           </div>
         ) : (
           <p className="empty-state">
-            یہ طالبہ داخلے کے ریکارڈ سے نہیں آئی — براہِ راست شامل کی گئی تھی۔
+            {t(lang, "academic.admission.empty")}
           </p>
         )}
 
         <div className="form-actions">
           <Link className="btn-ghost" href={`/departments/students/${student.id}`}>
-            طالبہ کا ریکارڈ دیکھیں
+            {t(lang, "academic.view_student")}
           </Link>
         </div>
 

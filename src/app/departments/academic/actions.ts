@@ -10,7 +10,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
   isModuleAllowedForMe,
-  MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
 import { getMyMadrasa,
   type SectionId,
@@ -22,6 +21,14 @@ import {
   type HifzKind,
   type HifzQuality,
 } from "@/lib/hifz";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
+
+/** مرحلہ 107 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -45,9 +52,10 @@ interface HifzFields {
   note: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
+  lang: Lang,
 ): { fields: HifzFields } | { error: string } {
   const studentId = clean(formData.get("student_id"), 100);
   const progressDate = clean(formData.get("progress_date"), 10);
@@ -57,16 +65,16 @@ function validateFields(
   const listenedBy = clean(formData.get("listened_by"), 100);
   const note = clean(formData.get("note"), 500);
 
-  if (!studentId) return { error: "طالبہ معلوم نہیں ہوئی۔" };
+  if (!studentId) return { error: t(lang, "hifz.err.student_unknown") };
   if (!isValidDate(progressDate))
-    return { error: "تاریخ درست لکھیں۔" };
+    return { error: t(lang, "hifz.err.date_invalid") };
   if (progressDate > todayInKarachi())
-    return { error: "تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "hifz.err.date_future") };
   if (!HIFZ_KINDS.includes(kind as HifzKind))
-    return { error: "قسم درست منتخب کریں (سبق، سبقی یا منزل)۔" };
-  if (!portion) return { error: "حصہ لکھنا ضروری ہے — مثلاً پارہ 5۔" };
+    return { error: t(lang, "hifz.err.kind_invalid") };
+  if (!portion) return { error: t(lang, "hifz.err.portion_required") };
   if (!HIFZ_QUALITIES.includes(quality as HifzQuality))
-    return { error: "کیفیت درست منتخب کریں (اچھا، اوسط یا کمزور)۔" };
+    return { error: t(lang, "hifz.err.quality_invalid") };
 
   return {
     fields: {
@@ -105,15 +113,16 @@ async function writeAudit(
 export async function addHifzProgress(
   formData: FormData,
 ): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "academic"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // طالبہ اپنے مدرسے کی فعال اور حفظ شعبے کی ہونی چاہیے
@@ -124,10 +133,10 @@ export async function addHifzProgress(
     .eq("status", "active")
     .single();
   if (!student) {
-    return { error: "طالبہ نہیں ملی — پہلے طلبہ کے ریکارڈ میں دیکھیں۔" };
+    return { error: t(lang, "hifz.err.student_not_found") };
   }
   if (student.department !== "hifz") {
-    return { error: "حفظ کی پیش رفت صرف حفظ شعبے کی طالبات کے لیے ہے۔" };
+    return { error: t(lang, "hifz.err.not_hifz") };
   }
   // مرحلہ 54 — بند شعبے کی طالبہ کی پیش رفت درج نہیں ہو سکے گی
   const allowedSections = await getMyAllowedSections(supabase);
@@ -136,7 +145,7 @@ export async function addHifzProgress(
       ((student as { section?: string | null }).section ?? "banat") as SectionId,
     )
   )
-    return { error: "اس شعبے کی طالبہ کی پیش رفت درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "hifz.err.section_denied") };
 
   // سننے والا استاد دیا ہو تو وہ اپنے مدرسے کا فعال استاد ہونا چاہیے
   if (f.listenedBy) {
@@ -147,7 +156,7 @@ export async function addHifzProgress(
       .eq("status", "active")
       .single();
     if (!teacher) {
-      return { error: "سننے والا استاد درست منتخب کریں۔" };
+      return { error: t(lang, "hifz.err.teacher_invalid") };
     }
   }
 
@@ -169,7 +178,7 @@ export async function addHifzProgress(
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "hifz.err.save_failed") };
   }
 
   await writeAudit(
@@ -193,12 +202,13 @@ export async function addHifzProgress(
 export async function voidHifzProgress(
   id: string,
   studentId: string,
+  lang: Lang = "ur",
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "academic"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -211,7 +221,7 @@ export async function voidHifzProgress(
     .single();
 
   if (error || !data) {
-    return { error: "منسوخ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "hifz.err.void_failed") };
   }
 
   await writeAudit(
