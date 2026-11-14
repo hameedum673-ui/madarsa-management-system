@@ -73,13 +73,14 @@
   .topbar .spacer{flex:1;order:3}
   .datebox{order:2;text-align:center;color:#dbe7f5;font-size:.86rem;line-height:1.5}
   .datebox .hijri{color:var(--gold);font-weight:600}
+  /* مرحلہ 99 — گھنٹی پروفائل بٹن سے چھوٹی (36px) */
   .icon-btn{
-    position:relative;width:42px;height:42px;border-radius:50%;
+    position:relative;width:36px;height:36px;border-radius:50%;
     border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);
     color:#fff;display:flex;align-items:center;justify-content:center;
   }
   .icon-btn:hover{background:rgba(255,255,255,.18)}
-  .icon-btn svg{width:20px;height:20px}
+  .icon-btn svg{width:18px;height:18px}
   /* مرحلہ 32 — گھنٹی پر فعال اطلاعات کی تعداد کا نشان */
   .bell-count{
     position:absolute;top:-4px;inset-inline-start:-4px;min-width:18px;height:18px;
@@ -90,19 +91,22 @@
   .dropdown .dd-notice-title{font-weight:700;font-size:.9rem}
   .dropdown .dd-notice-meta{font-size:.75rem;color:var(--muted)}
   /* مرحلہ 98 — صارف کا بٹن اب صرف گول دائرہ ہے (نام/عہدہ نہیں) */
+  /* مرحلہ 99 — بٹن بڑا (56px) تاکہ تصویر صاف دکھے */
   .userchip{
     display:flex;align-items:center;justify-content:center;
-    width:44px;height:44px;padding:0;background:rgba(255,255,255,.08);
+    width:56px;height:56px;padding:0;background:rgba(255,255,255,.08);
     border:1px solid rgba(255,255,255,.25);border-radius:50%;
     color:#fff;flex:0 0 auto;
   }
   .avatar{
-    width:34px;height:34px;border-radius:50%;background:var(--gold);color:#231a02;
-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex:0 0 auto;overflow:hidden;
+    width:46px;height:46px;border-radius:50%;background:var(--gold);color:#231a02;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.25rem;flex:0 0 auto;overflow:hidden;
   }
   .avatar img{width:100%;height:100%;object-fit:cover;display:block}
   /* مرحلہ 98 — پروفائل صفحے پر لوگو کا بڑا گول نمونہ */
   .logo-preview{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);display:block}
+  /* مرحلہ 99 — کاٹنے والی اسکرین کا ڈبہ (گول دائرہ) */
+  .crop-wrap{position:relative;width:100%;height:320px;background:#0c2745;border-radius:12px;overflow:hidden;margin-top:12px}
   .logo-preview-letter{width:96px;height:96px;border-radius:50%;background:var(--gold);color:#231a02;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:2rem}
   .menu-wrap{position:relative}
   .topbar-actions{display:flex;align-items:center;gap:14px;margin-inline-start:auto;order:4}
@@ -222,12 +226,14 @@
     .logo img{width:24px;height:24px}
     .brand h1{font-size:.92rem;white-space:normal;line-height:2}
     .brand .sysname{font-size:.66rem;margin-top:-2px}
-    .datebox{order:5;width:100%;text-align:right;font-size:.76rem;display:flex;gap:10px;flex-wrap:wrap}
+    /* مرحلہ 99 — موبائل پر تاریخ اور بٹن ایک ہی قطار میں: تاریخ
+       دائیں، بٹن بائیں، بیچ میں سیدھے */
+    .datebox{order:4;flex:1 1 auto;width:auto;text-align:right;font-size:.76rem;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     header.topbar{padding:9px 12px;gap:8px}
-    .topbar-actions{gap:8px}
-    .userchip{width:38px;height:38px;padding:0}
-    .avatar{width:28px;height:28px;font-size:.85rem}
-    .icon-btn{width:36px;height:36px}
+    .topbar-actions{gap:8px;order:5}
+    .userchip{width:52px;height:52px;padding:0}
+    .avatar{width:42px;height:42px;font-size:1.1rem}
+    .icon-btn{width:32px;height:32px}
     .stat{flex-direction:column;padding:7px 3px;gap:2px;text-align:center}
     .stat>div{text-align:center}
     .stat .sic{width:28px;height:28px;border-radius:8px}

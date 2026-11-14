@@ -4,7 +4,8 @@
     "@supabase/supabase-js": "^2.119.0",
     "next": "^15.5.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-easy-crop": "^6.2.5"
   },
   "description": "جامع مدرسہ مینجمنٹ سسٹم — مین ڈیش بورڈ (Next.js + TypeScript)",
   "devDependencies": {
