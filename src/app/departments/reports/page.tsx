@@ -59,10 +59,69 @@ export default async function ReportsPage({
   const monthStart = `${month}-01`;
   const monthEnd = nextMonthStart(month);
 
+  // مرحلہ 93 — 13 سوال ایک ساتھ (پہلے ایک کے بعد ایک پوچھے جاتے تھے —
+  // اسی لیے یہ صفحہ سست تھا)۔ حساب، فلٹر اور غلطی کی جانچ ویسے ہی ہیں۔
+  const [
+    { data: studentsData, error: studentsError },
+    { data: teachersData, error: teachersError },
+    { data: staffData, error: staffError },
+    { data: attStudentsData, error: attStudentsError },
+    { data: attTeachersData, error: attTeachersError },
+    { data: examsData, error: examsError },
+    { data: resultsData, error: resultsError },
+    { data: feesData, error: feesError },
+    { data: donationsData, error: donationsError },
+    { data: expensesData, error: expensesError },
+    { data: zakatData, error: zakatError },
+    { data: noticesData, error: noticesError },
+    { data: documentsData, error: documentsError },
+  ] = await Promise.all([
+    supabase.from("students").select("department, status, section"),
+    supabase.from("teachers").select("status, section"),
+    supabase.from("staff").select("status, section"),
+    supabase
+      .from("student_attendance")
+      .select("status, students(section)")
+      .eq("date", today),
+    supabase
+      .from("teacher_attendance")
+      .select("status, teachers(section)")
+      .eq("date", today),
+    supabase
+      .from("exams")
+      .select("id, name, exam_date, section")
+      .order("exam_date", { ascending: false }),
+    supabase
+      .from("exam_results")
+      .select("exam_id, student_id, students(section)"),
+    supabase
+      .from("fee_payments")
+      .select("amount, students(section)")
+      .eq("fee_month", month)
+      .eq("status", "active"),
+    supabase
+      .from("donations")
+      .select("amount, section")
+      .gte("donation_date", monthStart)
+      .lt("donation_date", monthEnd)
+      .eq("status", "active"),
+    supabase
+      .from("expenses")
+      .select("amount, section")
+      .gte("expense_date", monthStart)
+      .lt("expense_date", monthEnd)
+      .eq("status", "active"),
+    supabase
+      .from("zakat_records")
+      .select("kind, amount, section")
+      .gte("record_date", monthStart)
+      .lt("record_date", monthEnd)
+      .eq("status", "active"),
+    supabase.from("notices").select("status"),
+    supabase.from("documents").select("status, expiry_date"),
+  ]);
+
   // طلبہ — شعبہ وار + حالت
-  const { data: studentsData, error: studentsError } = await supabase
-    .from("students")
-    .select("department, status, section");
   const students = ((studentsData ?? []) as {
     department: DepartmentId;
     status: string;
@@ -74,18 +133,12 @@ export default async function ReportsPage({
   const studentsWithdrawn = students.filter((s) => s.status === "withdrawn");
 
   // اساتذہ اور عملہ
-  const { data: teachersData, error: teachersError } = await supabase
-    .from("teachers")
-    .select("status, section");
   const teachers = ((teachersData ?? []) as {
     status: string;
     section: string;
   }[]).filter((t) =>
     effectiveSections.has((t.section ?? "banat") as SectionId),
   );
-  const { data: staffData, error: staffError } = await supabase
-    .from("staff")
-    .select("status, section");
   const staff = ((staffData ?? []) as {
     status: string;
     section: string;
@@ -94,20 +147,12 @@ export default async function ReportsPage({
   );
 
   // آج کی حاضری — طلبہ + اساتذہ
-  const { data: attStudentsData, error: attStudentsError } = await supabase
-    .from("student_attendance")
-    .select("status, students(section)")
-    .eq("date", today);
   const attStudents = ((attStudentsData ?? []) as unknown as {
     status: string;
     students: { section: string } | null;
   }[]).filter((r) =>
     effectiveSections.has((r.students?.section ?? "banat") as SectionId),
   );
-  const { data: attTeachersData, error: attTeachersError } = await supabase
-    .from("teacher_attendance")
-    .select("status, teachers(section)")
-    .eq("date", today);
   const attTeachers = ((attTeachersData ?? []) as unknown as {
     status: string;
     teachers: { section: string } | null;
@@ -116,10 +161,6 @@ export default async function ReportsPage({
   );
 
   // امتحانات — ہر امتحان کے شرکاء
-  const { data: examsData, error: examsError } = await supabase
-    .from("exams")
-    .select("id, name, exam_date, section")
-    .order("exam_date", { ascending: false });
   const exams = ((examsData ?? []) as {
     id: string;
     name: string;
@@ -128,9 +169,6 @@ export default async function ReportsPage({
   }[]).filter((e) =>
     effectiveSections.has((e.section ?? "banat") as SectionId),
   );
-  const { data: resultsData, error: resultsError } = await supabase
-    .from("exam_results")
-    .select("exam_id, student_id, students(section)");
   const results = ((resultsData ?? []) as unknown as {
     exam_id: string;
     student_id: string;
@@ -140,23 +178,12 @@ export default async function ReportsPage({
   );
 
   // اس مہینے کا مالی خلاصہ
-  const { data: feesData, error: feesError } = await supabase
-    .from("fee_payments")
-    .select("amount, students(section)")
-    .eq("fee_month", month)
-    .eq("status", "active");
   const fees = ((feesData ?? []) as unknown as {
     amount: number;
     students: { section: string } | null;
   }[]).filter((f) =>
     effectiveSections.has((f.students?.section ?? "banat") as SectionId),
   );
-  const { data: donationsData, error: donationsError } = await supabase
-    .from("donations")
-    .select("amount, section")
-    .gte("donation_date", monthStart)
-    .lt("donation_date", monthEnd)
-    .eq("status", "active");
   // مرحلہ 62 — عطیات بھی چنے ہوئے شعبے کے
   const donations = ((donationsData ?? []) as {
     amount: number;
@@ -164,12 +191,6 @@ export default async function ReportsPage({
   }[]).filter((d) =>
     effectiveSections.has((d.section ?? "banat") as SectionId),
   );
-  const { data: expensesData, error: expensesError } = await supabase
-    .from("expenses")
-    .select("amount, section")
-    .gte("expense_date", monthStart)
-    .lt("expense_date", monthEnd)
-    .eq("status", "active");
   // مرحلہ 62 — اخراجات بھی چنے ہوئے شعبے کے
   const expenses = ((expensesData ?? []) as {
     amount: number;
@@ -177,12 +198,6 @@ export default async function ReportsPage({
   }[]).filter((e) =>
     effectiveSections.has((e.section ?? "banat") as SectionId),
   );
-  const { data: zakatData, error: zakatError } = await supabase
-    .from("zakat_records")
-    .select("kind, amount, section")
-    .gte("record_date", monthStart)
-    .lt("record_date", monthEnd)
-    .eq("status", "active");
   // مرحلہ 62 — زکوٰۃ بھی چنے ہوئے شعبے کی
   const zakat = ((zakatData ?? []) as {
     kind: string;
@@ -193,13 +208,7 @@ export default async function ReportsPage({
   );
 
   // اطلاعات اور دستاویزات
-  const { data: noticesData, error: noticesError } = await supabase
-    .from("notices")
-    .select("status");
   const notices = (noticesData ?? []) as { status: string }[];
-  const { data: documentsData, error: documentsError } = await supabase
-    .from("documents")
-    .select("status, expiry_date");
   const documents = (documentsData ?? []) as {
     status: string;
     expiry_date: string | null;
