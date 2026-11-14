@@ -7,9 +7,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 import {
   BORROWER_TYPES,
-  BORROWER_TYPE_LABELS,
   type BorrowerRef,
   type BorrowerType,
 } from "@/lib/library";
@@ -27,6 +27,7 @@ export default function IssueForm({
   teachers,
   staff,
   action,
+  lang,
 }: {
   bookId: string;
   bookTitle: string;
@@ -35,6 +36,7 @@ export default function IssueForm({
   teachers: BorrowerRef[];
   staff: BorrowerRef[];
   action: IssueAction;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [borrowerType, setBorrowerType] = useState<BorrowerType>("student");
@@ -65,10 +67,15 @@ export default function IssueForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3 className="form-section-title">کتاب دیں — {bookTitle}</h3>
+      <input type="hidden" name="lang" value={lang} />
+      <h3 className="form-section-title">
+        {t(lang, "library.issue_title", { title: bookTitle })}
+      </h3>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">لینے والا کون ہے؟ *</span>
+          <span className="field-label">
+            {t(lang, "library.issue_form.borrower_type")}
+          </span>
           <select
             className="field-input"
             name="borrower_type"
@@ -77,18 +84,20 @@ export default function IssueForm({
               setBorrowerType(e.target.value as BorrowerType)
             }
           >
-            {BORROWER_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {BORROWER_TYPE_LABELS[t]}
+            {BORROWER_TYPES.map((tr) => (
+              <option key={tr} value={tr}>
+                {t(lang, `library.borrower.${tr}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">نام چنیں *</span>
+          <span className="field-label">
+            {t(lang, "library.issue_form.borrower")}
+          </span>
           <select className="field-input" name="borrower_id" required>
-            <option value="">— منتخب کریں —</option>
+            <option value="">{t(lang, "library.issue_form.select")}</option>
             {people.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -99,7 +108,9 @@ export default function IssueForm({
         </label>
 
         <label className="field">
-          <span className="field-label">دینے کی تاریخ *</span>
+          <span className="field-label">
+            {t(lang, "library.issue_form.issued_at")}
+          </span>
           <input
             className="field-input"
             type="date"
@@ -110,14 +121,16 @@ export default function IssueForm({
         </label>
 
         <label className="field">
-          <span className="field-label">واپسی کی متوقع تاریخ (اختیاری)</span>
+          <span className="field-label">
+            {t(lang, "library.issue_form.due_date")}
+          </span>
           <input className="field-input" type="date" name="due_date" />
         </label>
       </div>
 
       {people.length === 0 ? (
         <p className="empty-state">
-          اس قسم کا کوئی فعال ریکارڈ نہیں ہے — پہلے {BORROWER_TYPE_LABELS[borrowerType] === "طالبہ" ? "طلبہ کے ریکارڈ" : BORROWER_TYPE_LABELS[borrowerType] === "استاد" ? "اساتذہ کے ریکارڈ" : "عملے کے ریکارڈ"} میں شامل کریں۔
+          {t(lang, `library.issue_form.no_people.${borrowerType}`)}
         </p>
       ) : null}
 
@@ -129,7 +142,7 @@ export default function IssueForm({
           type="submit"
           disabled={loading || people.length === 0}
         >
-          {loading ? "براہِ کرم انتظار کریں…" : "کتاب دیں"}
+          {loading ? t(lang, "common.wait") : t(lang, "library.issue")}
         </button>
       </div>
     </form>

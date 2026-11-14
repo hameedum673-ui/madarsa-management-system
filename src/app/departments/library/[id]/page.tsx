@@ -9,10 +9,9 @@ import BookForm from "@/app/departments/library/BookForm";
 import ArchiveButton from "@/app/departments/library/ArchiveButton";
 import { updateBook } from "@/app/departments/library/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import {
-  BOOK_CATEGORY_LABELS,
-  BOOK_STATUS_LABELS,
-  BORROWER_TYPE_LABELS,
   countActiveIssues,
   resolveBorrowerNames,
   type LibraryBook,
@@ -26,11 +25,13 @@ export default async function BookDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data, error } = await supabase
     .from("library_books")
     .select("*")
     .eq("id", id)
     .single();
+  const lang = await langP;
 
   if ((error as { code?: string } | null)?.code === "42P01") {
     return (
@@ -38,11 +39,9 @@ export default async function BookDetailPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/library" />
-            <h2>کتاب کی تفصیل</h2>
+            <h2>{t(lang, "library.detail_title")}</h2>
           </div>
-          <p className="empty-state">
-            لائبریری کی میز ابھی نہیں بنی — پہلے مرحلہ 100 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "library.table_missing")}</p>
         </div>
       </div>
     );
@@ -85,37 +84,37 @@ export default async function BookDetailPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/library" />
-          <h2>کتاب کی تفصیل</h2>
+          <h2>{t(lang, "library.detail_title")}</h2>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>کتاب کا نام</span>
+            <span>{t(lang, "library.col.title")}</span>
             <strong>{book.title}</strong>
           </div>
           <div className="row">
-            <span>مصنف</span>
+            <span>{t(lang, "library.col.author")}</span>
             <strong>{book.author ?? "—"}</strong>
           </div>
           <div className="row">
-            <span>قسم</span>
-            <strong>{BOOK_CATEGORY_LABELS[book.category]}</strong>
+            <span>{t(lang, "col.type")}</span>
+            <strong>{t(lang, `library.cat.${book.category}`)}</strong>
           </div>
           <div className="row">
-            <span>تعداد</span>
+            <span>{t(lang, "library.col.quantity")}</span>
             <strong>{book.quantity}</strong>
           </div>
           <div className="row">
-            <span>دستیاب</span>
+            <span>{t(lang, "library.col.available")}</span>
             <strong>{issuesMissing ? "—" : available}</strong>
           </div>
           <div className="row">
-            <span>الماری/جگہ</span>
+            <span>{t(lang, "library.col.shelf")}</span>
             <strong>{book.shelf ?? "—"}</strong>
           </div>
           <div className="row">
-            <span>حالت</span>
-            <strong>{BOOK_STATUS_LABELS[book.status]}</strong>
+            <span>{t(lang, "col.status")}</span>
+            <strong>{t(lang, `library.status.${book.status}`)}</strong>
           </div>
         </div>
 
@@ -125,21 +124,23 @@ export default async function BookDetailPage({
               className="btn-primary"
               href={`/departments/library/${book.id}/issue`}
             >
-              کتاب دیں
+              {t(lang, "library.issue")}
             </Link>
-            <ArchiveButton id={book.id} />
+            <ArchiveButton id={book.id} lang={lang} />
           </div>
         ) : null}
 
         {activeIssues.length > 0 ? (
           <>
-            <h3 className="form-section-title">ابھی کس کے پاس ہے</h3>
+            <h3 className="form-section-title">
+              {t(lang, "library.borrowers_now")}
+            </h3>
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>نام</th>
-                  <th>دینے کی تاریخ</th>
-                  <th>واپسی کی تاریخ</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "library.col.issued_at")}</th>
+                  <th>{t(lang, "library.col.due_date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,8 +150,8 @@ export default async function BookDetailPage({
                     <tr key={issue.id}>
                       <td>
                         {person
-                          ? `${person.name} (${BORROWER_TYPE_LABELS[issue.borrower_type]}${person.detail ? ` — ${person.detail}` : ""})`
-                          : BORROWER_TYPE_LABELS[issue.borrower_type]}
+                          ? `${person.name} (${t(lang, `library.borrower.${issue.borrower_type}`)}${person.detail ? ` — ${person.detail}` : ""})`
+                          : t(lang, `library.borrower.${issue.borrower_type}`)}
                       </td>
                       <td>{issue.issued_at}</td>
                       <td>{issue.due_date ?? "—"}</td>
@@ -166,6 +167,7 @@ export default async function BookDetailPage({
           book={book}
           action={updateBook}
           detailId={`/departments/library/${book.id}`}
+          lang={lang}
         />
       </div>
     </div>

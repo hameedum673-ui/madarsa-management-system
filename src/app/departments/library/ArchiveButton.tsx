@@ -6,9 +6,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 import { archiveBook } from "@/app/departments/library/actions";
 
-export default function ArchiveButton({ id }: { id: string }) {
+export default function ArchiveButton({
+  id,
+  lang,
+}: {
+  id: string;
+  lang: Lang;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +28,7 @@ export default function ArchiveButton({ id }: { id: string }) {
     }
     setError("");
     setLoading(true);
-    const res = await archiveBook(id);
+    const res = await archiveBook(id, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
@@ -40,10 +47,10 @@ export default function ArchiveButton({ id }: { id: string }) {
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.wait")
           : confirming
-            ? "پکا محفوظ کریں؟"
-            : "محفوظ کریں"}
+            ? t(lang, "library.archive.confirm")
+            : t(lang, "library.archive")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </span>

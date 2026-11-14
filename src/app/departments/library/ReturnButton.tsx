@@ -6,9 +6,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 import { returnBook } from "@/app/departments/library/actions";
 
-export default function ReturnButton({ id }: { id: string }) {
+export default function ReturnButton({
+  id,
+  lang,
+}: {
+  id: string;
+  lang: Lang;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +28,7 @@ export default function ReturnButton({ id }: { id: string }) {
     }
     setError("");
     setLoading(true);
-    const res = await returnBook(id);
+    const res = await returnBook(id, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
@@ -40,10 +47,10 @@ export default function ReturnButton({ id }: { id: string }) {
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.wait")
           : confirming
-            ? "پکا واپس آ گئی؟"
-            : "واپس آ گئی"}
+            ? t(lang, "library.return.confirm")
+            : t(lang, "library.return")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </span>

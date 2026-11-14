@@ -6,10 +6,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 import {
   BOOK_CATEGORIES,
-  BOOK_CATEGORY_LABELS,
-  BOOK_STATUS_LABELS,
   type LibraryBook,
 } from "@/lib/library";
 
@@ -24,10 +23,12 @@ export default function BookForm({
   book,
   action,
   detailId,
+  lang,
 }: {
   book?: LibraryBook;
   action: FormAction;
   detailId?: string;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -56,33 +57,40 @@ export default function BookForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <h3 className="form-section-title">
-        {isEdit ? "کتاب تبدیل کریں" : "نئی کتاب لکھیں"}
+        {isEdit
+          ? t(lang, "library.form.edit_title")
+          : t(lang, "library.add")}
       </h3>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">کتاب کا نام *</span>
+          <span className="field-label">{t(lang, "library.form.title")}</span>
           <input
             className="field-input"
             name="title"
             defaultValue={book?.title ?? ""}
-            placeholder="مثلاً تفسیر ابن کثیر"
+            placeholder={t(lang, "library.form.title_ph")}
             required
           />
         </label>
 
         <label className="field">
-          <span className="field-label">مصنف</span>
+          <span className="field-label">
+            {t(lang, "library.form.author")}
+          </span>
           <input
             className="field-input"
             name="author"
             defaultValue={book?.author ?? ""}
-            placeholder="مثلاً ابن کثیر"
+            placeholder={t(lang, "library.form.author_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">قسم *</span>
+          <span className="field-label">
+            {t(lang, "library.form.category")}
+          </span>
           <select
             className="field-input"
             name="category"
@@ -90,14 +98,16 @@ export default function BookForm({
           >
             {BOOK_CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {BOOK_CATEGORY_LABELS[c]}
+                {t(lang, `library.cat.${c}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">تعداد</span>
+          <span className="field-label">
+            {t(lang, "library.form.quantity")}
+          </span>
           <input
             className="field-input"
             type="number"
@@ -109,25 +119,33 @@ export default function BookForm({
         </label>
 
         <label className="field">
-          <span className="field-label">الماری/جگہ</span>
+          <span className="field-label">
+            {t(lang, "library.form.shelf")}
+          </span>
           <input
             className="field-input"
             name="shelf"
             defaultValue={book?.shelf ?? ""}
-            placeholder="مثلاً الماری 1"
+            placeholder={t(lang, "library.form.shelf_ph")}
           />
         </label>
 
         {isEdit ? (
           <label className="field">
-            <span className="field-label">حالت *</span>
+            <span className="field-label">
+              {t(lang, "library.form.status")}
+            </span>
             <select
               className="field-input"
               name="status"
               defaultValue={book?.status ?? "active"}
             >
-              <option value="active">{BOOK_STATUS_LABELS.active}</option>
-              <option value="archived">{BOOK_STATUS_LABELS.archived}</option>
+              <option value="active">
+                {t(lang, "library.status.active")}
+              </option>
+              <option value="archived">
+                {t(lang, "library.status.archived")}
+              </option>
             </select>
           </label>
         ) : null}
@@ -138,10 +156,10 @@ export default function BookForm({
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
           {loading
-            ? "براہِ کرم انتظار کریں…"
+            ? t(lang, "common.wait")
             : isEdit
-              ? "تبدیلی محفوظ کریں"
-              : "کتاب محفوظ کریں"}
+              ? t(lang, "student.form.update")
+              : t(lang, "library.form.save")}
         </button>
       </div>
     </form>

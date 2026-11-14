@@ -7,8 +7,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 import {
   todayInKarachi,
   isValidPastOrTodayDate,
@@ -20,6 +21,13 @@ import {
   type BookStatus,
   type BorrowerType,
 } from "@/lib/library";
+
+/** مرحلہ 108 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 type ActionResult = { ok: true } | { error: string };
 
@@ -35,9 +43,10 @@ interface BookFields {
   shelf: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
+  lang: Lang,
 ): { fields: BookFields } | { error: string } {
   const title = clean(formData.get("title"), 200);
   const author = clean(formData.get("author"), 100);
@@ -45,12 +54,12 @@ function validateFields(
   const quantityRaw = clean(formData.get("quantity"), 10);
   const shelf = clean(formData.get("shelf"), 100);
 
-  if (!title) return { error: "کتاب کا نام ضروری ہے۔" };
+  if (!title) return { error: t(lang, "library.err.title_required") };
   if (!BOOK_CATEGORIES.includes(category as BookCategory))
-    return { error: "قسم درست منتخب کریں (قرآن، تفسیر، حدیث، فقہ یا دیگر)۔" };
+    return { error: t(lang, "library.err.category_invalid") };
   const quantity = quantityRaw === "" ? 1 : Number(quantityRaw);
   if (!Number.isInteger(quantity) || quantity < 0)
-    return { error: "تعداد درست لکھیں (0 یا زیادہ)۔" };
+    return { error: t(lang, "library.err.quantity_invalid") };
 
   return {
     fields: {
@@ -85,15 +94,16 @@ async function writeAudit(
 
 /** نئی کتاب شامل کریں */
 export async function addBook(formData: FormData): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "library"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -112,7 +122,7 @@ export async function addBook(formData: FormData): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "student.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "book_created", {
@@ -130,19 +140,20 @@ export async function updateBook(
   id: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const status = clean(formData.get("status"), 20);
   if (status !== "active" && status !== "archived")
-    return { error: "حالت درست منتخب کریں (فعال یا محفوظ شدہ)۔" };
+    return { error: t(lang, "library.err.status_invalid") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "library"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // RLS خود یقین دلاتی ہے کہ یہ کتاب اسی مدرسے کی ہے
@@ -163,7 +174,7 @@ export async function updateBook(
     .single();
 
   if (error || !data) {
-    return { error: "تبدیلی محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "library.err.update_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "book_updated", {
@@ -178,12 +189,15 @@ export async function updateBook(
 }
 
 /** کتاب محفوظ کریں (archive) — حذف نہیں ہوتی، ریکارڈ رہتا ہے */
-export async function archiveBook(id: string): Promise<ActionResult> {
+export async function archiveBook(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "library"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -199,7 +213,7 @@ export async function archiveBook(id: string): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "student.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "book_archived", {
@@ -225,26 +239,28 @@ export async function issueBook(
   bookId: string,
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const borrowerType = clean(formData.get("borrower_type"), 20);
   const borrowerId = clean(formData.get("borrower_id"), 50);
   const issuedRaw = clean(formData.get("issued_at"), 10);
   const dueRaw = clean(formData.get("due_date"), 10);
 
   if (!BORROWER_TYPES.includes(borrowerType as BorrowerType))
-    return { error: "لینے والے کی قسم درست منتخب کریں (طالبہ، استاد یا عملہ)۔" };
-  if (!borrowerId) return { error: "لینے والا شخص منتخب کریں۔" };
+    return { error: t(lang, "library.err.borrower_type_invalid") };
+  if (!borrowerId)
+    return { error: t(lang, "library.err.borrower_required") };
   const issuedAt = issuedRaw === "" ? todayInKarachi() : issuedRaw;
   if (!isValidPastOrTodayDate(issuedAt))
-    return { error: "دینے کی تاریخ درست لکھیں (آج یا اس سے پہلے)۔" };
+    return { error: t(lang, "library.err.issued_date_invalid") };
   const dueDate = dueRaw === "" ? null : dueRaw;
   if (dueDate !== null && !isValidDate(dueDate))
-    return { error: "واپسی کی تاریخ درست لکھیں۔" };
+    return { error: t(lang, "library.err.due_date_invalid") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "library"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // کتاب اسی مدرسے کی ہو اور فعال ہو
@@ -254,9 +270,10 @@ export async function issueBook(
     .eq("id", bookId)
     .eq("madrasa_id", mine.madrasaId)
     .single();
-  if (bookError || !book) return { error: "کتاب نہیں ملی۔" };
+  if (bookError || !book)
+    return { error: t(lang, "library.err.book_not_found") };
   if ((book as { status: string }).status !== "active")
-    return { error: "یہ کتاب محفوظ شدہ ہے — دی نہیں جا سکتی۔" };
+    return { error: t(lang, "library.err.archived") };
 
   // لینے والا اسی مدرسے کا ہو (قسم کے مطابق میز سے جانچ)
   const borrowerTable =
@@ -271,7 +288,8 @@ export async function issueBook(
     .eq("id", borrowerId)
     .eq("madrasa_id", mine.madrasaId)
     .maybeSingle();
-  if (!borrower) return { error: "لینے والا شخص نہیں ملا۔ دوبارہ منتخب کریں۔" };
+  if (!borrower)
+    return { error: t(lang, "library.err.borrower_not_found") };
 
   // دستیابی: دیے ہوئے نسخے کل تعداد سے کم ہوں
   const { count, error: countError } = await supabase
@@ -280,10 +298,10 @@ export async function issueBook(
     .eq("book_id", bookId)
     .eq("status", "issued");
   if (countError) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "student.err.save_failed") };
   }
   if ((count ?? 0) >= (book as { quantity: number }).quantity) {
-    return { error: "کتاب دستیاب نہیں ہے — سب نسخے دیے جا چکے ہیں۔" };
+    return { error: t(lang, "library.err.unavailable") };
   }
 
   const { data, error } = await supabase
@@ -303,7 +321,7 @@ export async function issueBook(
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "student.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "book_issued", {
@@ -321,12 +339,15 @@ export async function issueBook(
 }
 
 /** کتاب واپس لکھیں — صرف ابھی دی ہوئی (واپس نہ آئی) کتاب پر */
-export async function returnBook(issueId: string): Promise<ActionResult> {
+export async function returnBook(
+  issueId: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "library"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -343,7 +364,7 @@ export async function returnBook(issueId: string): Promise<ActionResult> {
 
   if (error || !data) {
     return {
-      error: "واپسی لکھ نہیں سکی — شاید یہ کتاب پہلے ہی واپس آ چکی ہے۔",
+      error: t(lang, "library.err.return_failed"),
     };
   }
 

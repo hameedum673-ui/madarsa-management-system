@@ -8,11 +8,11 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import ReturnButton from "@/app/departments/library/ReturnButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import {
-  BORROWER_TYPE_LABELS,
-  ISSUE_STATUS_LABELS,
   resolveBorrowerNames,
   type LibraryIssue,
 } from "@/lib/library";
@@ -27,6 +27,7 @@ export default async function LibraryIssuesPage({
   searchParams: Promise<{ status?: string; page?: string }>;
 }) {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const params = await searchParams;
   const status = params.status ?? "issued";
   const statusValid =
@@ -54,56 +55,57 @@ export default async function LibraryIssuesPage({
   const names = tableMissing
     ? new Map()
     : await resolveBorrowerNames(supabase, issues);
+  const lang = await langP;
 
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/library" />
-          <h2>دی ہوئی کتابیں</h2>
+          <h2>{t(lang, "library.issued_title")}</h2>
         </div>
 
         {tableMissing ? (
           <p className="empty-state">
-            دینے/واپسی کی میز ابھی نہیں بنی — پہلے مرحلہ 101 کی SQL چلائیں۔
+            {t(lang, "library.issues_table_missing")}
           </p>
         ) : (
           <>
             <form className="filter-row" method="get">
               <label className="field">
-                <span className="field-label">حالت</span>
+                <span className="field-label">{t(lang, "col.status")}</span>
                 <select
                   className="field-input"
                   name="status"
                   defaultValue={statusValid ? status : "issued"}
                 >
-                  <option value="issued">دی ہوئی</option>
-                  <option value="returned">واپس آ گئی</option>
-                  <option value="all">سب</option>
+                  <option value="issued">
+                    {t(lang, "library.issue_status.issued")}
+                  </option>
+                  <option value="returned">
+                    {t(lang, "library.issue_status.returned")}
+                  </option>
+                  <option value="all">{t(lang, "common.all")}</option>
                 </select>
               </label>
               <button className="btn-primary" type="submit">
-                دکھائیں
+                {t(lang, "common.show")}
               </button>
             </form>
 
-            <p className="sub">
-              پہلے اوپر والے خانے میں حالت چنیں، پھر "دکھائیں" دبائیں — اگر
-              "دی ہوئی" چنا ہو تو صرف وہ کتابیں دکھیں گی جو ابھی واپس نہیں
-              آئیں۔
-            </p>
+            <p className="sub">{t(lang, "library.issues_hint")}</p>
 
             {issues.length === 0 ? (
-              <p className="empty-state">کوئی ریکارڈ نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "library.issues_empty")}</p>
             ) : (
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>کتاب</th>
-                    <th>کس کو دی</th>
-                    <th>دینے کی تاریخ</th>
-                    <th>واپسی کی تاریخ</th>
-                    <th>حالت</th>
+                    <th>{t(lang, "library.col.book")}</th>
+                    <th>{t(lang, "library.col.borrower")}</th>
+                    <th>{t(lang, "library.col.issued_at")}</th>
+                    <th>{t(lang, "library.col.due_date")}</th>
+                    <th>{t(lang, "col.status")}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -121,8 +123,8 @@ export default async function LibraryIssuesPage({
                         </td>
                         <td>
                           {person
-                            ? `${person.name} (${BORROWER_TYPE_LABELS[issue.borrower_type]}${person.detail ? ` — ${person.detail}` : ""})`
-                            : BORROWER_TYPE_LABELS[issue.borrower_type]}
+                            ? `${person.name} (${t(lang, `library.borrower.${issue.borrower_type}`)}${person.detail ? ` — ${person.detail}` : ""})`
+                            : t(lang, `library.borrower.${issue.borrower_type}`)}
                         </td>
                         <td>{issue.issued_at}</td>
                         <td>
@@ -134,12 +136,12 @@ export default async function LibraryIssuesPage({
                         </td>
                         <td>
                           <span className="badge">
-                            {ISSUE_STATUS_LABELS[issue.status]}
+                            {t(lang, `library.issue_status.${issue.status}`)}
                           </span>
                         </td>
                         <td>
                           {issue.status === "issued" ? (
-                            <ReturnButton id={issue.id} />
+                            <ReturnButton id={issue.id} lang={lang} />
                           ) : null}
                         </td>
                       </tr>
@@ -151,7 +153,7 @@ export default async function LibraryIssuesPage({
           </>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
       </div>
     </div>
   );

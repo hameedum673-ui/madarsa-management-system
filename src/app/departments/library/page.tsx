@@ -6,12 +6,12 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import {
   BOOK_CATEGORIES,
-  BOOK_CATEGORY_LABELS,
-  BOOK_STATUS_LABELS,
   type LibraryBook,
 } from "@/lib/library";
 
@@ -21,6 +21,7 @@ export default async function LibraryPage({
   searchParams: Promise<{ q?: string; category?: string; page?: string }>;
 }) {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const params = await searchParams;
   const q = (params.q ?? "").trim().replace(/[%_]/g, "").slice(0, 100);
   const category = params.category ?? "all";
@@ -49,76 +50,73 @@ export default async function LibraryPage({
   const books = (data ?? []) as LibraryBook[];
   const pages = pageCount(count);
   const tableMissing = (error as { code?: string } | null)?.code === "42P01";
+  const lang = await langP;
 
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>لائبریری</h2>
+          <h2>{t(lang, "module.library")}</h2>
           <Link className="btn-ghost" href="/departments/library/issues">
-            دی ہوئی کتابیں
+            {t(lang, "library.issued_title")}
           </Link>
           <Link className="btn-primary" href="/departments/library/new">
-            نئی کتاب لکھیں
+            {t(lang, "library.add")}
           </Link>
         </div>
 
         {tableMissing ? (
-          <p className="empty-state">
-            لائبریری کی میز ابھی نہیں بنی — پہلے مرحلہ 100 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "library.table_missing")}</p>
         ) : (
           <>
             <form className="filter-row" method="get">
               <label className="field">
-                <span className="field-label">تلاش (نام یا مصنف)</span>
+                <span className="field-label">
+                  {t(lang, "library.search_label")}
+                </span>
                 <input
                   className="field-input"
                   type="search"
                   name="q"
                   defaultValue={q}
-                  placeholder="مثلاً تفسیر ابن کثیر"
+                  placeholder={t(lang, "library.form.title_ph")}
                 />
               </label>
               <label className="field">
-                <span className="field-label">قسم</span>
+                <span className="field-label">{t(lang, "col.type")}</span>
                 <select
                   className="field-input"
                   name="category"
                   defaultValue={categoryValid ? category : "all"}
                 >
-                  <option value="all">سب</option>
+                  <option value="all">{t(lang, "common.all")}</option>
                   {BOOK_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {BOOK_CATEGORY_LABELS[c]}
+                      {t(lang, `library.cat.${c}`)}
                     </option>
                   ))}
                 </select>
               </label>
               <button className="btn-primary" type="submit">
-                دکھائیں
+                {t(lang, "common.show")}
               </button>
             </form>
 
-            <p className="sub">
-              پہلے اوپر والے خانوں میں تلاش یا قسم چنیں، پھر "دکھائیں"
-              دبائیں — اگر "سب" چنا ہو اور تلاش خالی ہو تو "دکھائیں" دبانے
-              سے فہرست ویسے ہی رہے گی۔
-            </p>
+            <p className="sub">{t(lang, "library.hint")}</p>
 
             {books.length === 0 ? (
-              <p className="empty-state">ابھی کوئی کتاب درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "library.empty")}</p>
             ) : (
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>کتاب کا نام</th>
-                    <th>مصنف</th>
-                    <th>قسم</th>
-                    <th>تعداد</th>
-                    <th>الماری/جگہ</th>
-                    <th>حالت</th>
+                    <th>{t(lang, "library.col.title")}</th>
+                    <th>{t(lang, "library.col.author")}</th>
+                    <th>{t(lang, "col.type")}</th>
+                    <th>{t(lang, "library.col.quantity")}</th>
+                    <th>{t(lang, "library.col.shelf")}</th>
+                    <th>{t(lang, "col.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -130,12 +128,12 @@ export default async function LibraryPage({
                         </Link>
                       </td>
                       <td>{b.author ?? "—"}</td>
-                      <td>{BOOK_CATEGORY_LABELS[b.category]}</td>
+                      <td>{t(lang, `library.cat.${b.category}`)}</td>
                       <td>{b.quantity}</td>
                       <td>{b.shelf ?? "—"}</td>
                       <td>
                         <span className="badge">
-                          {BOOK_STATUS_LABELS[b.status]}
+                          {t(lang, `library.status.${b.status}`)}
                         </span>
                       </td>
                     </tr>
@@ -146,7 +144,7 @@ export default async function LibraryPage({
           </>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
       </div>
     </div>
   );

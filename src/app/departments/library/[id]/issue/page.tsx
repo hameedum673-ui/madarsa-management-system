@@ -8,6 +8,8 @@ import BackButton from "@/components/BackButton";
 import IssueForm from "@/app/departments/library/IssueForm";
 import { issueBook } from "@/app/departments/library/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { todayInKarachi } from "@/lib/attendance";
 import {
   countActiveIssues,
@@ -22,11 +24,13 @@ export default async function IssueBookPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data, error } = await supabase
     .from("library_books")
     .select("*")
     .eq("id", id)
     .single();
+  const lang = await langP;
 
   if ((error as { code?: string } | null)?.code === "42P01") {
     return (
@@ -34,11 +38,9 @@ export default async function IssueBookPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/library" />
-            <h2>کتاب دیں</h2>
+            <h2>{t(lang, "library.issue")}</h2>
           </div>
-          <p className="empty-state">
-            لائبریری کی میز ابھی نہیں بنی — پہلے مرحلہ 100 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "library.table_missing")}</p>
         </div>
       </div>
     );
@@ -106,36 +108,32 @@ export default async function IssueBookPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href={`/departments/library/${book.id}`} />
-          <h2>کتاب دیں</h2>
+          <h2>{t(lang, "library.issue")}</h2>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>کتاب کا نام</span>
+            <span>{t(lang, "library.col.title")}</span>
             <strong>{book.title}</strong>
           </div>
           <div className="row">
-            <span>کل تعداد</span>
+            <span>{t(lang, "library.col.total")}</span>
             <strong>{book.quantity}</strong>
           </div>
           <div className="row">
-            <span>دستیاب</span>
+            <span>{t(lang, "library.col.available")}</span>
             <strong>{issuesMissing ? "—" : available}</strong>
           </div>
         </div>
 
         {issuesMissing ? (
           <p className="empty-state">
-            دینے/واپسی کی میز ابھی نہیں بنی — پہلے مرحلہ 101 کی SQL چلائیں۔
+            {t(lang, "library.issues_table_missing")}
           </p>
         ) : book.status !== "active" ? (
-          <p className="empty-state">
-            یہ کتاب محفوظ شدہ ہے — دی نہیں جا سکتی۔
-          </p>
+          <p className="empty-state">{t(lang, "library.err.archived")}</p>
         ) : available <= 0 ? (
-          <p className="empty-state">
-            کتاب دستیاب نہیں ہے — سب نسخے دیے جا چکے ہیں۔
-          </p>
+          <p className="empty-state">{t(lang, "library.err.unavailable")}</p>
         ) : (
           <IssueForm
             bookId={book.id}
@@ -145,6 +143,7 @@ export default async function IssueBookPage({
             teachers={teachers}
             staff={staff}
             action={issueBook}
+            lang={lang}
           />
         )}
       </div>

@@ -11,7 +11,8 @@
  * کے صفحے بھی اسی فہرست سے عربی ہوتے ہیں۔ مرحلہ 104 — اساتذہ اور عملے
  * کا ریکارڈ بھی اسی فہرست سے عربی ہوتا ہے۔ مرحلہ 105 — درجات اور
  * جماعتیں، مرحلہ 106 — دونوں حاضریاں، مرحلہ 107 — تعلیمی ریکارڈ بھی
- * اسی فہرست سے عربی ہوتے ہیں۔ باقی ماڈیول اگلے مرحلوں میں آئیں گے۔
+ * اسی فہرست سے عربی ہوتے ہیں۔ مرحلہ 108 — لائبریری بھی اسی فہرست سے
+ * عربی ہوتی ہے۔ باقی ماڈیول اگلے مرحلوں میں آئیں گے۔
  */
 
 export type Lang = "ur" | "ar" | "en";
@@ -525,6 +526,98 @@ const ur: Dict = {
   "hifz.err.teacher_invalid": "سننے والا استاد درست منتخب کریں۔",
   "hifz.err.save_failed": "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
   "hifz.err.void_failed": "منسوخ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+
+  "library.add": "نئی کتاب لکھیں",
+  "library.issued_title": "دی ہوئی کتابیں",
+  "library.table_missing":
+    "لائبریری کی میز ابھی نہیں بنی — پہلے مرحلہ 100 کی SQL چلائیں۔",
+  "library.issues_table_missing":
+    "دینے/واپسی کی میز ابھی نہیں بنی — پہلے مرحلہ 101 کی SQL چلائیں۔",
+  "library.search_label": "تلاش (نام یا مصنف)",
+  "library.hint":
+    "پہلے اوپر والے خانوں میں تلاش یا قسم چنیں، پھر \"دکھائیں\" دبائیں — اگر \"سب\" چنا ہو اور تلاش خالی ہو تو \"دکھائیں\" دبانے سے فہرست ویسے ہی رہے گی۔",
+  "library.empty": "ابھی کوئی کتاب درج نہیں ہے۔",
+  "library.issues_hint":
+    "پہلے اوپر والے خانے میں حالت چنیں، پھر \"دکھائیں\" دبائیں — اگر \"دی ہوئی\" چنا ہو تو صرف وہ کتابیں دکھیں گی جو ابھی واپس نہیں آئیں۔",
+  "library.issues_empty": "کوئی ریکارڈ نہیں ہے۔",
+  "library.detail_title": "کتاب کی تفصیل",
+  "library.borrowers_now": "ابھی کس کے پاس ہے",
+  "library.issue": "کتاب دیں",
+  "library.issue_title": "کتاب دیں — {title}",
+  "library.archive": "محفوظ کریں",
+  "library.archive.confirm": "پکا محفوظ کریں؟",
+  "library.return": "واپس آ گئی",
+  "library.return.confirm": "پکا واپس آ گئی؟",
+
+  "library.col.title": "کتاب کا نام",
+  "library.col.author": "مصنف",
+  "library.col.quantity": "تعداد",
+  "library.col.shelf": "الماری/جگہ",
+  "library.col.available": "دستیاب",
+  "library.col.total": "کل تعداد",
+  "library.col.book": "کتاب",
+  "library.col.borrower": "کس کو دی",
+  "library.col.issued_at": "دینے کی تاریخ",
+  "library.col.due_date": "واپسی کی تاریخ",
+
+  "library.cat.quran": "قرآن",
+  "library.cat.tafsir": "تفسیر",
+  "library.cat.hadith": "حدیث",
+  "library.cat.fiqh": "فقہ",
+  "library.cat.other": "دیگر",
+
+  "library.status.active": "فعال",
+  "library.status.archived": "محفوظ شدہ",
+  "library.issue_status.issued": "دی ہوئی",
+  "library.issue_status.returned": "واپس آ گئی",
+
+  "library.borrower.student": "طالبہ",
+  "library.borrower.teacher": "استاد",
+  "library.borrower.staff": "عملہ",
+
+  "library.form.edit_title": "کتاب تبدیل کریں",
+  "library.form.title": "کتاب کا نام *",
+  "library.form.title_ph": "مثلاً تفسیر ابن کثیر",
+  "library.form.author": "مصنف",
+  "library.form.author_ph": "مثلاً ابن کثیر",
+  "library.form.category": "قسم *",
+  "library.form.quantity": "تعداد",
+  "library.form.shelf": "الماری/جگہ",
+  "library.form.shelf_ph": "مثلاً الماری 1",
+  "library.form.status": "حالت *",
+  "library.form.save": "کتاب محفوظ کریں",
+
+  "library.issue_form.borrower_type": "لینے والا کون ہے؟ *",
+  "library.issue_form.borrower": "نام چنیں *",
+  "library.issue_form.select": "— منتخب کریں —",
+  "library.issue_form.issued_at": "دینے کی تاریخ *",
+  "library.issue_form.due_date": "واپسی کی متوقع تاریخ (اختیاری)",
+  "library.issue_form.no_people.student":
+    "اس قسم کا کوئی فعال ریکارڈ نہیں ہے — پہلے طلبہ کے ریکارڈ میں شامل کریں۔",
+  "library.issue_form.no_people.teacher":
+    "اس قسم کا کوئی فعال ریکارڈ نہیں ہے — پہلے اساتذہ کے ریکارڈ میں شامل کریں۔",
+  "library.issue_form.no_people.staff":
+    "اس قسم کا کوئی فعال ریکارڈ نہیں ہے — پہلے عملے کے ریکارڈ میں شامل کریں۔",
+
+  "library.err.title_required": "کتاب کا نام ضروری ہے۔",
+  "library.err.category_invalid":
+    "قسم درست منتخب کریں (قرآن، تفسیر، حدیث، فقہ یا دیگر)۔",
+  "library.err.quantity_invalid": "تعداد درست لکھیں (0 یا زیادہ)۔",
+  "library.err.status_invalid": "حالت درست منتخب کریں (فعال یا محفوظ شدہ)۔",
+  "library.err.update_failed": "تبدیلی محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "library.err.borrower_type_invalid":
+    "لینے والے کی قسم درست منتخب کریں (طالبہ، استاد یا عملہ)۔",
+  "library.err.borrower_required": "لینے والا شخص منتخب کریں۔",
+  "library.err.issued_date_invalid":
+    "دینے کی تاریخ درست لکھیں (آج یا اس سے پہلے)۔",
+  "library.err.due_date_invalid": "واپسی کی تاریخ درست لکھیں۔",
+  "library.err.book_not_found": "کتاب نہیں ملی۔",
+  "library.err.archived": "یہ کتاب محفوظ شدہ ہے — دی نہیں جا سکتی۔",
+  "library.err.borrower_not_found":
+    "لینے والا شخص نہیں ملا۔ دوبارہ منتخب کریں۔",
+  "library.err.unavailable": "کتاب دستیاب نہیں ہے — سب نسخے دیے جا چکے ہیں۔",
+  "library.err.return_failed":
+    "واپسی لکھ نہیں سکی — شاید یہ کتاب پہلے ہی واپس آ چکی ہے۔",
 };
 
 const ar: Dict = {
@@ -1016,6 +1109,98 @@ const ar: Dict = {
   "hifz.err.teacher_invalid": "اختر المعلم المستمع الصحيح.",
   "hifz.err.save_failed": "تعذّر الحفظ. حاول مرة أخرى.",
   "hifz.err.void_failed": "تعذّر الإلغاء. حاول مرة أخرى.",
+
+  "library.add": "إضافة كتاب جديد",
+  "library.issued_title": "الكتب المعارة",
+  "library.table_missing":
+    "لم يُنشأ جدول المكتبة بعد — شغّل أولًا SQL المرحلة 100.",
+  "library.issues_table_missing":
+    "لم يُنشأ جدول الإعارة والإرجاع بعد — شغّل أولًا SQL المرحلة 101.",
+  "library.search_label": "بحث (بالاسم أو المؤلف)",
+  "library.hint":
+    "اختر أولًا البحث أو النوع في الحقول أعلاه، ثم اضغط «عرض» — إذا اخترت «الكل» وكان البحث فارغًا، فستبقى القائمة كما هي عند الضغط على «عرض».",
+  "library.empty": "لا يوجد أي كتاب مسجل بعد.",
+  "library.issues_hint":
+    "اختر أولًا الحالة في الحقل أعلاه، ثم اضغط «عرض» — إذا اخترت «مُعارة» فستظهر فقط الكتب التي لم تُرجع بعد.",
+  "library.issues_empty": "لا يوجد أي سجل.",
+  "library.detail_title": "تفاصيل الكتاب",
+  "library.borrowers_now": "لدى من هو الآن",
+  "library.issue": "إعارة الكتاب",
+  "library.issue_title": "إعارة الكتاب — {title}",
+  "library.archive": "أرشفة",
+  "library.archive.confirm": "هل أنت متأكد من الأرشفة؟",
+  "library.return": "أُرجعت",
+  "library.return.confirm": "هل أُرجعت بالتأكيد؟",
+
+  "library.col.title": "اسم الكتاب",
+  "library.col.author": "المؤلف",
+  "library.col.quantity": "العدد",
+  "library.col.shelf": "الرف / المكان",
+  "library.col.available": "المتاح",
+  "library.col.total": "العدد الكلي",
+  "library.col.book": "الكتاب",
+  "library.col.borrower": "أُعير إلى",
+  "library.col.issued_at": "تاريخ الإعارة",
+  "library.col.due_date": "تاريخ الإرجاع",
+
+  "library.cat.quran": "القرآن",
+  "library.cat.tafsir": "التفسير",
+  "library.cat.hadith": "الحديث",
+  "library.cat.fiqh": "الفقه",
+  "library.cat.other": "أخرى",
+
+  "library.status.active": "نشط",
+  "library.status.archived": "مؤرشف",
+  "library.issue_status.issued": "مُعارة",
+  "library.issue_status.returned": "أُرجعت",
+
+  "library.borrower.student": "الطالبة",
+  "library.borrower.teacher": "المعلم",
+  "library.borrower.staff": "الموظف",
+
+  "library.form.edit_title": "تعديل الكتاب",
+  "library.form.title": "اسم الكتاب *",
+  "library.form.title_ph": "مثلًا تفسير ابن كثير",
+  "library.form.author": "المؤلف",
+  "library.form.author_ph": "مثلًا ابن كثير",
+  "library.form.category": "النوع *",
+  "library.form.quantity": "العدد",
+  "library.form.shelf": "الرف / المكان",
+  "library.form.shelf_ph": "مثلًا الرف 1",
+  "library.form.status": "الحالة *",
+  "library.form.save": "حفظ الكتاب",
+
+  "library.issue_form.borrower_type": "من المستعير؟ *",
+  "library.issue_form.borrower": "اختر الاسم *",
+  "library.issue_form.select": "— اختر —",
+  "library.issue_form.issued_at": "تاريخ الإعارة *",
+  "library.issue_form.due_date": "تاريخ الإرجاع المتوقع (اختياري)",
+  "library.issue_form.no_people.student":
+    "لا يوجد سجل نشط من هذا النوع — أضفه أولًا إلى سجل الطلاب.",
+  "library.issue_form.no_people.teacher":
+    "لا يوجد سجل نشط من هذا النوع — أضفه أولًا إلى سجل المعلمين.",
+  "library.issue_form.no_people.staff":
+    "لا يوجد سجل نشط من هذا النوع — أضفه أولًا إلى سجل الموظفين.",
+
+  "library.err.title_required": "اسم الكتاب إلزامي.",
+  "library.err.category_invalid":
+    "اختر النوع الصحيح (القرآن أو التفسير أو الحديث أو الفقه أو أخرى).",
+  "library.err.quantity_invalid": "اكتب العدد الصحيح (0 أو أكثر).",
+  "library.err.status_invalid": "اختر الحالة الصحيحة (نشط أو مؤرشف).",
+  "library.err.update_failed": "تعذّر حفظ التعديل. حاول مرة أخرى.",
+  "library.err.borrower_type_invalid":
+    "اختر نوع المستعير الصحيح (طالبة أو معلم أو موظف).",
+  "library.err.borrower_required": "اختر الشخص المستعير.",
+  "library.err.issued_date_invalid":
+    "اكتب تاريخ الإعارة الصحيح (اليوم أو قبله).",
+  "library.err.due_date_invalid": "اكتب تاريخ الإرجاع الصحيح.",
+  "library.err.book_not_found": "لم يُعثر على الكتاب.",
+  "library.err.archived": "هذا الكتاب مؤرشف — لا يمكن إعارته.",
+  "library.err.borrower_not_found":
+    "لم يُعثر على الشخص المستعير. اختر مرة أخرى.",
+  "library.err.unavailable": "الكتاب غير متاح — جميع النسخ مُعارة.",
+  "library.err.return_failed":
+    "تعذّر تسجيل الإرجاع — ربما أُرجع هذا الكتاب من قبل.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */
