@@ -412,6 +412,40 @@ const ur: Dict = {
   "class.err.name_required": "جماعت کا نام ضروری ہے۔",
   "class.err.sort_order": "ترتیب نمبر 1 سے 999 کے درمیان ہونا چاہیے۔",
   "class.err.status_invalid": "حالت درست منتخب کریں (فعال یا غیر فعال)۔",
+
+  "att.status.present": "حاضر",
+  "att.status.absent": "غیر حاضر",
+  "att.status.leave": "رخصت",
+  "att.status.late": "تاخیر",
+
+  "att.form.date": "تاریخ",
+  "att.form.all_depts": "سب شعبے",
+  "att.form.mark_all": "سب کو حاضر کریں",
+  "att.form.clear_all": "سب صاف کریں",
+  "att.summary.remaining": "باقی",
+  "att.save": "حاضری محفوظ کریں",
+  "att.saved":
+    "حاضری محفوظ ہو گئی — حاضر: {present}، غیر حاضر: {absent}، رخصت: {leave}، تاخیر: {late}",
+
+  "att.table_missing.students":
+    "حاضری کی میز ابھی نہیں بنی — پہلے مرحلہ 6 کی SQL چلائیں۔",
+  "att.table_missing.teachers":
+    "حاضری کی میز ابھی نہیں بنی — پہلے مرحلہ 7 کی SQL چلائیں۔",
+  "att.load_error": "حاضری نہیں کھل سکی — دوبارہ کوشش کریں۔",
+
+  "att.empty.students": "اس شعبے میں کوئی فعال طالبہ نہیں ہے۔",
+  "att.empty.teachers": "اس شعبے میں کوئی فعال استاد نہیں ہے۔",
+
+  "att.hub.desc.students": "طلبہ کی روزانہ حاضری درج کریں اور دیکھیں۔",
+  "att.hub.desc.teachers": "اساتذہ کی روزانہ حاضری درج کریں اور دیکھیں۔",
+  "att.hub.open": "{title} کھولیں",
+
+  "att.err.date_invalid": "تاریخ درست نہیں ہے۔",
+  "att.err.none_marked.students": "کسی طالبہ کی حاضری نہیں لگائی گئی۔",
+  "att.err.none_marked.teachers": "کسی استاد کی حاضری نہیں لگائی گئی۔",
+  "att.err.verify.students": "طالبات کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "att.err.verify.teachers": "اساتذہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "att.err.save_failed": "حاضری محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
 };
 
 const ar: Dict = {
@@ -791,6 +825,40 @@ const ar: Dict = {
   "class.err.name_required": "اسم الشعبة مطلوب.",
   "class.err.sort_order": "يجب أن يكون رقم الترتيب بين 1 و999.",
   "class.err.status_invalid": "اختر الحالة الصحيحة (نشط أو غير نشط).",
+
+  "att.status.present": "حاضر",
+  "att.status.absent": "غائب",
+  "att.status.leave": "إجازة",
+  "att.status.late": "متأخر",
+
+  "att.form.date": "التاريخ",
+  "att.form.all_depts": "كل الأقسام",
+  "att.form.mark_all": "تعليم الجميع حاضرين",
+  "att.form.clear_all": "مسح الكل",
+  "att.summary.remaining": "المتبقي",
+  "att.save": "حفظ الحضور",
+  "att.saved":
+    "تم حفظ الحضور — حاضر: {present}، غائب: {absent}، إجازة: {leave}، متأخر: {late}",
+
+  "att.table_missing.students":
+    "لم يتم إنشاء جدول الحضور بعد — شغّل SQL للمرحلة 6 أولًا.",
+  "att.table_missing.teachers":
+    "لم يتم إنشاء جدول الحضور بعد — شغّل SQL للمرحلة 7 أولًا.",
+  "att.load_error": "تعذّر فتح الحضور — حاول مرة أخرى.",
+
+  "att.empty.students": "لا توجد طالبة نشطة في هذا القسم.",
+  "att.empty.teachers": "لا يوجد معلم نشط في هذا القسم.",
+
+  "att.hub.desc.students": "سجّل حضور الطلاب اليومي واطّلع عليه.",
+  "att.hub.desc.teachers": "سجّل حضور المعلمين اليومي واطّلع عليه.",
+  "att.hub.open": "افتح {title}",
+
+  "att.err.date_invalid": "التاريخ غير صحيح.",
+  "att.err.none_marked.students": "لم يتم تسجيل حضور أي طالبة.",
+  "att.err.none_marked.teachers": "لم يتم تسجيل حضور أي معلم.",
+  "att.err.verify.students": "تعذّر التحقق من الطالبات. حاول مرة أخرى.",
+  "att.err.verify.teachers": "تعذّر التحقق من المعلمين. حاول مرة أخرى.",
+  "att.err.save_failed": "تعذّر حفظ الحضور. حاول مرة أخرى.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

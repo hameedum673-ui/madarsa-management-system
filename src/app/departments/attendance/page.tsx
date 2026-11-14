@@ -10,24 +10,27 @@ import { redirect } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { isAppAdmin } from "@/lib/approval";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 const ATTENDANCE_MODULES = [
   {
     id: "att-students",
-    title: "طلبہ کی حاضری",
-    desc: "طلبہ کی روزانہ حاضری درج کریں اور دیکھیں۔",
+    titleKey: "module.att-students",
+    descKey: "att.hub.desc.students",
     href: "/departments/att-students",
   },
   {
     id: "att-teachers",
-    title: "اساتذہ کی حاضری",
-    desc: "اساتذہ کی روزانہ حاضری درج کریں اور دیکھیں۔",
+    titleKey: "module.att-teachers",
+    descKey: "att.hub.desc.teachers",
     href: "/departments/att-teachers",
   },
 ] as const;
 
 export default async function AttendanceHubPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const admin = await isAppAdmin(supabase);
 
   const allowed: Record<string, boolean> = {};
@@ -48,21 +51,23 @@ export default async function AttendanceHubPage() {
     redirect("/");
   }
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>حاضری</h2>
+          <h2>{t(lang, "hub.attendance")}</h2>
         </div>
 
         {ATTENDANCE_MODULES.filter((m) => allowed[m.id]).map((m) => (
           <div key={m.id}>
-            <h3 className="form-section-title">{m.title}</h3>
-            <p className="sub">{m.desc}</p>
+            <h3 className="form-section-title">{t(lang, m.titleKey)}</h3>
+            <p className="sub">{t(lang, m.descKey)}</p>
             <div className="form-actions">
               <Link className="btn-primary" href={m.href}>
-                {m.title} کھولیں
+                {t(lang, "att.hub.open", { title: t(lang, m.titleKey) })}
               </Link>
             </div>
           </div>

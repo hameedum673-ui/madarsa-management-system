@@ -10,7 +10,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
   isModuleAllowedForMe,
-  MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
 import {
   ATTENDANCE_STATUSES,
@@ -20,6 +19,14 @@ import {
 import { getMyMadrasa,
   type SectionId,
 } from "@/lib/students";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
+
+/** مرحلہ 106 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 type SaveResult =
   | {
@@ -31,16 +38,17 @@ type SaveResult =
 export async function saveTeacherAttendance(
   formData: FormData,
 ): Promise<SaveResult> {
+  const lang = formLang(formData);
   const date = String(formData.get("date") ?? "");
   if (!isValidPastOrTodayDate(date)) {
-    return { error: "تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "att.err.date_invalid") };
   }
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "att-teachers"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // فارم سے status_<استاد-id> والے کھیت نکالیں
@@ -54,7 +62,7 @@ export async function saveTeacherAttendance(
     entries.push({ teacherId, status: status as AttendanceStatus });
   }
   if (entries.length === 0) {
-    return { error: "کسی استاد کی حاضری نہیں لگائی گئی۔" };
+    return { error: t(lang, "att.err.none_marked.teachers") };
   }
 
   // صرف اپنے مدرسے کے فعال اساتذہ کی حاضری لگ سکتی ہے
@@ -84,14 +92,14 @@ export async function saveTeacherAttendance(
       updated_at: new Date().toISOString(),
     }));
   if (rows.length === 0) {
-    return { error: "اساتذہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "att.err.verify.teachers") };
   }
 
   const { error } = await supabase
     .from("teacher_attendance")
     .upsert(rows, { onConflict: "madrasa_id,teacher_id,date" });
   if (error) {
-    return { error: "حاضری محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "att.err.save_failed") };
   }
 
   const summary = { present: 0, absent: 0, leave: 0, late: 0 };

@@ -19,6 +19,8 @@ import {
 import TeacherAttendanceForm, {
   type AttendanceTeacher,
 } from "@/app/departments/att-teachers/TeacherAttendanceForm";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string): string {
   return new Date(value + "T00:00:00").toLocaleDateString("ur-PK", {
@@ -44,7 +46,10 @@ export default async function TeacherAttendancePage({
   // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
-  const allowedSections = await getMyAllowedSections(supabase);
+  const [allowedSections, lang] = await Promise.all([
+    getMyAllowedSections(supabase),
+    getMyLanguage(),
+  ]);
   const rawSection = sp.section ?? "all";
   const section: SectionId | "all" =
     (SECTION_IDS as string[]).includes(rawSection) &&
@@ -95,16 +100,16 @@ export default async function TeacherAttendancePage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>اساتذہ کی حاضری</h2>
+          <h2>{t(lang, "module.att-teachers")}</h2>
           <span className="page-count">{formatDate(date)}</span>
         </div>
 
         {tableMissing ? (
           <p className="empty-state">
-            حاضری کی میز ابھی نہیں بنی — پہلے مرحلہ 7 کی SQL چلائیں۔
+            {t(lang, "att.table_missing.teachers")}
           </p>
         ) : teachersError || attError ? (
-          <p className="empty-state">حاضری نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "att.load_error")}</p>
         ) : (
           <TeacherAttendanceForm
             teachers={teachers}
@@ -113,6 +118,7 @@ export default async function TeacherAttendancePage({
             department={department}
             section={section}
             allowedSections={[...allowedSections]}
+            lang={lang}
           />
         )}
 

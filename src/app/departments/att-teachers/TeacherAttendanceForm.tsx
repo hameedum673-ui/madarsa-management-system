@@ -8,17 +8,14 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ATTENDANCE_LABELS,
   ATTENDANCE_STATUSES,
   type AttendanceStatus,
 } from "@/lib/attendance";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
-  type SectionId,
 } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 import { saveTeacherAttendance } from "@/app/departments/att-teachers/actions";
 
 export interface AttendanceTeacher {
@@ -37,6 +34,7 @@ export default function TeacherAttendanceForm({
   department,
   section,
   allowedSections,
+  lang = "ur",
 }: {
   teachers: AttendanceTeacher[];
   existing: Record<string, AttendanceStatus>;
@@ -45,6 +43,7 @@ export default function TeacherAttendanceForm({
   section: string;
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   allowedSections: string[];
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>(
@@ -56,8 +55,8 @@ export default function TeacherAttendanceForm({
 
   const counts = useMemo(() => {
     const c = { present: 0, absent: 0, leave: 0, late: 0, unmarked: 0 };
-    for (const t of teachers) {
-      const m = marks[t.id];
+    for (const tr of teachers) {
+      const m = marks[tr.id];
       if (!m) c.unmarked += 1;
       else c[m] += 1;
     }
@@ -72,7 +71,7 @@ export default function TeacherAttendanceForm({
 
   function markAllPresent() {
     const all: Record<string, AttendanceStatus> = {};
-    for (const t of teachers) all[t.id] = "present";
+    for (const tr of teachers) all[tr.id] = "present";
     setMarks(all);
     setSuccess("");
   }
@@ -88,6 +87,7 @@ export default function TeacherAttendanceForm({
     setLoading(true);
     const formData = new FormData();
     formData.set("date", date);
+    formData.set("lang", lang);
     for (const [teacherId, status] of Object.entries(marks)) {
       formData.set(`status_${teacherId}`, status);
     }
@@ -99,7 +99,12 @@ export default function TeacherAttendanceForm({
     }
     const s = res.summary;
     setSuccess(
-      `حاضری محفوظ ہو گئی — حاضر: ${s.present}، غیر حاضر: ${s.absent}، رخصت: ${s.leave}، تاخیر: ${s.late}`,
+      t(lang, "att.saved", {
+        present: s.present,
+        absent: s.absent,
+        leave: s.leave,
+        late: s.late,
+      }),
     );
     router.refresh();
   }
@@ -108,7 +113,7 @@ export default function TeacherAttendanceForm({
     <div>
       <div className="att-controls">
         <label className="field">
-          <span className="field-label">تاریخ</span>
+          <span className="field-label">{t(lang, "att.form.date")}</span>
           <input
             className="field-input"
             type="date"
@@ -119,31 +124,33 @@ export default function TeacherAttendanceForm({
           />
         </label>
         <label className="field">
-          <span className="field-label">شعبہ</span>
+          <span className="field-label">{t(lang, "col.dept")}</span>
           <select
             className="field-input"
             value={department}
             onChange={(e) => go(date, e.target.value, section)}
           >
-            <option value="all">سب شعبے</option>
+            <option value="all">{t(lang, "att.form.all_depts")}</option>
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+                {t(lang, `dept.${d}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          <span className="field-label">شعبہ (بنین / بنات)</span>
+          <span className="field-label">
+            {t(lang, "classes.section_filter")}
+          </span>
           <select
             className="field-input"
             value={section}
             onChange={(e) => go(date, department, e.target.value)}
           >
-            <option value="all">سب</option>
+            <option value="all">{t(lang, "common.all")}</option>
             {SECTION_IDS.filter((s) => allowedSections.includes(s)).map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABELS[s]}
+                {t(lang, `section.${s}`)}
               </option>
             ))}
           </select>
@@ -155,7 +162,7 @@ export default function TeacherAttendanceForm({
           onClick={markAllPresent}
           disabled={teachers.length === 0}
         >
-          سب کو حاضر کریں
+          {t(lang, "att.form.mark_all")}
         </button>
         <button
           className="btn-ghost"
@@ -163,42 +170,44 @@ export default function TeacherAttendanceForm({
           onClick={clearAll}
           disabled={teachers.length === 0}
         >
-          سب صاف کریں
+          {t(lang, "att.form.clear_all")}
         </button>
       </div>
 
       <div className="att-summary">
         <span className="att-chip att-chip-present">
-          حاضر: {counts.present.toLocaleString("ur-PK")}
+          {t(lang, "att.status.present")}: {counts.present.toLocaleString("ur-PK")}
         </span>
         <span className="att-chip att-chip-absent">
-          غیر حاضر: {counts.absent.toLocaleString("ur-PK")}
+          {t(lang, "att.status.absent")}: {counts.absent.toLocaleString("ur-PK")}
         </span>
         <span className="att-chip att-chip-leave">
-          رخصت: {counts.leave.toLocaleString("ur-PK")}
+          {t(lang, "att.status.leave")}: {counts.leave.toLocaleString("ur-PK")}
         </span>
         <span className="att-chip att-chip-late">
-          تاخیر: {counts.late.toLocaleString("ur-PK")}
+          {t(lang, "att.status.late")}: {counts.late.toLocaleString("ur-PK")}
         </span>
-        <span className="att-chip">باقی: {counts.unmarked.toLocaleString("ur-PK")}</span>
+        <span className="att-chip">
+          {t(lang, "att.summary.remaining")}: {counts.unmarked.toLocaleString("ur-PK")}
+        </span>
       </div>
 
       {teachers.length === 0 ? (
         <p className="empty-state">
-          اس شعبے میں کوئی فعال استاد نہیں ہے۔
+          {t(lang, "att.empty.teachers")}
         </p>
       ) : (
         <div>
-          {teachers.map((t) => (
-            <div className="att-row" key={t.id}>
+          {teachers.map((tr) => (
+            <div className="att-row" key={tr.id}>
               <div className="att-name">
                 <div>
-                  <strong>{t.name}</strong>
+                  <strong>{tr.name}</strong>
                 </div>
                 <div className="sub">
-                  {t.father_name}
-                  {t.position ? ` — ${t.position}` : ""}
-                  {t.section ? ` — ${SECTION_LABELS[t.section as SectionId]}` : ""}
+                  {tr.father_name}
+                  {tr.position ? ` — ${tr.position}` : ""}
+                  {tr.section ? ` — ${t(lang, `section.${tr.section}`)}` : ""}
                 </div>
               </div>
               <div className="att-btns">
@@ -206,13 +215,13 @@ export default function TeacherAttendanceForm({
                   <button
                     key={st}
                     type="button"
-                    className={`att-btn${marks[t.id] === st ? ` sel-${st}` : ""}`}
+                    className={`att-btn${marks[tr.id] === st ? ` sel-${st}` : ""}`}
                     onClick={() => {
-                      setMarks((prev) => ({ ...prev, [t.id]: st }));
+                      setMarks((prev) => ({ ...prev, [tr.id]: st }));
                       setSuccess("");
                     }}
                   >
-                    {ATTENDANCE_LABELS[st]}
+                    {t(lang, `att.status.${st}`)}
                   </button>
                 ))}
               </div>
@@ -231,7 +240,7 @@ export default function TeacherAttendanceForm({
           onClick={handleSave}
           disabled={loading || teachers.length === 0}
         >
-          {loading ? "براہِ کرم انتظار کریں…" : "حاضری محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "att.save")}
         </button>
       </div>
     </div>

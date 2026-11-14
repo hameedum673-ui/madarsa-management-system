@@ -8,17 +8,14 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ATTENDANCE_LABELS,
   ATTENDANCE_STATUSES,
   type AttendanceStatus,
 } from "@/lib/attendance";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
-  type SectionId,
 } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 import { saveAttendance } from "@/app/departments/att-students/actions";
 
 export interface AttendanceStudent {
@@ -38,6 +35,7 @@ export default function AttendanceForm({
   department,
   section,
   allowedSections,
+  lang = "ur",
 }: {
   students: AttendanceStudent[];
   existing: Record<string, AttendanceStatus>;
@@ -46,6 +44,7 @@ export default function AttendanceForm({
   section: string;
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   allowedSections: string[];
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>(
@@ -89,6 +88,7 @@ export default function AttendanceForm({
     setLoading(true);
     const formData = new FormData();
     formData.set("date", date);
+    formData.set("lang", lang);
     for (const [studentId, status] of Object.entries(marks)) {
       formData.set(`status_${studentId}`, status);
     }
@@ -100,7 +100,12 @@ export default function AttendanceForm({
     }
     const s = res.summary;
     setSuccess(
-      `حاضری محفوظ ہو گئی — حاضر: ${s.present}، غیر حاضر: ${s.absent}، رخصت: ${s.leave}، تاخیر: ${s.late}`,
+      t(lang, "att.saved", {
+        present: s.present,
+        absent: s.absent,
+        leave: s.leave,
+        late: s.late,
+      }),
     );
     router.refresh();
   }
@@ -109,7 +114,7 @@ export default function AttendanceForm({
     <div>
       <div className="att-controls">
         <label className="field">
-          <span className="field-label">تاریخ</span>
+          <span className="field-label">{t(lang, "att.form.date")}</span>
           <input
             className="field-input"
             type="date"
@@ -120,31 +125,33 @@ export default function AttendanceForm({
           />
         </label>
         <label className="field">
-          <span className="field-label">شعبہ</span>
+          <span className="field-label">{t(lang, "col.dept")}</span>
           <select
             className="field-input"
             value={department}
             onChange={(e) => go(date, e.target.value, section)}
           >
-            <option value="all">سب شعبے</option>
+            <option value="all">{t(lang, "att.form.all_depts")}</option>
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+                {t(lang, `dept.${d}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          <span className="field-label">شعبہ (بنین / بنات)</span>
+          <span className="field-label">
+            {t(lang, "classes.section_filter")}
+          </span>
           <select
             className="field-input"
             value={section}
             onChange={(e) => go(date, department, e.target.value)}
           >
-            <option value="all">سب</option>
+            <option value="all">{t(lang, "common.all")}</option>
             {SECTION_IDS.filter((s) => allowedSections.includes(s)).map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABELS[s]}
+                {t(lang, `section.${s}`)}
               </option>
             ))}
           </select>
@@ -156,7 +163,7 @@ export default function AttendanceForm({
           onClick={markAllPresent}
           disabled={students.length === 0}
         >
-          سب کو حاضر کریں
+          {t(lang, "att.form.mark_all")}
         </button>
         <button
           className="btn-ghost"
@@ -164,29 +171,31 @@ export default function AttendanceForm({
           onClick={clearAll}
           disabled={students.length === 0}
         >
-          سب صاف کریں
+          {t(lang, "att.form.clear_all")}
         </button>
       </div>
 
       <div className="att-summary">
         <span className="att-chip att-chip-present">
-          حاضر: {counts.present.toLocaleString("ur-PK")}
+          {t(lang, "att.status.present")}: {counts.present.toLocaleString("ur-PK")}
         </span>
         <span className="att-chip att-chip-absent">
-          غیر حاضر: {counts.absent.toLocaleString("ur-PK")}
+          {t(lang, "att.status.absent")}: {counts.absent.toLocaleString("ur-PK")}
         </span>
         <span className="att-chip att-chip-leave">
-          رخصت: {counts.leave.toLocaleString("ur-PK")}
+          {t(lang, "att.status.leave")}: {counts.leave.toLocaleString("ur-PK")}
         </span>
         <span className="att-chip att-chip-late">
-          تاخیر: {counts.late.toLocaleString("ur-PK")}
+          {t(lang, "att.status.late")}: {counts.late.toLocaleString("ur-PK")}
         </span>
-        <span className="att-chip">باقی: {counts.unmarked.toLocaleString("ur-PK")}</span>
+        <span className="att-chip">
+          {t(lang, "att.summary.remaining")}: {counts.unmarked.toLocaleString("ur-PK")}
+        </span>
       </div>
 
       {students.length === 0 ? (
         <p className="empty-state">
-          اس شعبے میں کوئی فعال طالبہ نہیں ہے۔
+          {t(lang, "att.empty.students")}
         </p>
       ) : (
         <div>
@@ -200,7 +209,7 @@ export default function AttendanceForm({
                 <div className="sub">
                   {s.father_name}
                   {s.class_name ? ` — ${s.class_name}` : ""}
-                  {s.section ? ` — ${SECTION_LABELS[s.section as SectionId]}` : ""}
+                  {s.section ? ` — ${t(lang, `section.${s.section}`)}` : ""}
                 </div>
               </div>
               <div className="att-btns">
@@ -214,7 +223,7 @@ export default function AttendanceForm({
                       setSuccess("");
                     }}
                   >
-                    {ATTENDANCE_LABELS[st]}
+                    {t(lang, `att.status.${st}`)}
                   </button>
                 ))}
               </div>
@@ -233,7 +242,7 @@ export default function AttendanceForm({
           onClick={handleSave}
           disabled={loading || students.length === 0}
         >
-          {loading ? "براہِ کرم انتظار کریں…" : "حاضری محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "att.save")}
         </button>
       </div>
     </div>
