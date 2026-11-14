@@ -10,9 +10,15 @@ import { createClient } from "@/lib/supabase/server";
 import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
+  todayInKarachi,
+  isValidPastOrTodayDate,
+} from "@/lib/attendance";
+import {
   BOOK_CATEGORIES,
+  BORROWER_TYPES,
   type BookCategory,
   type BookStatus,
+  type BorrowerType,
 } from "@/lib/library";
 
 type ActionResult = { ok: true } | { error: string };
@@ -203,6 +209,154 @@ export async function archiveBook(id: string): Promise<ActionResult> {
 
   revalidatePath("/departments/library");
   revalidatePath(`/departments/library/${id}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/** تاریخ درست ہے (YYYY-MM-DD، حقیقی دن)؟ */
+function isValidDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value + "T00:00:00");
+  return !Number.isNaN(d.getTime());
+}
+
+/** کتاب دیں — دستیابی سرور پر جانچی جاتی ہے (نسخے ختم ہوں تو انکار) */
+export async function issueBook(
+  bookId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const borrowerType = clean(formData.get("borrower_type"), 20);
+  const borrowerId = clean(formData.get("borrower_id"), 50);
+  const issuedRaw = clean(formData.get("issued_at"), 10);
+  const dueRaw = clean(formData.get("due_date"), 10);
+
+  if (!BORROWER_TYPES.includes(borrowerType as BorrowerType))
+    return { error: "لینے والے کی قسم درست منتخب کریں (طالبہ، استاد یا عملہ)۔" };
+  if (!borrowerId) return { error: "لینے والا شخص منتخب کریں۔" };
+  const issuedAt = issuedRaw === "" ? todayInKarachi() : issuedRaw;
+  if (!isValidPastOrTodayDate(issuedAt))
+    return { error: "دینے کی تاریخ درست لکھیں (آج یا اس سے پہلے)۔" };
+  const dueDate = dueRaw === "" ? null : dueRaw;
+  if (dueDate !== null && !isValidDate(dueDate))
+    return { error: "واپسی کی تاریخ درست لکھیں۔" };
+
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "library"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
+
+  // کتاب اسی مدرسے کی ہو اور فعال ہو
+  const { data: book, error: bookError } = await supabase
+    .from("library_books")
+    .select("id, title, quantity, status")
+    .eq("id", bookId)
+    .eq("madrasa_id", mine.madrasaId)
+    .single();
+  if (bookError || !book) return { error: "کتاب نہیں ملی۔" };
+  if ((book as { status: string }).status !== "active")
+    return { error: "یہ کتاب محفوظ شدہ ہے — دی نہیں جا سکتی۔" };
+
+  // لینے والا اسی مدرسے کا ہو (قسم کے مطابق میز سے جانچ)
+  const borrowerTable =
+    borrowerType === "student"
+      ? "students"
+      : borrowerType === "teacher"
+        ? "teachers"
+        : "staff";
+  const { data: borrower } = await supabase
+    .from(borrowerTable)
+    .select("id")
+    .eq("id", borrowerId)
+    .eq("madrasa_id", mine.madrasaId)
+    .maybeSingle();
+  if (!borrower) return { error: "لینے والا شخص نہیں ملا۔ دوبارہ منتخب کریں۔" };
+
+  // دستیابی: دیے ہوئے نسخے کل تعداد سے کم ہوں
+  const { count, error: countError } = await supabase
+    .from("library_issues")
+    .select("id", { count: "exact", head: true })
+    .eq("book_id", bookId)
+    .eq("status", "issued");
+  if (countError) {
+    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+  }
+  if ((count ?? 0) >= (book as { quantity: number }).quantity) {
+    return { error: "کتاب دستیاب نہیں ہے — سب نسخے دیے جا چکے ہیں۔" };
+  }
+
+  const { data, error } = await supabase
+    .from("library_issues")
+    .insert({
+      madrasa_id: mine.madrasaId,
+      book_id: bookId,
+      borrower_type: borrowerType as BorrowerType,
+      borrower_id: borrowerId,
+      issued_at: issuedAt,
+      due_date: dueDate,
+      returned_at: null,
+      status: "issued",
+      created_by: mine.userId,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+  }
+
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "book_issued", {
+    book_id: bookId,
+    title: (book as { title: string }).title,
+    borrower_type: borrowerType,
+    borrower_id: borrowerId,
+  });
+
+  revalidatePath("/departments/library");
+  revalidatePath(`/departments/library/${bookId}`);
+  revalidatePath("/departments/library/issues");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/** کتاب واپس لکھیں — صرف ابھی دی ہوئی (واپس نہ آئی) کتاب پر */
+export async function returnBook(issueId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!(await isModuleAllowedForMe(supabase, "library"))) {
+    return { error: MODULE_DENIED_ERROR };
+  }
+
+  const { data, error } = await supabase
+    .from("library_issues")
+    .update({
+      returned_at: new Date().toISOString(),
+      status: "returned",
+    })
+    .eq("id", issueId)
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("status", "issued")
+    .select("id, book_id")
+    .single();
+
+  if (error || !data) {
+    return {
+      error: "واپسی لکھ نہیں سکی — شاید یہ کتاب پہلے ہی واپس آ چکی ہے۔",
+    };
+  }
+
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "book_returned", {
+    issue_id: data.id as string,
+    book_id: (data as { book_id: string }).book_id,
+  });
+
+  revalidatePath("/departments/library");
+  revalidatePath(
+    `/departments/library/${(data as { book_id: string }).book_id}`,
+  );
+  revalidatePath("/departments/library/issues");
   revalidatePath("/");
   return { ok: true };
 }

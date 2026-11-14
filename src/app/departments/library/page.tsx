@@ -56,6 +56,9 @@ export default async function LibraryPage({
         <div className="page-head">
           <BackButton />
           <h2>لائبریری</h2>
+          <Link className="btn-ghost" href="/departments/library/issues">
+            دی ہوئی کتابیں
+          </Link>
           <Link className="btn-primary" href="/departments/library/new">
             نئی کتاب لکھیں
           </Link>

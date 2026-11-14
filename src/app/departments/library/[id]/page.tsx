@@ -3,6 +3,7 @@
  * میز ابھی نہ بنی ہو (migration 052 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import BookForm from "@/app/departments/library/BookForm";
 import ArchiveButton from "@/app/departments/library/ArchiveButton";
@@ -11,7 +12,11 @@ import { createClient } from "@/lib/supabase/server";
 import {
   BOOK_CATEGORY_LABELS,
   BOOK_STATUS_LABELS,
+  BORROWER_TYPE_LABELS,
+  countActiveIssues,
+  resolveBorrowerNames,
   type LibraryBook,
+  type LibraryIssue,
 } from "@/lib/library";
 
 export default async function BookDetailPage({
@@ -48,6 +53,33 @@ export default async function BookDetailPage({
     notFound();
   }
 
+  // مرحلہ 101 — دستیاب تعداد اور ابھی کس کے پاس ہے (میز نہ بنی ہو تو خالی)
+  let issuedCount = 0;
+  let issuesMissing = false;
+  let activeIssues: LibraryIssue[] = [];
+  try {
+    const res = await countActiveIssues(supabase, book.id);
+    issuedCount = res.count;
+    issuesMissing = res.missing;
+    if (!issuesMissing) {
+      const { data: issueRows, error: issueError } = await supabase
+        .from("library_issues")
+        .select("*")
+        .eq("book_id", book.id)
+        .eq("status", "issued")
+        .order("issued_at", { ascending: false });
+      if (!issueError) {
+        activeIssues = (issueRows ?? []) as LibraryIssue[];
+      }
+    }
+  } catch {
+    issuesMissing = true;
+  }
+  const available = book.quantity - issuedCount;
+  const borrowerNames = activeIssues.length
+    ? await resolveBorrowerNames(supabase, activeIssues)
+    : new Map();
+
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -74,6 +106,10 @@ export default async function BookDetailPage({
             <strong>{book.quantity}</strong>
           </div>
           <div className="row">
+            <span>دستیاب</span>
+            <strong>{issuesMissing ? "—" : available}</strong>
+          </div>
+          <div className="row">
             <span>الماری/جگہ</span>
             <strong>{book.shelf ?? "—"}</strong>
           </div>
@@ -85,8 +121,45 @@ export default async function BookDetailPage({
 
         {book.status === "active" ? (
           <div className="form-actions">
+            <Link
+              className="btn-primary"
+              href={`/departments/library/${book.id}/issue`}
+            >
+              کتاب دیں
+            </Link>
             <ArchiveButton id={book.id} />
           </div>
+        ) : null}
+
+        {activeIssues.length > 0 ? (
+          <>
+            <h3 className="form-section-title">ابھی کس کے پاس ہے</h3>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>نام</th>
+                  <th>دینے کی تاریخ</th>
+                  <th>واپسی کی تاریخ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeIssues.map((issue) => {
+                  const person = borrowerNames.get(issue.borrower_id);
+                  return (
+                    <tr key={issue.id}>
+                      <td>
+                        {person
+                          ? `${person.name} (${BORROWER_TYPE_LABELS[issue.borrower_type]}${person.detail ? ` — ${person.detail}` : ""})`
+                          : BORROWER_TYPE_LABELS[issue.borrower_type]}
+                      </td>
+                      <td>{issue.issued_at}</td>
+                      <td>{issue.due_date ?? "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
         ) : null}
 
         <BookForm
