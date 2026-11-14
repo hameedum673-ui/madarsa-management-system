@@ -130,6 +130,10 @@
   .dropdown svg{width:17px;height:17px;stroke:var(--navy);flex:0 0 auto}
   .dropdown .dd-empty{padding:12px 10px;font-size:.88rem;color:var(--muted);text-align:center}
   .dropdown .dd-head{padding:8px 10px 4px;font-size:.78rem;color:var(--muted)}
+  /* مرحلہ 102 — مینیو میں زبان کے اندرونی آپشن (تھوڑے اندر، موجودہ پر ✓) */
+  .dropdown .dd-lang{padding-inline-start:36px}
+  .dropdown .dd-lang .tick{margin-inline-start:auto;color:var(--navy);font-weight:700}
+  .dropdown .dd-lang:disabled{opacity:.6;cursor:default}
 
   /* ---------- Stats ---------- */
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
