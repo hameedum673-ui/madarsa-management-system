@@ -211,12 +211,12 @@ const ur: Dict = {
   "hub.students.active_cards": "فعال طلبہ (جن کے کارڈ بن سکتے ہیں)",
   "hub.students.open2": "شناختی کارڈ کھولیں",
 
-  "hub.adm_students.sec1": "جدید داخلہ",
+  "hub.adm_students.sec1": "داخلے کی درخواستیں",
   "hub.adm_students.sec1_desc": "نیا داخلہ درج کریں اور زیرِ غور درخواستوں کا فیصلہ کریں۔",
-  "hub.adm_students.open1": "جدید داخلہ کھولیں",
-  "hub.adm_students.sec2": "قدیم داخلہ",
+  "hub.adm_students.open1": "درخواستیں کھولیں",
+  "hub.adm_students.sec2": "طلبہ کا ریکارڈ",
   "hub.adm_students.sec2_desc": "پہلے سے داخل شدہ طلبہ کا مکمل ریکارڈ دیکھیں اور تبدیل کریں۔",
-  "hub.adm_students.open2": "قدیم داخلہ کھولیں",
+  "hub.adm_students.open2": "ریکارڈ کھولیں",
 
   "students.new_title": "نیا طالب علم شامل کریں",
   "students.count_total": "کل: {n}",
@@ -1265,12 +1265,12 @@ const ar: Dict = {
   "hub.students.active_cards": "الطلاب النشطون (الذين يمكن إصدار بطاقات لهم)",
   "hub.students.open2": "افتح بطاقات الهوية",
 
-  "hub.adm_students.sec1": "قبول جديد",
+  "hub.adm_students.sec1": "طلبات القبول",
   "hub.adm_students.sec1_desc": "سجّل قبولًا جديدًا واتخذ قرارًا بشأن الطلبات قيد النظر.",
-  "hub.adm_students.open1": "افتح القبول الجديد",
-  "hub.adm_students.sec2": "قبول قديم",
+  "hub.adm_students.open1": "افتح الطلبات",
+  "hub.adm_students.sec2": "سجل الطلاب",
   "hub.adm_students.sec2_desc": "اعرض السجل الكامل للطلاب المسجلين وعدّله.",
-  "hub.adm_students.open2": "افتح القبول القديم",
+  "hub.adm_students.open2": "افتح السجل",
 
   "students.new_title": "إضافة طالب جديد",
   "students.count_total": "المجموع: {n}",
