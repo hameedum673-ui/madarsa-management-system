@@ -6,6 +6,8 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections } from "@/lib/permissions";
 import { getMyMadrasa,
   type SectionId,
@@ -32,6 +34,7 @@ export default async function StudentExpDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const lang = await getMyLanguage();
 
   const { data, error } = await supabase
     .from("student_expenses")
@@ -45,11 +48,9 @@ export default async function StudentExpDetailPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/student-exp" />
-            <h2>خرچ کا اندراج</h2>
+            <h2>{t(lang, "studentexp.detail_title")}</h2>
           </div>
-          <p className="empty-state">
-            طلبہ کے اخراجات کی میز ابھی نہیں بنی — پہلے مرحلہ 22 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "studentexp.table_missing")}</p>
         </div>
       </div>
     );
@@ -103,7 +104,7 @@ export default async function StudentExpDetailPage({
       <div className="page-card receipt receipt-slip">
         <div className="page-head">
           <BackButton href="/departments/student-exp" />
-          <h2>خرچ کا اندراج</h2>
+          <h2>{t(lang, "studentexp.detail_title")}</h2>
           <span className="page-count">{record.record_number}</span>
         </div>
 
@@ -114,48 +115,54 @@ export default async function StudentExpDetailPage({
 
         <div className="detail-rows">
           <div className="row">
-            <span>ریکارڈ نمبر</span>
+            <span>{t(lang, "welfare.col_record")}</span>
             <span>{record.record_number}</span>
           </div>
           <div className="row">
-            <span>طالب علم</span>
+            <span>{t(lang, "col.student")}</span>
             <span>{record.students?.name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>والد کا نام</span>
+            <span>{t(lang, "col.father")}</span>
             <span>{record.students?.father_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>رجسٹریشن نمبر</span>
+            <span>{t(lang, "col.reg")}</span>
             <span>{record.students?.registration_number ?? "—"}</span>
           </div>
           <div className="row">
-            <span>قسم</span>
-            <span>{STUDENT_EXPENSE_CATEGORY_LABELS[record.category]}</span>
+            <span>{t(lang, "col.type")}</span>
+            <span>{t(lang, `studentexp.cat.${record.category}`)}</span>
           </div>
           <div className="row">
-            <span>رقم</span>
-            <span>{record.amount.toLocaleString("ur-PK")} روپے</span>
+            <span>{t(lang, "col.amount")}</span>
+            <span>
+              {t(lang, "common.money", {
+                n: record.amount.toLocaleString("ur-PK"),
+              })}
+            </span>
           </div>
           <div className="row">
-            <span>تاریخ</span>
+            <span>{t(lang, "col.date")}</span>
             <span>{formatDate(record.expense_date)}</span>
           </div>
           {record.note ? (
             <div className="row">
-              <span>نوٹ</span>
+              <span>{t(lang, "fee.form.note")}</span>
               <span>{record.note}</span>
             </div>
           ) : null}
           <div className="row">
-            <span>حالت</span>
-            <span>{STUDENT_EXPENSE_STATUS_LABELS[record.status]}</span>
+            <span>{t(lang, "col.status")}</span>
+            <span>{t(lang, `fee.status.${record.status}`)}</span>
           </div>
         </div>
 
         <div className="form-actions no-print">
           <SaveSlipImageButton data={imageData} />
-          {record.status === "active" ? <VoidButton id={record.id} /> : null}
+          {record.status === "active" ? (
+            <VoidButton id={record.id} lang={lang} />
+          ) : null}
         </div>
       </div>
     </div>

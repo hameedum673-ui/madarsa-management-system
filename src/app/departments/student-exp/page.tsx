@@ -9,18 +9,17 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
   SECTION_IDS,
-  SECTION_LABELS,
   type SectionId,
   type Student,
 } from "@/lib/students";
 import {
-  STUDENT_EXPENSE_CATEGORY_LABELS,
-  STUDENT_EXPENSE_STATUS_LABELS,
   type StudentExpense,
 } from "@/lib/studentExpenses";
 
@@ -38,6 +37,7 @@ export default async function StudentExpPage({
   const selectedStudent = params.student ?? "all";
   // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   const rawSection = params.section ?? "all";
@@ -112,25 +112,27 @@ export default async function StudentExpPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/welfare-expenses" />
-          <h2>طلبہ کے اخراجات</h2>
+          <h2>{t(lang, "studentexp.title")}</h2>
           <span className="page-count">
-            کل اخراجات: {totalSpent.toLocaleString("ur-PK")} روپے
+            {t(lang, "studentexp.total_spent", {
+              total: totalSpent.toLocaleString("ur-PK"),
+            })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/student-exp/new">
-            + نیا اندراج
+            {t(lang, "studentexp.add")}
           </Link>
         </div>
 
         <form className="filter-row" method="get">
           <label className="field">
-            <span className="field-label">طالب علم</span>
+            <span className="field-label">{t(lang, "col.student")}</span>
             <select
               className="field-input"
               name="student"
               defaultValue={selectedStudent}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} — {s.father_name}
@@ -139,49 +141,53 @@ export default async function StudentExpPage({
             </select>
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">
+              {t(lang, "students.section_filter")}
+            </span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {selectedStudent !== "all" ? (
-          <p className="sub">طالب علم: {selectedStudentName || "—"}</p>
+          <p className="sub">
+            {t(lang, "studentexp.selected_student", {
+              name: selectedStudentName || "—",
+            })}
+          </p>
         ) : null}
 
         {tableMissing ? (
-          <p className="empty-state">
-            طلبہ کے اخراجات کی میز ابھی نہیں بنی — پہلے مرحلہ 22 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "studentexp.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : records.length === 0 ? (
-          <p className="empty-state">ابھی کوئی خرچ درج نہیں ہے۔</p>
+          <p className="empty-state">{t(lang, "studentexp.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>ریکارڈ نمبر</th>
-                  <th>طالب علم</th>
-                  <th>بنین / بنات</th>
-                  <th>قسم</th>
-                  <th>رقم</th>
-                  <th>تاریخ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "welfare.col_record")}</th>
+                  <th>{t(lang, "col.student")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.type")}</th>
+                  <th>{t(lang, "exp.col_amount")}</th>
+                  <th>{t(lang, "col.date")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -199,17 +205,20 @@ export default async function StudentExpPage({
                     </td>
                     <td>
                       {r.students?.section
-                        ? SECTION_LABELS[r.students.section as SectionId]
+                        ? t(
+                            lang,
+                            `section.${r.students.section as SectionId}`,
+                          )
                         : "—"}
                     </td>
-                    <td>{STUDENT_EXPENSE_CATEGORY_LABELS[r.category]}</td>
+                    <td>{t(lang, `studentexp.cat.${r.category}`)}</td>
                     <td>{r.amount.toLocaleString("ur-PK")}</td>
                     <td>{formatDate(r.expense_date)}</td>
                     <td>
                       <span
                         className={`badge${r.status === "voided" ? " badge-withdrawn" : ""}`}
                       >
-                        {STUDENT_EXPENSE_STATUS_LABELS[r.status]}
+                        {t(lang, `fee.status.${r.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -219,7 +228,7 @@ export default async function StudentExpPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

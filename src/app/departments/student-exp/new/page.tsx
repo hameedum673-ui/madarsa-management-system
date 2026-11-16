@@ -7,10 +7,13 @@ import BackButton from "@/components/BackButton";
 import StudentExpenseForm from "@/app/departments/student-exp/StudentExpenseForm";
 import { addStudentExpense } from "@/app/departments/student-exp/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import type { Student } from "@/lib/students";
 
 export default async function NewStudentExpPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const { data, error } = await supabase
     .from("students")
     .select("*")
@@ -26,19 +29,18 @@ export default async function NewStudentExpPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/student-exp" />
-          <h2>نیا خرچ</h2>
+          <h2>{t(lang, "studentexp.new_title")}</h2>
         </div>
         {tableMissing ? (
-          <p className="empty-state">
-            طلبہ کی میز ابھی نہیں بنی — پہلے مرحلہ 4 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "students.table_missing")}</p>
         ) : students.length === 0 ? (
-          <p className="empty-state">
-            ابھی کوئی فعال طالب علم درج نہیں ہے — پہلے طلبہ والے حصے میں طالب علم
-            شامل کریں۔
-          </p>
+          <p className="empty-state">{t(lang, "welfare.no_students")}</p>
         ) : (
-          <StudentExpenseForm students={students} action={addStudentExpense} />
+          <StudentExpenseForm
+            students={students}
+            action={addStudentExpense}
+            lang={lang}
+          />
         )}
       </div>
     </div>

@@ -9,10 +9,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
 import type { Student } from "@/lib/students";
-import {
-  STUDENT_EXPENSE_CATEGORIES,
-  STUDENT_EXPENSE_CATEGORY_LABELS,
-} from "@/lib/studentExpenses";
+import { STUDENT_EXPENSE_CATEGORIES } from "@/lib/studentExpenses";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -21,9 +19,11 @@ type FormAction = (
 export default function StudentExpenseForm({
   students,
   action,
+  lang,
 }: {
   students: Student[];
   action: FormAction;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -34,6 +34,8 @@ export default function StudentExpenseForm({
     setError("");
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    // مرحلہ 121 — چھپا ہوا خانہ: سرور کو زبان بتاتا ہے
+    formData.set("lang", lang);
     const res = await action(formData);
     setLoading(false);
     if ("error" in res) {
@@ -52,9 +54,11 @@ export default function StudentExpenseForm({
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">طالب علم *</span>
+          <span className="field-label">
+            {t(lang, "welfare.form.student")}
+          </span>
           <select className="field-input" name="student_id" required>
-            <option value="">— منتخب کریں —</option>
+            <option value="">{t(lang, "library.issue_form.select")}</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} — {s.father_name}
@@ -65,18 +69,18 @@ export default function StudentExpenseForm({
         </label>
 
         <label className="field">
-          <span className="field-label">قسم *</span>
+          <span className="field-label">{t(lang, "welfare.form.kind")}</span>
           <select className="field-input" name="category" required>
             {STUDENT_EXPENSE_CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {STUDENT_EXPENSE_CATEGORY_LABELS[c]}
+                {t(lang, `studentexp.cat.${c}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">رقم (روپے) *</span>
+          <span className="field-label">{t(lang, "fee.form.amount")}</span>
           <input
             className="field-input"
             name="amount"
@@ -85,12 +89,12 @@ export default function StudentExpenseForm({
             required
             min={1}
             max={10000000}
-            placeholder="مثلاً 1500"
+            placeholder={t(lang, "studentexp.form.amount_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">تاریخ *</span>
+          <span className="field-label">{t(lang, "funds.form.date")}</span>
           <input
             className="field-input"
             name="expense_date"
@@ -102,13 +106,13 @@ export default function StudentExpenseForm({
       </div>
 
       <label className="field">
-        <span className="field-label">نوٹ (اگر کوئی ہو)</span>
+        <span className="field-label">{t(lang, "funds.form.note")}</span>
         <textarea
           className="field-input"
           name="note"
           rows={2}
           maxLength={500}
-          placeholder="مثلاً کون سی کتابیں خریدی گئیں"
+          placeholder={t(lang, "studentexp.form.note_ph")}
         />
       </label>
 
@@ -116,10 +120,10 @@ export default function StudentExpenseForm({
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "common.save")}
         </button>
         <Link className="btn-ghost" href="/departments/student-exp">
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>
