@@ -1026,6 +1026,15 @@ const ur: Dict = {
   "zakat.detail_title": "زکوٰۃ اندراج",
   "zakat.void": "اندراج منسوخ کریں",
   "zakat.err.void_failed": "منسوخ نہیں ہو سکا — شاید یہ اندراج پہلے سے منسوخ ہے۔",
+  "ushr.title": "عشر کا حساب",
+  "ushr.total_received": "کل وصول شدہ: {total} روپے",
+  "ushr.total_received_label": "کل وصول شدہ عشر",
+  "ushr.table_missing": "عشر کی میز ابھی نہیں بنی — پہلے مرحلہ 48 کی SQL چلائیں۔",
+  "ushr.empty": "ابھی کوئی عشر اندراج درج نہیں ہے۔",
+  "ushr.new_title": "نیا عشر اندراج",
+  "ushr.detail_title": "عشر اندراج",
+  "ushr.void": "اندراج منسوخ کریں",
+  "ushr.err.void_failed": "منسوخ نہیں ہو سکا — شاید یہ اندراج پہلے سے منسوخ ہے۔",
 };
 
 const ar: Dict = {
@@ -2009,6 +2018,15 @@ const ar: Dict = {
   "zakat.detail_title": "قيد الزكاة",
   "zakat.void": "إلغاء القيد",
   "zakat.err.void_failed": "تعذّر الإلغاء — ربما أُلغي هذا القيد من قبل.",
+  "ushr.title": "حساب العشر",
+  "ushr.total_received": "إجمالي المستلم: {total} روبية",
+  "ushr.total_received_label": "إجمالي العشر المستلم",
+  "ushr.table_missing": "لم يُنشأ جدول العشر بعد — نفّذ أولًا SQL المرحلة 48.",
+  "ushr.empty": "لا توجد أي قيود عشر مسجلة بعد.",
+  "ushr.new_title": "قيد عشر جديد",
+  "ushr.detail_title": "قيد العشر",
+  "ushr.void": "إلغاء القيد",
+  "ushr.err.void_failed": "تعذّر الإلغاء — ربما أُلغي هذا القيد من قبل.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

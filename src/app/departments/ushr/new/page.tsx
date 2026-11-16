@@ -6,9 +6,12 @@ import BackButton from "@/components/BackButton";
 import UshrForm from "@/app/departments/ushr/UshrForm";
 import { addUshrRecord } from "@/app/departments/ushr/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function NewUshrPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const { error } = await supabase
     .from("ushr_records")
     .select("id", { head: true })
@@ -22,14 +25,12 @@ export default async function NewUshrPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/ushr" />
-          <h2>نیا عشر اندراج</h2>
+          <h2>{t(lang, "ushr.new_title")}</h2>
         </div>
         {tableMissing ? (
-          <p className="empty-state">
-            عشر کی میز ابھی نہیں بنی — پہلے مرحلہ 48 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "ushr.table_missing")}</p>
         ) : (
-          <UshrForm action={addUshrRecord} />
+          <UshrForm action={addUshrRecord} lang={lang} />
         )}
       </div>
     </div>
