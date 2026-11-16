@@ -6,9 +6,12 @@ import BackButton from "@/components/BackButton";
 import ExpenseForm from "@/app/departments/expenses/ExpenseForm";
 import { addExpense } from "@/app/departments/expenses/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function NewExpensePage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const { error } = await supabase
     .from("expenses")
     .select("id", { head: true })
@@ -22,14 +25,14 @@ export default async function NewExpensePage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/expenses" />
-          <h2>نیا خرچ درج کریں</h2>
+          <h2>{t(lang, "expenses.new_title")}</h2>
         </div>
         {tableMissing ? (
           <p className="empty-state">
-            اخراجات کی میز ابھی نہیں بنی — پہلے مرحلہ 16 کی SQL چلائیں۔
+            {t(lang, "expenses.table_missing")}
           </p>
         ) : (
-          <ExpenseForm action={addExpense} />
+          <ExpenseForm action={addExpense} lang={lang} />
         )}
       </div>
     </div>

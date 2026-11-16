@@ -7,6 +7,8 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections } from "@/lib/permissions";
 import { SECTION_LABELS, type SectionId } from "@/lib/students";
 import { getMyMadrasa } from "@/lib/students";
@@ -33,6 +35,7 @@ export default async function ExpenseDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const lang = await getMyLanguage();
 
   const { data, error } = await supabase
     .from("expenses")
@@ -46,10 +49,10 @@ export default async function ExpenseDetailPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/expenses" />
-            <h2>خرچ کا واؤچر</h2>
+            <h2>{t(lang, "expense.voucher_title")}</h2>
           </div>
           <p className="empty-state">
-            اخراجات کی میز ابھی نہیں بنی — پہلے مرحلہ 16 کی SQL چلائیں۔
+            {t(lang, "expenses.table_missing")}
           </p>
         </div>
       </div>
@@ -101,7 +104,7 @@ export default async function ExpenseDetailPage({
       <div className="page-card receipt receipt-slip">
         <div className="page-head">
           <BackButton href="/departments/expenses" />
-          <h2>خرچ کا واؤچر</h2>
+          <h2>{t(lang, "expense.voucher_title")}</h2>
           <span className="page-count">{expense.voucher_number}</span>
         </div>
 
@@ -112,48 +115,48 @@ export default async function ExpenseDetailPage({
 
         <div className="detail-rows">
           <div className="row">
-            <span>واؤچر نمبر</span>
+            <span>{t(lang, "exp.col_voucher")}</span>
             <span>{expense.voucher_number}</span>
           </div>
           <div className="row">
-            <span>تفصیل</span>
+            <span>{t(lang, "exp.col_title")}</span>
             <span>{expense.title}</span>
           </div>
           <div className="row">
-            <span>زمرہ</span>
-            <span>{EXPENSE_CATEGORY_LABELS[expense.category]}</span>
+            <span>{t(lang, "exp.col_category")}</span>
+            <span>{t(lang, `exp.cat.${expense.category}`)}</span>
           </div>
           <div className="row">
-            <span>شعبہ (بنین / بنات)</span>
-            <span>{SECTION_LABELS[(expense.section ?? "banat") as SectionId]}</span>
+            <span>{t(lang, "students.section_filter")}</span>
+            <span>{t(lang, `section.${(expense.section ?? "banat") as SectionId}`)}</span>
           </div>
           <div className="row">
-            <span>رقم</span>
-            <span>{expense.amount.toLocaleString("ur-PK")} روپے</span>
+            <span>{t(lang, "exp.col_amount")}</span>
+            <span>{t(lang, "common.money", { n: expense.amount.toLocaleString("ur-PK") })}</span>
           </div>
           <div className="row">
-            <span>تاریخ</span>
+            <span>{t(lang, "col.date")}</span>
             <span>{formatDate(expense.expense_date)}</span>
           </div>
           <div className="row">
-            <span>ادائیگی کا طریقہ</span>
-            <span>{PAYMENT_METHOD_LABELS[expense.payment_method]}</span>
+            <span>{t(lang, "fee.method_label")}</span>
+            <span>{t(lang, `fee.method.${expense.payment_method}`)}</span>
           </div>
           {expense.note ? (
             <div className="row">
-              <span>نوٹ</span>
+              <span>{t(lang, "fee.form.note")}</span>
               <span>{expense.note}</span>
             </div>
           ) : null}
           <div className="row">
-            <span>حالت</span>
-            <span>{EXPENSE_STATUS_LABELS[expense.status]}</span>
+            <span>{t(lang, "col.status")}</span>
+            <span>{t(lang, `fee.status.${expense.status}`)}</span>
           </div>
         </div>
 
         <div className="form-actions no-print">
           <SaveSlipImageButton data={imageData} />
-          {expense.status === "active" ? <VoidButton id={expense.id} /> : null}
+          {expense.status === "active" ? <VoidButton id={expense.id} lang={lang} /> : null}
         </div>
       </div>
     </div>

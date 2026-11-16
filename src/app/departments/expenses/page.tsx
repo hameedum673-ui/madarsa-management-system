@@ -9,21 +9,18 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
-import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
+import { SECTION_IDS, type SectionId } from "@/lib/students";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import {
   currentMonthInKarachi,
   formatMonthUrdu,
   isValidMonth,
-  PAYMENT_METHOD_LABELS,
 } from "@/lib/fees";
-import {
-  EXPENSE_CATEGORY_LABELS,
-  EXPENSE_STATUS_LABELS,
-  type Expense,
-} from "@/lib/expenses";
+import type { Expense } from "@/lib/expenses";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -48,6 +45,7 @@ export default async function ExpensesPage({
     rawMonth === "all" ? "all" : isValidMonth(rawMonth) ? rawMonth : currentMonthInKarachi();
 
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 62 — اجازت والے شعبے + چنا ہوا شعبہ (بنین / بنات / سب)
   const allowedSections = await getMyAllowedSections(supabase);
   const section = getMySectionFilter(allowedSections, params.section);
@@ -101,19 +99,19 @@ export default async function ExpensesPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>اخراجات کا ریکارڈ</h2>
+          <h2>{t(lang, "expenses.title")}</h2>
           <span className="page-count">
-            کل خرچ: {totalSpent.toLocaleString("ur-PK")} روپے
+            {t(lang, "expenses.total_spent", { total: totalSpent.toLocaleString("ur-PK") })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/expenses/new">
-            + نیا خرچ درج کریں
+            {t(lang, "expenses.add")}
           </Link>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">مہینہ</span>
+            <span className="field-label">{t(lang, "fees.month")}</span>
             <input
               className="field-input"
               name="month"
@@ -122,47 +120,47 @@ export default async function ExpensesPage({
             />
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select className="field-input" name="section" defaultValue={section}>
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
           <Link className="btn-ghost" href="/departments/expenses?month=all">
-            سب دکھائیں
+            {t(lang, "students.show_all")}
           </Link>
         </form>
 
         {tableMissing ? (
           <p className="empty-state">
-            اخراجات کی میز ابھی نہیں بنی — پہلے مرحلہ 16 کی SQL چلائیں۔
+            {t(lang, "expenses.table_missing")}
           </p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : expenses.length === 0 ? (
           <p className="empty-state">
-            اس مہینے کا کوئی خرچ درج نہیں ہے۔
+            {t(lang, "expenses.empty")}
           </p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>واؤچر نمبر</th>
-                  <th>تفصیل</th>
-                  <th>زمرہ</th>
-                  <th>بنین / بنات</th>
-                  <th>رقم</th>
-                  <th>تاریخ</th>
-                  <th>طریقہ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "exp.col_voucher")}</th>
+                  <th>{t(lang, "exp.col_title")}</th>
+                  <th>{t(lang, "exp.col_category")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "exp.col_amount")}</th>
+                  <th>{t(lang, "col.date")}</th>
+                  <th>{t(lang, "col.method")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -178,16 +176,16 @@ export default async function ExpensesPage({
                         {e.title}
                       </Link>
                     </td>
-                    <td>{EXPENSE_CATEGORY_LABELS[e.category]}</td>
-                    <td>{SECTION_LABELS[(e.section ?? "banat") as SectionId]}</td>
+                    <td>{t(lang, `exp.cat.${e.category}`)}</td>
+                    <td>{t(lang, `section.${(e.section ?? "banat") as SectionId}`)}</td>
                     <td>{e.amount.toLocaleString("ur-PK")}</td>
                     <td>{formatDate(e.expense_date)}</td>
-                    <td>{PAYMENT_METHOD_LABELS[e.payment_method]}</td>
+                    <td>{t(lang, `fee.method.${e.payment_method}`)}</td>
                     <td>
                       <span
                         className={`badge${e.status === "voided" ? " badge-withdrawn" : ""}`}
                       >
-                        {EXPENSE_STATUS_LABELS[e.status]}
+                        {t(lang, `fee.status.${e.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -199,7 +197,7 @@ export default async function ExpensesPage({
 
         {month !== "all" ? (
           <p className="sub">
-            دکھایا گیا مہینہ: {formatMonthUrdu(month)}
+            {t(lang, "expenses.shown_month", { month: formatMonthUrdu(month) })}
           </p>
         ) : null}
 
