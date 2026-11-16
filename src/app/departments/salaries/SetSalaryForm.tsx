@@ -8,6 +8,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type SalaryPerson } from "@/lib/salaries";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -17,10 +18,12 @@ export default function SetSalaryForm({
   action,
   persons,
   initialPerson,
+  lang,
 }: {
   action: FormAction;
   persons: SalaryPerson[];
   initialPerson: string;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -62,33 +65,34 @@ export default function SetSalaryForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">شخص *</span>
+          <span className="field-label">{t(lang, "salary.form.person")}</span>
           <select
             className="field-input"
             value={selectedPerson}
             onChange={(e) => onPersonChange(e.target.value)}
             required
           >
-            <option value="">— منتخب کریں —</option>
-            <optgroup label="اساتذہ">
+            <option value="">{t(lang, "salary.form.pick_placeholder")}</option>
+            <optgroup label={t(lang, "salary.group.teachers")}>
               {teachers.map((p) => (
                 <option key={p.id} value={`teacher:${p.id}`}>
                   {p.name}
                   {p.monthly_salary
-                    ? ` — مقررہ ${p.monthly_salary.toLocaleString("ur-PK")} روپے`
-                    : " — مقررہ طے نہیں"}
+                    ? ` — ${t(lang, "salary.form.fixed_amount", { amount: p.monthly_salary.toLocaleString("ur-PK") })}`
+                    : ` — ${t(lang, "salary.form.fixed_not_set")}`}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="عملہ">
+            <optgroup label={t(lang, "salary.group.staff")}>
               {staff.map((p) => (
                 <option key={p.id} value={`staff:${p.id}`}>
                   {p.name}
                   {p.monthly_salary
-                    ? ` — مقررہ ${p.monthly_salary.toLocaleString("ur-PK")} روپے`
-                    : " — مقررہ طے نہیں"}
+                    ? ` — ${t(lang, "salary.form.fixed_amount", { amount: p.monthly_salary.toLocaleString("ur-PK") })}`
+                    : ` — ${t(lang, "salary.form.fixed_not_set")}`}
                 </option>
               ))}
             </optgroup>
@@ -97,7 +101,7 @@ export default function SetSalaryForm({
 
         <label className="field">
           <span className="field-label">
-            ماہانہ مقررہ تنخواہ (روپے) — خالی رکھیں تو ختم ہو جائے گی
+            {t(lang, "salary.form.set_amount")}
           </span>
           <input
             className="field-input"
@@ -108,24 +112,21 @@ export default function SetSalaryForm({
             max={10000000}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="مثلاً 20000"
+            placeholder={t(lang, "salary.form.amount_ph")}
           />
         </label>
       </div>
 
-      <p className="sub">
-        یہ رقم صرف یہاں نظر آئے گی — اساتذہ یا عملے کے ریکارڈ میں
-        تنخواہ کہیں نہیں دکھائی جائے گی۔
-      </p>
+      <p className="sub">{t(lang, "salary.form.set_note")}</p>
 
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "common.save")}
         </button>
         <Link className="btn-ghost" href="/departments/salaries">
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

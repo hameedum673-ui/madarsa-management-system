@@ -9,6 +9,8 @@ import { getSalaryPersons } from "@/app/departments/salaries/people";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { isMadrasaOwner } from "@/lib/approval";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function SetSalaryPage({
   searchParams,
@@ -17,6 +19,7 @@ export default async function SetSalaryPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // حصہ 4 کی درستگی — تنخواہیں مدرسے کے مالک کے لیے ہیں (سپر ایڈمن ہونا ضروری نہیں)
   if (!(await isMadrasaOwner(supabase))) {
     redirect("/");
@@ -34,18 +37,18 @@ export default async function SetSalaryPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/salaries" />
-          <h2>مقررہ تنخواہ طے کریں</h2>
+          <h2>{t(lang, "salaries.set_title")}</h2>
         </div>
         {persons.length === 0 ? (
           <p className="empty-state">
-            ابھی کوئی فعال استاد یا ملازم درج نہیں ہے — پہلے اساتذہ یا
-            عملے کا ریکارڈ بنائیں۔
+            {t(lang, "salaries.empty_persons")}
           </p>
         ) : (
           <SetSalaryForm
             action={setMonthlySalary}
             persons={persons}
             initialPerson={initialPerson}
+            lang={lang}
           />
         )}
       </div>

@@ -9,7 +9,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
-import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/lib/fees";
+import { PAYMENT_METHODS } from "@/lib/fees";
+import { t, type Lang } from "@/i18n/dictionary";
 import {
   type SalaryPerson,
   type SalaryPersonType,
@@ -24,11 +25,13 @@ export default function SalaryPaymentForm({
   persons,
   initialPerson,
   initialMonth,
+  lang,
 }: {
   action: FormAction;
   persons: SalaryPerson[];
   initialPerson: string;
   initialMonth: string;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -70,33 +73,34 @@ export default function SalaryPaymentForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">شخص *</span>
+          <span className="field-label">{t(lang, "salary.form.person")}</span>
           <select
             className="field-input"
             value={selectedPerson}
             onChange={(e) => onPersonChange(e.target.value)}
             required
           >
-            <option value="">— منتخب کریں —</option>
-            <optgroup label="اساتذہ">
+            <option value="">{t(lang, "salary.form.pick_placeholder")}</option>
+            <optgroup label={t(lang, "salary.group.teachers")}>
               {teachers.map((p) => (
                 <option key={p.id} value={`teacher:${p.id}`}>
                   {p.name}
                   {p.monthly_salary
-                    ? ` — مقررہ ${p.monthly_salary.toLocaleString("ur-PK")} روپے`
-                    : " — مقررہ طے نہیں"}
+                    ? ` — ${t(lang, "salary.form.fixed_amount", { amount: p.monthly_salary.toLocaleString("ur-PK") })}`
+                    : ` — ${t(lang, "salary.form.fixed_not_set")}`}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="عملہ">
+            <optgroup label={t(lang, "salary.group.staff")}>
               {staff.map((p) => (
                 <option key={p.id} value={`staff:${p.id}`}>
                   {p.name}
                   {p.monthly_salary
-                    ? ` — مقررہ ${p.monthly_salary.toLocaleString("ur-PK")} روپے`
-                    : " — مقررہ طے نہیں"}
+                    ? ` — ${t(lang, "salary.form.fixed_amount", { amount: p.monthly_salary.toLocaleString("ur-PK") })}`
+                    : ` — ${t(lang, "salary.form.fixed_not_set")}`}
                 </option>
               ))}
             </optgroup>
@@ -104,7 +108,7 @@ export default function SalaryPaymentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">تنخواہ کا مہینہ *</span>
+          <span className="field-label">{t(lang, "salary.form.month")}</span>
           <input
             className="field-input"
             name="salary_month"
@@ -115,7 +119,7 @@ export default function SalaryPaymentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">رقم (روپے) *</span>
+          <span className="field-label">{t(lang, "fee.form.amount")}</span>
           <input
             className="field-input"
             name="amount"
@@ -126,12 +130,12 @@ export default function SalaryPaymentForm({
             max={10000000}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="مثلاً 20000"
+            placeholder={t(lang, "salary.form.amount_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">ادائیگی کی تاریخ *</span>
+          <span className="field-label">{t(lang, "fee.form.date")}</span>
           <input
             className="field-input"
             name="payment_date"
@@ -142,11 +146,11 @@ export default function SalaryPaymentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">ادائیگی کا طریقہ *</span>
+          <span className="field-label">{t(lang, "fee.form.method")}</span>
           <select className="field-input" name="payment_method" required>
             {PAYMENT_METHODS.map((m) => (
               <option key={m} value={m}>
-                {PAYMENT_METHOD_LABELS[m]}
+                {t(lang, `fee.method.${m}`)}
               </option>
             ))}
           </select>
@@ -154,29 +158,26 @@ export default function SalaryPaymentForm({
       </div>
 
       <label className="field">
-        <span className="field-label">نوٹ (اگر کوئی ہو)</span>
+        <span className="field-label">{t(lang, "expense.form.note")}</span>
         <textarea
           className="field-input"
           name="note"
           rows={2}
           maxLength={500}
-          placeholder="مثلاً تنخواہ کے ساتھ کچھ اور"
+          placeholder={t(lang, "salary.form.note_ph")}
         />
       </label>
 
-      <p className="sub">
-        تنخواہ دیتے ہی اخراجات میں خودکار واؤچر بن جائے گا — بیلنس اور
-        ماہانہ حساب میں یہ رقم خودبخود شامل ہو جائے گی۔
-      </p>
+      <p className="sub">{t(lang, "salary.form.voucher_note")}</p>
 
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "common.save")}
         </button>
         <Link className="btn-ghost" href="/departments/salaries">
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

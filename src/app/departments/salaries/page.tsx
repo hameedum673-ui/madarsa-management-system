@@ -10,17 +10,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { isMadrasaOwner } from "@/lib/approval";
-import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import {
   currentMonthInKarachi,
   formatMonthUrdu,
   isValidMonth,
 } from "@/lib/fees";
-import {
-  SALARY_PERSON_TYPE_LABELS,
-  SALARY_STATUS_LABELS,
-  type SalaryPayment,
-} from "@/lib/salaries";
+import { type SalaryPayment } from "@/lib/salaries";
 import { getSalaryPersons } from "@/app/departments/salaries/people";
 
 function formatDate(value: string | null): string {
@@ -39,6 +36,7 @@ export default async function SalariesPage({
     : currentMonthInKarachi();
 
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // حصہ 4 کی درستگی — تنخواہیں مدرسے کے مالک کے لیے ہیں (سپر ایڈمن ہونا ضروری نہیں)
   if (!(await isMadrasaOwner(supabase))) {
     redirect("/");
@@ -101,39 +99,44 @@ export default async function SalariesPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>تنخواہیں</h2>
+          <h2>{t(lang, "salaries.title")}</h2>
           <span className="spacer" />
           <Link
             className="btn-primary"
             href={`/departments/salaries/new?month=${month}`}
           >
-            + تنخواہ دیں
+            {t(lang, "salaries.add")}
           </Link>
         </div>
 
-        <p className="sub">
-          تنخواہیں صرف ایڈمن دیکھ سکتا ہے — یہ رقم اساتذہ یا عملے کے
-          ریکارڈ میں کہیں نہیں دکھائی جائے گی۔
-        </p>
+        <p className="sub">{t(lang, "salaries.admin_note")}</p>
 
         <div className="detail-rows">
           <div className="row">
-            <span>کل مقررہ تنخواہیں ({formatMonthUrdu(month)})</span>
-            <span>{totalFixed.toLocaleString("ur-PK")} روپے</span>
+            <span>
+              {t(lang, "salaries.total_fixed", { month: formatMonthUrdu(month) })}
+            </span>
+            <span>
+              {t(lang, "common.money", { n: totalFixed.toLocaleString("ur-PK") })}
+            </span>
           </div>
           <div className="row">
-            <span>اس مہینے ادا شدہ</span>
-            <span>{totalPaid.toLocaleString("ur-PK")} روپے</span>
+            <span>{t(lang, "salaries.paid_this_month")}</span>
+            <span>
+              {t(lang, "common.money", { n: totalPaid.toLocaleString("ur-PK") })}
+            </span>
           </div>
           <div className="row">
-            <span>باقی</span>
-            <span>{totalRemaining.toLocaleString("ur-PK")} روپے</span>
+            <span>{t(lang, "salaries.remaining")}</span>
+            <span>
+              {t(lang, "common.money", { n: totalRemaining.toLocaleString("ur-PK") })}
+            </span>
           </div>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">مہینہ</span>
+            <span className="field-label">{t(lang, "fees.month")}</span>
             <input
               className="field-input"
               type="month"
@@ -142,38 +145,34 @@ export default async function SalariesPage({
             />
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
-        <p className="sub">
-          ’دکھائیں‘ دبانے سے پہلے مہینہ بدلیں — مہینہ بدلے بغیر دبانے
-          سے فہرست ویسی ہی رہے گی۔
-        </p>
+        <p className="sub">{t(lang, "salaries.month_hint")}</p>
 
         {tableMissing ? (
           <p className="empty-state">
-            تنخواہوں کی میز ابھی نہیں بنی — پہلے مرحلہ 50 کی SQL چلائیں۔
+            {t(lang, "salaries.table_missing")}
           </p>
         ) : persons.length === 0 ? (
           <p className="empty-state">
-            ابھی کوئی فعال استاد یا ملازم درج نہیں ہے — پہلے اساتذہ یا
-            عملے کا ریکارڈ بنائیں۔
+            {t(lang, "salaries.empty_persons")}
           </p>
         ) : (
           <>
             <h3 className="form-section-title">
-              {formatMonthUrdu(month)} کی تنخواہیں
+              {t(lang, "salaries.month_title", { month: formatMonthUrdu(month) })}
             </h3>
             <div className="tbl-wrap">
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>نام</th>
-                    <th>قسم</th>
-                    <th>مقررہ تنخواہ</th>
-                    <th>ادا شدہ</th>
-                    <th>حالت</th>
-                    <th>عمل</th>
+                    <th>{t(lang, "col.name")}</th>
+                    <th>{t(lang, "col.type")}</th>
+                    <th>{t(lang, "salaries.col_fixed")}</th>
+                    <th>{t(lang, "salary.status.active")}</th>
+                    <th>{t(lang, "col.status")}</th>
+                    <th>{t(lang, "col.action")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -182,15 +181,19 @@ export default async function SalariesPage({
                     return (
                       <tr key={`${p.type}-${p.id}`}>
                         <td>{p.name}</td>
-                        <td>{SALARY_PERSON_TYPE_LABELS[p.type]}</td>
+                        <td>{t(lang, `salary.person.${p.type}`)}</td>
                         <td>
                           {p.monthly_salary
-                            ? `${p.monthly_salary.toLocaleString("ur-PK")} روپے`
-                            : "طے نہیں"}
+                            ? t(lang, "common.money", {
+                                n: p.monthly_salary.toLocaleString("ur-PK"),
+                              })
+                            : t(lang, "salaries.not_set")}
                         </td>
                         <td>
                           {paid
-                            ? `${paid.amount.toLocaleString("ur-PK")} روپے`
+                            ? t(lang, "common.money", {
+                                n: paid.amount.toLocaleString("ur-PK"),
+                              })
                             : "—"}
                         </td>
                         <td>
@@ -198,29 +201,29 @@ export default async function SalariesPage({
                             className={`badge${paid ? "" : " badge-withdrawn"}`}
                           >
                             {paid
-                              ? "ادا شدہ"
+                              ? t(lang, "salary.status.active")
                               : p.monthly_salary
-                                ? "بقایا"
-                                : "طے نہیں"}
+                                ? t(lang, "salaries.due")
+                                : t(lang, "salaries.not_set")}
                           </span>
                         </td>
                         <td>
                           {paid ? (
                             <Link href={`/departments/salaries/${paid.id}`}>
-                              تفصیل
+                              {t(lang, "exp.col_title")}
                             </Link>
                           ) : (
                             <>
                               <Link
                                 href={`/departments/salaries/new?person=${p.type}:${p.id}&month=${month}`}
                               >
-                                تنخواہ دیں
+                                {t(lang, "salaries.pay_link")}
                               </Link>{" "}
                               ·{" "}
                               <Link
                                 href={`/departments/salaries/set?person=${p.type}:${p.id}`}
                               >
-                                طے کریں
+                                {t(lang, "salaries.set_link")}
                               </Link>
                             </>
                           )}
@@ -232,21 +235,23 @@ export default async function SalariesPage({
               </table>
             </div>
 
-            <h3 className="form-section-title">ادائیگیوں کی تاریخ</h3>
+            <h3 className="form-section-title">
+              {t(lang, "salaries.history_title")}
+            </h3>
             {payments.length === 0 ? (
-              <p className="empty-state">ابھی کوئی تنخواہ دی نہیں گئی۔</p>
+              <p className="empty-state">{t(lang, "salaries.no_payments")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>واؤچر</th>
-                      <th>نام</th>
-                      <th>مہینہ</th>
-                      <th>رقم</th>
-                      <th>ادائیگی کی تاریخ</th>
-                      <th>طریقہ</th>
-                      <th>حالت</th>
+                      <th>{t(lang, "exp.col_voucher")}</th>
+                      <th>{t(lang, "col.name")}</th>
+                      <th>{t(lang, "fees.month")}</th>
+                      <th>{t(lang, "exp.col_amount")}</th>
+                      <th>{t(lang, "salaries.col_payment_date")}</th>
+                      <th>{t(lang, "col.method")}</th>
+                      <th>{t(lang, "col.status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -269,17 +274,13 @@ export default async function SalariesPage({
                         <td>{p.amount.toLocaleString("ur-PK")}</td>
                         <td>{formatDate(p.payment_date)}</td>
                         <td>
-                          {
-                            PAYMENT_METHOD_LABELS[
-                              p.payment_method as keyof typeof PAYMENT_METHOD_LABELS
-                            ]
-                          }
+                          {t(lang, `fee.method.${p.payment_method}`)}
                         </td>
                         <td>
                           <span
                             className={`badge${p.status === "voided" ? " badge-withdrawn" : ""}`}
                           >
-                            {SALARY_STATUS_LABELS[p.status]}
+                            {t(lang, `salary.status.${p.status}`)}
                           </span>
                         </td>
                       </tr>

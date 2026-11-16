@@ -10,13 +10,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { t, isLang, type Lang } from "@/i18n/dictionary";
 import { getMyMadrasa } from "@/lib/students";
 import { isMadrasaOwner } from "@/lib/approval";
-import {
-  CLOSED_MONTH_ERROR,
-  isMonthClosed,
-  monthOfDate,
-} from "@/lib/monthClosing";
+import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import {
   PAYMENT_METHODS,
@@ -27,11 +24,17 @@ import {
 } from "@/lib/fees";
 import {
   SALARY_PERSON_TYPES,
-  SALARY_PERSON_TYPE_LABELS,
   type SalaryPersonType,
 } from "@/lib/salaries";
 
 type ActionResult = { ok: true; id?: string } | { error: string };
+
+// مرحلہ 114 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو)
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -79,25 +82,26 @@ async function getPerson(
 export async function setMonthlySalary(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const personType = clean(formData.get("person_type"), 20);
   const personId = clean(formData.get("person_id"), 40);
   const amountRaw = clean(formData.get("amount"), 12);
   const amount = amountRaw === "" ? null : Number(amountRaw);
 
   if (!SALARY_PERSON_TYPES.includes(personType as SalaryPersonType))
-    return { error: "شخص درست منتخب کریں (استاد یا عملہ)۔" };
-  if (!personId) return { error: "شخص ضروری ہے۔" };
+    return { error: t(lang, "sal.err.person_invalid") };
+  if (!personId) return { error: t(lang, "sal.err.person_required") };
   if (
     amount !== null &&
     (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
   )
-    return { error: "رقم 1 سے 10,000,000 کے درمیان ہونی چاہیے۔" };
+    return { error: t(lang, "exp.err.amount_invalid") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isMadrasaOwner(supabase)))
-    return { error: "صرف ایڈمن تنخواہ طے کر سکتا ہے۔" };
+    return { error: t(lang, "sal.err.only_admin_set") };
 
   const person = await getPerson(
     supabase,
@@ -105,7 +109,7 @@ export async function setMonthlySalary(
     personType as SalaryPersonType,
     personId,
   );
-  if (!person) return { error: "یہ شخص آپ کے ریکارڈ میں نہیں ہے۔" };
+  if (!person) return { error: t(lang, "sal.err.person_not_found") };
 
   const table = personType === "teacher" ? "teachers" : "staff";
   const { error } = await supabase
@@ -113,7 +117,7 @@ export async function setMonthlySalary(
     .update({ monthly_salary: amount })
     .eq("id", personId)
     .eq("madrasa_id", mine.madrasaId);
-  if (error) return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+  if (error) return { error: t(lang, "funds.err.save_failed") };
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "salary_set", {
     person_type: personType,
@@ -140,6 +144,7 @@ interface SalaryFields {
 function validateFields(
   formData: FormData,
 ): { fields: SalaryFields } | { error: string } {
+  const lang = formLang(formData);
   const personType = clean(formData.get("person_type"), 20);
   const personId = clean(formData.get("person_id"), 40);
   const salaryMonth = clean(formData.get("salary_month"), 10);
@@ -150,20 +155,20 @@ function validateFields(
   const note = clean(formData.get("note"), 500);
 
   if (!SALARY_PERSON_TYPES.includes(personType as SalaryPersonType))
-    return { error: "شخص درست منتخب کریں (استاد یا عملہ)۔" };
-  if (!personId) return { error: "شخص ضروری ہے۔" };
+    return { error: t(lang, "sal.err.person_invalid") };
+  if (!personId) return { error: t(lang, "sal.err.person_required") };
   if (!isValidMonth(salaryMonth))
-    return { error: "مہینہ درست شکل میں لکھیں (مثلاً 2026-11)۔" };
+    return { error: t(lang, "sal.err.month_invalid") };
   if (salaryMonth > currentMonthInKarachi())
-    return { error: "تنخواہ آنے والے مہینے کی نہیں دی جا سکتی۔" };
+    return { error: t(lang, "sal.err.month_future") };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(paymentDate))
-    return { error: "تاریخ درست شکل میں لکھیں۔" };
+    return { error: t(lang, "exp.err.date_invalid") };
   if (paymentDate > todayInKarachi())
-    return { error: "تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "exp.err.date_future") };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
-    return { error: "رقم 1 سے 10,000,000 کے درمیان ہونی چاہیے۔" };
+    return { error: t(lang, "exp.err.amount_invalid") };
   if (!PAYMENT_METHODS.includes(paymentMethod as PaymentMethod))
-    return { error: "ادائیگی کا طریقہ درست منتخب کریں۔" };
+    return { error: t(lang, "exp.err.method_invalid") };
 
   return {
     fields: {
@@ -182,15 +187,16 @@ function validateFields(
 export async function addSalaryPayment(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const checked = validateFields(formData);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isMadrasaOwner(supabase)))
-    return { error: "صرف ایڈمن تنخواہ دے سکتا ہے۔" };
+    return { error: t(lang, "sal.err.only_admin_pay") };
 
   const person = await getPerson(
     supabase,
@@ -198,11 +204,11 @@ export async function addSalaryPayment(
     f.personType,
     f.personId,
   );
-  if (!person) return { error: "یہ شخص آپ کے ریکارڈ میں نہیں ہے۔" };
+  if (!person) return { error: t(lang, "sal.err.person_not_found") };
 
   // مرحلہ 39 — بند مہینے کی تنخواہ نہیں دی جا سکتی
   if (await isMonthClosed(supabase, mine.madrasaId, f.salaryMonth)) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
   if (
     await isMonthClosed(
@@ -211,7 +217,7 @@ export async function addSalaryPayment(
       monthOfDate(f.paymentDate),
     )
   ) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
 
   // ایک شخص کی ایک مہینے کی تنخواہ صرف ایک بار
@@ -226,7 +232,9 @@ export async function addSalaryPayment(
     .maybeSingle();
   if (existing) {
     return {
-      error: `اس شخص کی ${formatMonthUrdu(f.salaryMonth)} کی تنخواہ پہلے سے دی جا چکی ہے۔`,
+      error: t(lang, "sal.err.already_paid", {
+        month: formatMonthUrdu(f.salaryMonth),
+      }),
     };
   }
 
@@ -257,9 +265,9 @@ export async function addSalaryPayment(
     .single();
   if (expenseError || !expense) {
     if ((expenseError as { code?: string } | null)?.code === "23505") {
-      return { error: "واؤچر نمبر دو بار بن گیا — دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "exp.err.voucher_clash") };
     }
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "funds.err.save_failed") };
   }
   const expenseId = expense.id as string;
 
@@ -291,10 +299,12 @@ export async function addSalaryPayment(
       .eq("status", "active");
     if ((error as { code?: string } | null)?.code === "23505") {
       return {
-        error: `اس شخص کی ${formatMonthUrdu(f.salaryMonth)} کی تنخواہ پہلے سے دی جا چکی ہے۔`,
+        error: t(lang, "sal.err.already_paid", {
+        month: formatMonthUrdu(f.salaryMonth),
+      }),
       };
     }
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "funds.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "salary_created", {
@@ -314,12 +324,13 @@ export async function addSalaryPayment(
 /** غلط ادائیگی منسوخ کریں — جڑا ہوا واؤچر بھی منسوخ ہوتا ہے */
 export async function voidSalaryPayment(
   id: string,
+  lang: Lang,
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isMadrasaOwner(supabase)))
-    return { error: "صرف ایڈمن تنخواہ منسوخ کر سکتا ہے۔" };
+    return { error: t(lang, "sal.err.only_admin_void") };
 
   const { data: row } = await supabase
     .from("salary_payments")
@@ -329,7 +340,7 @@ export async function voidSalaryPayment(
     .eq("status", "active")
     .maybeSingle();
   if (!row) {
-    return { error: "منسوخ نہیں ہو سکا — شاید یہ ادائیگی پہلے سے منسوخ ہے۔" };
+    return { error: t(lang, "sal.err.void_not_found") };
   }
 
   // مرحلہ 39 — بند مہینے کی ادائیگی منسوخ نہیں ہو سکتی
@@ -340,7 +351,7 @@ export async function voidSalaryPayment(
       row.salary_month as string,
     )
   ) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
 
   const { data, error } = await supabase
@@ -352,7 +363,7 @@ export async function voidSalaryPayment(
     .select("id")
     .single();
   if (error || !data) {
-    return { error: "منسوخ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "sal.err.void_failed") };
   }
 
   // جڑا ہوا واؤچر بھی منسوخ کریں (اگر ابھی فعال ہے)

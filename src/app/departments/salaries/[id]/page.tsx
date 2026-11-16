@@ -10,6 +10,8 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
 import { isMadrasaOwner } from "@/lib/approval";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { PAYMENT_METHOD_LABELS, formatMonthUrdu } from "@/lib/fees";
 import {
   SALARY_PERSON_TYPE_LABELS,
@@ -33,6 +35,7 @@ export default async function SalaryDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // حصہ 4 کی درستگی — تنخواہیں مدرسے کے مالک کے لیے ہیں (سپر ایڈمن ہونا ضروری نہیں)
   if (!(await isMadrasaOwner(supabase))) {
     redirect("/");
@@ -50,10 +53,10 @@ export default async function SalaryDetailPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/salaries" />
-            <h2>تنخواہ کی ادائیگی</h2>
+            <h2>{t(lang, "salary.detail_title")}</h2>
           </div>
           <p className="empty-state">
-            تنخواہوں کی میز ابھی نہیں بنی — پہلے مرحلہ 50 کی SQL چلائیں۔
+            {t(lang, "salaries.table_missing")}
           </p>
         </div>
       </div>
@@ -125,7 +128,7 @@ export default async function SalaryDetailPage({
       <div className="page-card receipt receipt-slip">
         <div className="page-head">
           <BackButton href="/departments/salaries" />
-          <h2>تنخواہ کی ادائیگی</h2>
+          <h2>{t(lang, "salary.detail_title")}</h2>
           <span className="page-count">{voucherNumber}</span>
         </div>
 
@@ -136,7 +139,7 @@ export default async function SalaryDetailPage({
 
         <div className="detail-rows">
           <div className="row">
-            <span>واؤچر نمبر</span>
+            <span>{t(lang, "exp.col_voucher")}</span>
             <span>
               {record.expense_id ? (
                 <Link href={`/departments/expenses/${record.expense_id}`}>
@@ -148,44 +151,48 @@ export default async function SalaryDetailPage({
             </span>
           </div>
           <div className="row">
-            <span>شخص</span>
+            <span>{t(lang, "salary.col_person")}</span>
             <span>{personName}</span>
           </div>
           <div className="row">
-            <span>قسم</span>
-            <span>{SALARY_PERSON_TYPE_LABELS[record.person_type]}</span>
+            <span>{t(lang, "col.type")}</span>
+            <span>{t(lang, `salary.person.${record.person_type}`)}</span>
           </div>
           <div className="row">
-            <span>تنخواہ کا مہینہ</span>
+            <span>{t(lang, "salary.col_month")}</span>
             <span>{formatMonthUrdu(record.salary_month)}</span>
           </div>
           <div className="row">
-            <span>رقم</span>
-            <span>{record.amount.toLocaleString("ur-PK")} روپے</span>
+            <span>{t(lang, "exp.col_amount")}</span>
+            <span>
+              {t(lang, "common.money", { n: record.amount.toLocaleString("ur-PK") })}
+            </span>
           </div>
           <div className="row">
-            <span>ادائیگی کی تاریخ</span>
+            <span>{t(lang, "salaries.col_payment_date")}</span>
             <span>{formatDate(record.payment_date)}</span>
           </div>
           <div className="row">
-            <span>ادائیگی کا طریقہ</span>
-            <span>{PAYMENT_METHOD_LABELS[record.payment_method]}</span>
+            <span>{t(lang, "fee.method_label")}</span>
+            <span>{t(lang, `fee.method.${record.payment_method}`)}</span>
           </div>
           {record.note ? (
             <div className="row">
-              <span>نوٹ</span>
+              <span>{t(lang, "fee.form.note")}</span>
               <span>{record.note}</span>
             </div>
           ) : null}
           <div className="row">
-            <span>حالت</span>
-            <span>{SALARY_STATUS_LABELS[record.status]}</span>
+            <span>{t(lang, "col.status")}</span>
+            <span>{t(lang, `salary.status.${record.status}`)}</span>
           </div>
         </div>
 
         <div className="form-actions no-print">
           <SaveSlipImageButton data={imageData} />
-          {record.status === "active" ? <VoidButton id={record.id} /> : null}
+          {record.status === "active" ? (
+            <VoidButton id={record.id} lang={lang} />
+          ) : null}
         </div>
       </div>
     </div>
