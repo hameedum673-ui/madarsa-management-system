@@ -7,7 +7,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
+import { t, isLang, type Lang } from "@/i18n/dictionary";
 import {
   DEPARTMENT_IDS,
   getMyMadrasa,
@@ -26,9 +27,17 @@ interface FeeScheduleFields {
   amount: number;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** مرحلہ 112 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
+
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
+  lang: Lang,
 ): { fields: FeeScheduleFields } | { error: string } {
   const department = clean(formData.get("department"), 20);
   const className = clean(formData.get("class_name"), 100);
@@ -36,9 +45,9 @@ function validateFields(
   const amount = Number(amountRaw);
 
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
-    return { error: "شعبہ درست منتخب کریں (حفظ، ناظرہ یا درسِ نظامی)۔" };
+    return { error: t(lang, "schedule.err.dept_invalid") };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
-    return { error: "رقم 1 سے 10,000,000 روپے کے درمیان ہونی چاہیے۔" };
+    return { error: t(lang, "schedule.err.amount_invalid") };
 
   return {
     fields: {
@@ -73,15 +82,16 @@ async function writeAudit(
 export async function saveFeeSchedule(
   formData: FormData,
 ): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "income"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // جماعت دی ہو تو وہ اس شعبے کی فعال جماعت ہونی چاہیے
@@ -94,7 +104,7 @@ export async function saveFeeSchedule(
       .eq("status", "active")
       .maybeSingle();
     if (!cls) {
-      return { error: "یہ جماعت اس شعبے کی درجات میں درج نہیں ہے۔" };
+      return { error: t(lang, "schedule.err.class_not_found") };
     }
   }
 
@@ -110,7 +120,7 @@ export async function saveFeeSchedule(
   );
 
   if (error) {
-    return { error: "فیس محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "schedule.err.save_failed") };
   }
 
   await writeAudit(
@@ -134,12 +144,13 @@ export async function saveFeeSchedule(
 /** فیس غیر فعال کریں — ریکارڈ حذف نہیں ہوتا، صرف بند ہوتا ہے */
 export async function deactivateFeeSchedule(
   id: string,
+  lang: Lang = "ur",
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "income"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -151,7 +162,7 @@ export async function deactivateFeeSchedule(
     .single();
 
   if (error || !data) {
-    return { error: "غیر فعال نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "schedule.err.deactivate_failed") };
   }
 
   await writeAudit(

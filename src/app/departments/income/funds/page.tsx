@@ -10,16 +10,13 @@ import BackButton from "@/components/BackButton";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
-import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
+import { SECTION_IDS, type SectionId } from "@/lib/students";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { isAppAdmin } from "@/lib/approval";
-import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
-import {
-  FUND_CATEGORIES,
-  FUND_CATEGORY_LABELS,
-  type FundCategory,
-} from "@/lib/funds";
+import { FUND_CATEGORIES, type FundCategory } from "@/lib/funds";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -54,6 +51,7 @@ export default async function FundsPage({
     : "all";
 
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const admin = await isAppAdmin(supabase);
   // مرحلہ 62 — اجازت والے شعبے + چنا ہوا شعبہ (بنین / بنات / سب)
   const allowedSections = await getMyAllowedSections(supabase);
@@ -238,70 +236,77 @@ export default async function FundsPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/income" />
-          <h2>زکوٰۃ، عشر اور عطیات</h2>
+          <h2>{t(lang, "income.sec_funds")}</h2>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/income/funds/new">
-            + نیا اندراج
+{t(lang, "funds.add")}
           </Link>
         </div>
 
         <div className="detail-rows">
-          {totals.map((t) => (
-            <div className="row" key={t.fund}>
-              <span>کل {FUND_CATEGORY_LABELS[t.fund]}</span>
-              <span>{t.total.toLocaleString("ur-PK")} روپے</span>
+          {totals.map((tr) => (
+            <div className="row" key={tr.fund}>
+              <span>
+                {t(lang, "funds.total_cat", {
+                  cat: t(lang, `fund.cat.${tr.fund}`),
+                })}
+              </span>
+              <span>
+                {t(lang, "common.money", {
+                  n: tr.total.toLocaleString("ur-PK"),
+                })}
+              </span>
             </div>
           ))}
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">مد</span>
+            <span className="field-label">{t(lang, "funds.filter_fund")}</span>
             <select className="field-input" name="fund" defaultValue={fund}>
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {visibleFunds.map((f) => (
                 <option key={f} value={f}>
-                  {FUND_CATEGORY_LABELS[f]}
+                  {t(lang, `fund.cat.${f}`)}
                 </option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select className="field-input" name="section" defaultValue={section}>
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {tableMissing ? (
           <p className="empty-state">
-            زکوٰۃ یا عشر کی میز ابھی نہیں بنی — پہلے متعلقہ مرحلے کی SQL
-            چلائیں۔
+{t(lang, "funds.table_missing")}
           </p>
         ) : rows.length === 0 ? (
-          <p className="empty-state">ابھی کوئی اندراج درج نہیں ہے۔</p>
+          <p className="empty-state">{t(lang, "funds.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>رسید نمبر</th>
-                  <th>مد</th>
-                  <th>بنین / بنات</th>
-                  <th>نام</th>
-                  <th>رقم</th>
-                  <th>تاریخ</th>
-                  <th>طریقہ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.receipt")}</th>
+                  <th>{t(lang, "funds.filter_fund")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "fee.amount_label")}</th>
+                  <th>{t(lang, "col.date")}</th>
+                  <th>{t(lang, "col.method")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -310,8 +315,8 @@ export default async function FundsPage({
                     <td>
                       <Link href={r.detailHref}>{r.receipt_number}</Link>
                     </td>
-                    <td>{FUND_CATEGORY_LABELS[r.fund]}</td>
-                    <td>{SECTION_LABELS[(r.section ?? "banat") as SectionId]}</td>
+                    <td>{t(lang, `fund.cat.${r.fund}`)}</td>
+                    <td>{t(lang, `section.${(r.section ?? "banat") as SectionId}`)}</td>
                     <td>
                       <Link href={r.detailHref}>{r.name}</Link>
                     </td>
@@ -319,16 +324,19 @@ export default async function FundsPage({
                     <td>{formatDate(r.date)}</td>
                     <td>
                       {
-                        PAYMENT_METHOD_LABELS[
-                          r.payment_method as keyof typeof PAYMENT_METHOD_LABELS
-                        ]
+                        t(
+                          lang,
+                          `fee.method.${r.payment_method as string}`,
+                        )
                       }
                     </td>
                     <td>
                       <span
                         className={`badge${r.status === "voided" ? " badge-withdrawn" : ""}`}
                       >
-                        {r.status === "voided" ? "منسوخ" : "فعال"}
+                        {r.status === "voided"
+                          ? t(lang, "fee.status.voided")
+                          : t(lang, "fee.status.active")}
                       </span>
                     </td>
                   </tr>
@@ -338,7 +346,7 @@ export default async function FundsPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

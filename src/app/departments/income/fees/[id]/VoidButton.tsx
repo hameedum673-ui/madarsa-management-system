@@ -7,8 +7,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { voidFeePayment } from "@/app/departments/income/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
-export default function VoidButton({ id }: { id: string }) {
+export default function VoidButton({
+  id,
+  lang,
+}: {
+  id: string;
+  lang: Lang;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -17,7 +24,7 @@ export default function VoidButton({ id }: { id: string }) {
   async function handleVoid() {
     setError("");
     setLoading(true);
-    const res = await voidFeePayment(id);
+    const res = await voidFeePayment(id, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
@@ -33,7 +40,7 @@ export default function VoidButton({ id }: { id: string }) {
         type="button"
         onClick={() => setConfirming(true)}
       >
-        رسید منسوخ کریں
+{t(lang, "fee.void")}
       </button>
     );
   }
@@ -46,14 +53,14 @@ export default function VoidButton({ id }: { id: string }) {
         onClick={handleVoid}
         disabled={loading}
       >
-        {loading ? "براہِ کرم انتظار کریں…" : "جی ہاں، منسوخ کریں"}
+        {loading ? t(lang, "common.wait") : t(lang, "fee.void_confirm")}
       </button>{" "}
       <button
         className="btn-primary"
         type="button"
         onClick={() => setConfirming(false)}
       >
-        واپس
+{t(lang, "common.back")}
       </button>
       {error ? <span className="form-error"> {error}</span> : null}
     </span>

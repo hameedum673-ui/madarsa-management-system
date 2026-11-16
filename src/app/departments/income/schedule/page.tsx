@@ -12,9 +12,7 @@ import {
   getMySectionFilter,
 } from "@/lib/permissions";
 import {
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
   type DepartmentId,
   type SectionId,
   type Student,
@@ -28,11 +26,12 @@ import { getActiveClasses } from "@/lib/classes";
 import {
   dueStatus,
   feeForStudent,
-  FEE_DUE_STATUS_LABELS,
   type FeeDueStatus,
   type FeeScheduleEntry,
   type FeeScheduleRow,
 } from "@/lib/feeSchedule";
+import { getMyLanguage } from "@/lib/language";
+import { t, type Lang } from "@/i18n/dictionary";
 import ScheduleForm from "@/app/departments/income/schedule/ScheduleForm";
 import DeactivateButton from "@/app/departments/income/schedule/DeactivateButton";
 import {
@@ -42,8 +41,8 @@ import {
   whatsappLink,
 } from "@/lib/whatsapp";
 
-function money(value: number): string {
-  return `${value.toLocaleString("ur-PK")} روپے`;
+function money(value: number, lang: Lang): string {
+  return t(lang, "common.money", { n: value.toLocaleString("ur-PK") });
 }
 
 function statusBadgeClass(status: FeeDueStatus): string {
@@ -65,6 +64,7 @@ export default async function FeeSchedulePage({
       : currentMonthInKarachi();
 
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
@@ -160,47 +160,49 @@ export default async function FeeSchedulePage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/income/fees" />
-          <h2>فیس کا شیڈول</h2>
+          <h2>{t(lang, "schedule.title")}</h2>
           <span className="page-count">
-            طے شدہ فیس: {schedule.length.toLocaleString("ur-PK")}
+            {t(lang, "schedule.count_set", {
+              n: schedule.length.toLocaleString("ur-PK"),
+            })}
           </span>
         </div>
 
         {tableMissing ? (
           <p className="empty-state">
-            فیس کے شیڈول کی میز ابھی نہیں بنی — پہلے مرحلہ 37 کی SQL چلائیں۔
+{t(lang, "schedule.table_missing")}
           </p>
         ) : scheduleError ? (
-          <p className="empty-state">شیڈول نہیں کھل سکا — دوبارہ کوشش کریں۔</p>
+<p className="empty-state">{t(lang, "schedule.load_error")}</p>
         ) : (
           <>
-            <h3 className="form-section-title">ماہانہ فیس طے کریں</h3>
-            <ScheduleForm classes={classes} />
+            <h3 className="form-section-title">{t(lang, "schedule.set_title")}</h3>
+            <ScheduleForm classes={classes} lang={lang} />
 
-            <h3 className="form-section-title">طے شدہ فیس</h3>
+            <h3 className="form-section-title">{t(lang, "schedule.set_list_title")}</h3>
             {schedule.length === 0 ? (
               <p className="empty-state">
-                ابھی کوئی فیس طے نہیں ہے — اوپر والے فارم سے پہلی فیس طے کریں۔
+{t(lang, "schedule.empty")}
               </p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>شعبہ</th>
-                      <th>جماعت</th>
-                      <th>ماہانہ فیس</th>
-                      <th>کارروائی</th>
+                      <th>{t(lang, "col.dept")}</th>
+                      <th>{t(lang, "col.class")}</th>
+                      <th>{t(lang, "schedule.col_monthly")}</th>
+                      <th>{t(lang, "col.action")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {schedule.map((s) => (
                       <tr key={s.id}>
-                        <td>{DEPARTMENT_LABELS[s.department]}</td>
-                        <td>{s.class_name === "" ? "پورا شعبہ" : s.class_name}</td>
-                        <td>{money(s.amount)}</td>
+                        <td>{t(lang, `dept.${s.department}`)}</td>
+                        <td>{s.class_name === "" ? t(lang, "schedule.whole_dept") : s.class_name}</td>
+                        <td>{money(s.amount, lang)}</td>
                         <td>
-                          <DeactivateButton id={s.id} />
+                          <DeactivateButton id={s.id} lang={lang} />
                         </td>
                       </tr>
                     ))}
@@ -209,14 +211,14 @@ export default async function FeeSchedulePage({
               </div>
             )}
 
-            <h3 className="form-section-title">ادا / بقایا فہرست</h3>
+            <h3 className="form-section-title">{t(lang, "schedule.due_title")}</h3>
             <form
               method="get"
               action="/departments/income/schedule"
               className="att-controls"
             >
               <label className="field">
-                <span className="field-label">مہینہ</span>
+                <span className="field-label">{t(lang, "fees.month")}</span>
                 <input
                   className="field-input"
                   type="month"
@@ -225,54 +227,56 @@ export default async function FeeSchedulePage({
                 />
               </label>
               <label className="field">
-                <span className="field-label">شعبہ (بنین / بنات)</span>
+                <span className="field-label">{t(lang, "students.section_filter")}</span>
                 <select
                   className="field-input"
                   name="section"
                   defaultValue={section}
                 >
-                  <option value="all">سب</option>
+                  <option value="all">{t(lang, "common.all")}</option>
                   {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                     <option key={s} value={s}>
-                      {SECTION_LABELS[s]}
+    {t(lang, `section.${s}`)}
                     </option>
                   ))}
                 </select>
               </label>
               <button className="btn-primary" type="submit">
-                دکھائیں
+                {t(lang, "common.show")}
               </button>
               <span className="spacer" />
               <span className="page-count">
-                {formatMonthUrdu(month)} — ادا شدہ:{" "}
-                {counts.paid.toLocaleString("ur-PK")}، جزوی:{" "}
-                {counts.partial.toLocaleString("ur-PK")}، بقایا:{" "}
-                {counts.unpaid.toLocaleString("ur-PK")}، فیس طے نہیں:{" "}
-                {counts.unset.toLocaleString("ur-PK")}
+                {t(lang, "schedule.counts_line", {
+                  month: formatMonthUrdu(month),
+                  paid: counts.paid.toLocaleString("ur-PK"),
+                  partial: counts.partial.toLocaleString("ur-PK"),
+                  unpaid: counts.unpaid.toLocaleString("ur-PK"),
+                  unset: counts.unset.toLocaleString("ur-PK"),
+                })}
               </span>
             </form>
             <p className="sub">
-              پہلے مہینہ چنیں، پھر &quot;دکھائیں&quot; دبائیں۔
+{t(lang, "schedule.hint")}
             </p>
 
             {dueRows.length === 0 ? (
               <p className="empty-state">
-                کوئی فعال طالب علم نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالب علم شامل کریں۔
+{t(lang, "fees.no_students")}
               </p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>رجسٹریشن نمبر</th>
-                      <th>نام</th>
-                      <th>والد کا نام</th>
-                      <th>شعبہ</th>
-                      <th>جماعت</th>
-                      <th>طے شدہ فیس</th>
-                      <th>ادا شدہ</th>
-                      <th>حالت</th>
-                      <th>پیغام</th>
+                      <th>{t(lang, "col.reg")}</th>
+                      <th>{t(lang, "col.name")}</th>
+                      <th>{t(lang, "col.father")}</th>
+                      <th>{t(lang, "col.dept")}</th>
+                      <th>{t(lang, "col.class")}</th>
+                      <th>{t(lang, "schedule.col_expected")}</th>
+                      <th>{t(lang, "schedule.col_paid")}</th>
+                      <th>{t(lang, "col.status")}</th>
+                      <th>{t(lang, "schedule.col_message")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -313,16 +317,16 @@ export default async function FeeSchedulePage({
                           </td>
                           <td>{r.student.father_name}</td>
                           <td>
-                            {DEPARTMENT_LABELS[r.student.department]}
+                            {t(lang, `dept.${r.student.department}`)}
                           </td>
                           <td>{r.student.class_name ?? "—"}</td>
                           <td>
-                            {r.expected === null ? "—" : money(r.expected)}
+{r.expected === null ? "—" : money(r.expected, lang)}
                           </td>
-                          <td>{money(r.paid)}</td>
+                          <td>{money(r.paid, lang)}</td>
                           <td>
                             <span className={statusBadgeClass(r.status)}>
-                              {FEE_DUE_STATUS_LABELS[r.status]}
+{t(lang, `schedule.due.${r.status}`)}
                             </span>
                           </td>
                           <td>
@@ -335,10 +339,10 @@ export default async function FeeSchedulePage({
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  WhatsApp پر بھیجیں
+                                  {t(lang, "schedule.whatsapp_send")}
                                 </a>
                               ) : (
-                                "فون نمبر درج نہیں ہے"
+                                t(lang, "schedule.no_phone")
                               )
                             ) : (
                               "—"

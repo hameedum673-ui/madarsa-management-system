@@ -10,9 +10,12 @@ import { addFundRecord } from "@/app/departments/income/funds/actions";
 import { createClient } from "@/lib/supabase/server";
 import { isAppAdmin } from "@/lib/approval";
 import { FUND_CATEGORIES, type FundCategory } from "@/lib/funds";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function NewFundPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const admin = await isAppAdmin(supabase);
 
   let allowedFunds: FundCategory[] = [...FUND_CATEGORIES];
@@ -47,9 +50,9 @@ export default async function NewFundPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/income/funds" />
-          <h2>نیا اندراج — زکوٰۃ، عشر اور عطیات</h2>
+          <h2>{t(lang, "funds.new_title")}</h2>
         </div>
-        <FundsForm action={addFundRecord} allowedFunds={allowedFunds} />
+        <FundsForm action={addFundRecord} allowedFunds={allowedFunds} lang={lang} />
       </div>
     </div>
   );

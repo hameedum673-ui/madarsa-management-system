@@ -6,14 +6,17 @@
 "use client";
 
 import { useState } from "react";
-import { DEPARTMENT_IDS, DEPARTMENT_LABELS } from "@/lib/students";
+import { DEPARTMENT_IDS } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 import type { ClassOption } from "@/lib/classes";
 import { saveFeeSchedule } from "@/app/departments/income/schedule/actions";
 
 export default function ScheduleForm({
   classes,
+  lang,
 }: {
   classes: ClassOption[];
+  lang: Lang;
 }) {
   const [department, setDepartment] = useState("hifz");
   const [className, setClassName] = useState("");
@@ -33,13 +36,14 @@ export default function ScheduleForm({
     formData.set("department", department);
     formData.set("class_name", className);
     formData.set("amount", amount);
+    formData.set("lang", lang);
     const res = await saveFeeSchedule(formData);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
       return;
     }
-    setSuccess("فیس طے ہو گئی ہے۔");
+    setSuccess(t(lang, "schedule.form.saved"));
     setAmount("");
   }
 
@@ -47,7 +51,7 @@ export default function ScheduleForm({
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">شعبہ *</span>
+          <span className="field-label">{t(lang, "schedule.form.dept")}</span>
           <select
             className="field-input"
             value={department}
@@ -59,19 +63,19 @@ export default function ScheduleForm({
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
-                {DEPARTMENT_LABELS[d]}
+{t(lang, `dept.${d}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          <span className="field-label">جماعت</span>
+          <span className="field-label">{t(lang, "schedule.form.class")}</span>
           <select
             className="field-input"
             value={className}
             onChange={(e) => setClassName(e.target.value)}
           >
-            <option value="">پورا شعبہ</option>
+            <option value="">{t(lang, "schedule.whole_dept")}</option>
             {deptClasses.map((c) => (
               <option key={`${c.department}-${c.name}`} value={c.name}>
                 {c.name}
@@ -80,7 +84,7 @@ export default function ScheduleForm({
           </select>
         </label>
         <label className="field">
-          <span className="field-label">ماہانہ فیس (روپے) *</span>
+          <span className="field-label">{t(lang, "schedule.form.amount")}</span>
           <input
             className="field-input"
             type="number"
@@ -90,7 +94,7 @@ export default function ScheduleForm({
             inputMode="numeric"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="مثلاً 1000"
+            placeholder={t(lang, "fee.form.amount_ph")}
             required
           />
         </label>
@@ -105,7 +109,7 @@ export default function ScheduleForm({
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "فیس طے کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "schedule.form.submit")}
         </button>
       </div>
     </form>

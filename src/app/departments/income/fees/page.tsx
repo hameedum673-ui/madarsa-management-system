@@ -10,14 +10,13 @@ import { createClient } from "@/lib/supabase/server";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import {
   SECTION_IDS,
-  SECTION_LABELS,
   type SectionId,
 } from "@/lib/students";
 import {
-  FEE_PAYMENT_STATUS_LABELS,
-  PAYMENT_METHOD_LABELS,
   currentMonthInKarachi,
   formatMonthUrdu,
   isValidMonth,
@@ -43,6 +42,7 @@ export default async function IncomePage({
 
   // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   const rawSection = sp.section ?? "all";
@@ -101,18 +101,18 @@ export default async function IncomePage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/income" />
-          <h2>آمدنی کا ریکارڈ — فیس اور رسیدیں</h2>
+          <h2>{t(lang, "fees.title")}</h2>
           <span className="page-count">
             {month === "all"
-              ? "سب مہینے"
+              ? t(lang, "fees.all_months")
               : formatMonthUrdu(month)}
           </span>
           <span className="spacer" />
           <Link className="btn-ghost" href="/departments/income/schedule">
-            فیس کا شیڈول دیکھیں
+{t(lang, "income.view_schedule")}
           </Link>
           <Link className="btn-primary" href="/departments/income/fees/new">
-            + نئی فیس درج کریں
+{t(lang, "fees.add")}
           </Link>
         </div>
 
@@ -122,7 +122,7 @@ export default async function IncomePage({
           className="att-controls"
         >
           <label className="field">
-            <span className="field-label">مہینہ</span>
+            <span className="field-label">{t(lang, "fees.month")}</span>
             <input
               className="field-input"
               type="month"
@@ -131,55 +131,57 @@ export default async function IncomePage({
             />
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دیکھیں
+            {t(lang, "common.view")}
           </button>
           <Link className="btn-ghost" href="/departments/income/fees?month=all">
-            سب مہینے دیکھیں
+{t(lang, "fees.show_all_months")}
           </Link>
           <span className="spacer" />
           <span className="page-count">
-            کل وصول شدہ: {totalCollected.toLocaleString("ur-PK")} روپے
+            {t(lang, "fees.total_collected", {
+              total: totalCollected.toLocaleString("ur-PK"),
+            })}
           </span>
         </form>
 
         {tableMissing ? (
           <p className="empty-state">
-            فیس کی میز ابھی نہیں بنی — پہلے مرحلہ 8 کی SQL چلائیں۔
+{t(lang, "fees.table_missing")}
           </p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+<p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : payments.length === 0 ? (
           <p className="empty-state">
-            اس مہینے کی کوئی فیس درج نہیں ہے۔ اوپر والے بٹن سے پہلی فیس درج کریں۔
+{t(lang, "fees.empty")}
           </p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>رسید نمبر</th>
-                  <th>طالب علم</th>
-                  <th>بنین / بنات</th>
-                  <th>مہینہ</th>
-                  <th>رقم (روپے)</th>
-                  <th>طریقہ</th>
-                  <th>تاریخ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.receipt")}</th>
+                  <th>{t(lang, "col.student")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "fees.month")}</th>
+                  <th>{t(lang, "col.amount")}</th>
+                  <th>{t(lang, "col.method")}</th>
+                  <th>{t(lang, "col.date")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,18 +199,18 @@ export default async function IncomePage({
                     </td>
                     <td>
                       {p.students?.section
-                        ? SECTION_LABELS[p.students.section as SectionId]
+                        ? t(lang, `section.${p.students.section as SectionId}`)
                         : "—"}
                     </td>
                     <td>{formatMonthUrdu(p.fee_month)}</td>
                     <td>{p.amount.toLocaleString("ur-PK")}</td>
-                    <td>{PAYMENT_METHOD_LABELS[p.payment_method]}</td>
+                    <td>{t(lang, `fee.method.${p.payment_method}`)}</td>
                     <td>{formatDate(p.payment_date)}</td>
                     <td>
                       <span
                         className={`badge ${p.status === "voided" ? "badge-muted" : ""}`}
                       >
-                        {FEE_PAYMENT_STATUS_LABELS[p.status]}
+{t(lang, `fee.status.${p.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -218,7 +220,7 @@ export default async function IncomePage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={sp} />
+        <Pagination page={page} totalPages={pages} params={sp} lang={lang} />
 
       </div>
     </div>

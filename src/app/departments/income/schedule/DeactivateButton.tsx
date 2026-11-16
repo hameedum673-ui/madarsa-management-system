@@ -7,8 +7,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { deactivateFeeSchedule } from "@/app/departments/income/schedule/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
-export default function DeactivateButton({ id }: { id: string }) {
+export default function DeactivateButton({
+  id,
+  lang,
+}: {
+  id: string;
+  lang: Lang;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +28,7 @@ export default function DeactivateButton({ id }: { id: string }) {
     }
     setError("");
     setLoading(true);
-    const res = await deactivateFeeSchedule(id);
+    const res = await deactivateFeeSchedule(id, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
@@ -40,10 +47,10 @@ export default function DeactivateButton({ id }: { id: string }) {
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.wait")
           : confirming
-            ? "پکا غیر فعال کریں؟"
-            : "غیر فعال کریں"}
+            ? t(lang, "schedule.deactivate_confirm")
+            : t(lang, "schedule.deactivate")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </span>

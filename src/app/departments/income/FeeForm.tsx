@@ -6,7 +6,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/fees";
+import { PAYMENT_METHODS } from "@/lib/fees";
+import { t, type Lang } from "@/i18n/dictionary";
 import { currentMonthInKarachi } from "@/lib/fees";
 import { addFeePayment } from "@/app/departments/income/actions";
 import {
@@ -27,9 +28,11 @@ export interface FeeStudent {
 export default function FeeForm({
   students,
   schedule = [],
+  lang,
 }: {
   students: FeeStudent[];
   schedule?: FeeScheduleEntry[];
+  lang: Lang;
 }) {
   const router = useRouter();
   const [studentId, setStudentId] = useState("");
@@ -79,6 +82,7 @@ export default function FeeForm({
     formData.set("payment_date", paymentDate);
     formData.set("payment_method", paymentMethod);
     formData.set("note", note);
+    formData.set("lang", lang);
     const res = await addFeePayment(formData);
     setLoading(false);
     if ("error" in res) {
@@ -92,14 +96,14 @@ export default function FeeForm({
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">طالب علم *</span>
+          <span className="field-label">{t(lang, "fee.form.student")}</span>
           <select
             className="field-input"
             value={studentId}
             onChange={(e) => handleStudentChange(e.target.value)}
             required
           >
-            <option value="">طالب علم منتخب کریں</option>
+            <option value="">{t(lang, "admission.form.pick_placeholder")}</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} — {s.father_name}
@@ -109,7 +113,7 @@ export default function FeeForm({
           </select>
         </label>
         <label className="field">
-          <span className="field-label">مہینہ *</span>
+          <span className="field-label">{t(lang, "fee.form.month")}</span>
           <input
             className="field-input"
             type="month"
@@ -119,7 +123,7 @@ export default function FeeForm({
           />
         </label>
         <label className="field">
-          <span className="field-label">رقم (روپے) *</span>
+          <span className="field-label">{t(lang, "fee.form.amount")}</span>
           <input
             className="field-input"
             type="number"
@@ -132,17 +136,17 @@ export default function FeeForm({
               setAmount(e.target.value);
               setAmountFromSchedule(false);
             }}
-            placeholder="مثلاً 1000"
+            placeholder={t(lang, "fee.form.amount_ph")}
             required
           />
           {amountFromSchedule ? (
             <span className="sub">
-              طے شدہ فیس سے بھری گئی ہے — بدلی جا سکتی ہے۔
+{t(lang, "fee.form.from_schedule")}
             </span>
           ) : null}
         </label>
         <label className="field">
-          <span className="field-label">ادائیگی کی تاریخ *</span>
+          <span className="field-label">{t(lang, "fee.form.date")}</span>
           <input
             className="field-input"
             type="date"
@@ -152,7 +156,7 @@ export default function FeeForm({
           />
         </label>
         <label className="field">
-          <span className="field-label">ادائیگی کا طریقہ *</span>
+          <span className="field-label">{t(lang, "fee.form.method")}</span>
           <select
             className="field-input"
             value={paymentMethod}
@@ -161,19 +165,19 @@ export default function FeeForm({
           >
             {PAYMENT_METHODS.map((m) => (
               <option key={m} value={m}>
-                {PAYMENT_METHOD_LABELS[m]}
+                {t(lang, `fee.method.${m}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="field">
-          <span className="field-label">نوٹ</span>
+          <span className="field-label">{t(lang, "fee.form.note")}</span>
           <input
             className="field-input"
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="اختیاری"
+            placeholder={t(lang, "fee.form.note_ph")}
           />
         </label>
       </div>
@@ -182,7 +186,7 @@ export default function FeeForm({
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "فیس درج کریں اور رسید بنائیں"}
+          {loading ? t(lang, "common.wait") : t(lang, "fee.form.submit")}
         </button>
       </div>
     </form>

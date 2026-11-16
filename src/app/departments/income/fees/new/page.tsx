@@ -5,11 +5,14 @@
  */
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import FeeForm, { type FeeStudent } from "@/app/departments/income/FeeForm";
 import type { FeeScheduleEntry } from "@/lib/feeSchedule";
 
 export default async function NewFeePage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const { data, error } = await supabase
     .from("students")
     .select("id, name, father_name, registration_number, class_name, department")
@@ -37,21 +40,21 @@ export default async function NewFeePage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/income/fees" />
-          <h2>نئی فیس درج کریں</h2>
+          <h2>{t(lang, "fees.new_title")}</h2>
         </div>
 
         {tableMissing ? (
           <p className="empty-state">
-            فیس کی میز ابھی نہیں بنی — پہلے مرحلہ 8 کی SQL چلائیں۔
+{t(lang, "fees.table_missing")}
           </p>
         ) : error ? (
-          <p className="empty-state">فارم نہیں کھل سکا — دوبارہ کوشش کریں۔</p>
+<p className="empty-state">{t(lang, "fees.form_error")}</p>
         ) : students.length === 0 ? (
           <p className="empty-state">
-            کوئی فعال طالب علم نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالب علم شامل کریں۔
+{t(lang, "fees.no_students")}
           </p>
         ) : (
-          <FeeForm students={students} schedule={schedule} />
+          <FeeForm students={students} schedule={schedule} lang={lang} />
         )}
 
       </div>

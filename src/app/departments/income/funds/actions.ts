@@ -12,13 +12,10 @@ import { createClient } from "@/lib/supabase/server";
 import { SECTION_IDS, getMyMadrasa, type SectionId } from "@/lib/students";
 import { getMyAllowedSections } from "@/lib/permissions";
 import { isAppAdmin } from "@/lib/approval";
-import {
-  CLOSED_MONTH_ERROR,
-  isMonthClosed,
-  monthOfDate,
-} from "@/lib/monthClosing";
+import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/fees";
+import { t, isLang, type Lang } from "@/i18n/dictionary";
 import {
   FUND_CATEGORIES,
   FUND_MODULE,
@@ -43,9 +40,17 @@ interface FundFields {
   note: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** مرحلہ 112 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
+
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
+  lang: Lang,
 ): { fields: FundFields } | { error: string } {
   const fund = clean(formData.get("fund"), 20);
   const personName = clean(formData.get("person_name"), 100);
@@ -57,18 +62,18 @@ function validateFields(
   const section = clean(formData.get("section"), 20);
 
   if (!FUND_CATEGORIES.includes(fund as FundCategory))
-    return { error: "مد درست منتخب کریں۔" };
-  if (!personName) return { error: "نام ضروری ہے۔" };
+    return { error: t(lang, "funds.err.fund_invalid") };
+  if (!personName) return { error: t(lang, "funds.err.name_required") };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
-    return { error: "رقم 1 سے 10,000,000 کے درمیان ہونی چاہیے۔" };
+    return { error: t(lang, "funds.err.amount_invalid") };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(recordDate))
-    return { error: "تاریخ درست شکل میں لکھیں۔" };
+    return { error: t(lang, "funds.err.date_invalid") };
   if (recordDate > todayInKarachi())
-    return { error: "تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "funds.err.date_future") };
   if (!PAYMENT_METHODS.includes(paymentMethod as PaymentMethod))
-    return { error: "ادائیگی کا طریقہ درست منتخب کریں۔" };
+    return { error: t(lang, "fee.err.method_invalid") };
   if (!SECTION_IDS.includes(section as SectionId))
-    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
+    return { error: t(lang, "funds.err.section_invalid") };
 
   return {
     fields: {
@@ -107,13 +112,14 @@ async function writeAudit(
 export async function addFundRecord(
   formData: FormData,
 ): Promise<ActionResult> {
-  const checked = validateFields(formData);
+  const lang = formLang(formData);
+  const checked = validateFields(formData, lang);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
 
   // اس مد کی اجازت ہے؟ (ایڈمن کو سب کی اجازت ہے)
   const admin = await isAppAdmin(supabase);
@@ -122,20 +128,20 @@ export async function addFundRecord(
       p_module: FUND_MODULE[f.fund],
     });
     if (allowed === false) {
-      return { error: "اس مد کی اجازت نہیں ہے۔" };
+      return { error: t(lang, "funds.err.fund_denied") };
     }
   }
   // مرحلہ 62 — شعبہ بند ہو تو اس شعبے میں اندراج نہیں ہو سکتا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(f.section)) {
-    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "funds.err.section_denied") };
   }
 
   // مرحلہ 39 — بند مہینے میں اندراج نہیں ہو سکتا
   if (
     await isMonthClosed(supabase, mine.madrasaId, monthOfDate(f.recordDate))
   ) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
 
   // مد کے حساب سے میز، رسید نمبر اور قسم
@@ -212,9 +218,9 @@ export async function addFundRecord(
 
   if (insertError || !insertedId) {
     if (insertError?.code === "23505") {
-      return { error: "رسید نمبر دو بار بن گیا — دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "funds.err.receipt_clash") };
     }
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "funds.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, auditAction, {

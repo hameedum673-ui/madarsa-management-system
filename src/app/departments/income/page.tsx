@@ -15,9 +15,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import { type SectionId } from "@/lib/students";
 import { isAppAdmin } from "@/lib/approval";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function IncomeHubPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const admin = await isAppAdmin(supabase);
 
   let incomeAllowed = true;
@@ -141,37 +144,37 @@ export default async function IncomeHubPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>آمدنی کا ریکارڈ</h2>
+          <h2>{t(lang, "module.income")}</h2>
         </div>
 
         {incomeAllowed ? (
           <>
-            <h3 className="form-section-title">فیس</h3>
+            <h3 className="form-section-title">{t(lang, "income.sec_fees")}</h3>
             <p className="sub">
-              فیس اور رسیدوں کی فہرست دیکھیں، نئی فیس درج کریں اور فیس کا
-              شیڈول طے کریں۔
+{t(lang, "income.sec_fees_desc")}
             </p>
             <div className="detail-rows">
               <div className="row">
-                <span>کل وصول شدہ فیس</span>
+                <span>{t(lang, "income.total_fees")}</span>
                 <strong>
                   {feesTotal === null
                     ? "—"
-                    : `${feesTotal.toLocaleString("ur-PK")} روپے — ${(
-                        feesCount ?? 0
-                      ).toLocaleString("ur-PK")} رسیدیں`}
+                    : t(lang, "income.fees_total_line", {
+                        total: feesTotal.toLocaleString("ur-PK"),
+                        count: (feesCount ?? 0).toLocaleString("ur-PK"),
+                      })}
                 </strong>
               </div>
             </div>
             <div className="form-actions">
               <Link className="btn-primary" href="/departments/income/fees">
-                فیس دیکھیں
+{t(lang, "income.view_fees")}
               </Link>
               <Link
                 className="btn-ghost"
                 href="/departments/income/schedule"
               >
-                فیس کا شیڈول
+{t(lang, "income.view_schedule")}
               </Link>
             </div>
           </>
@@ -179,46 +182,51 @@ export default async function IncomeHubPage() {
 
         {fundsAllowed ? (
           <>
-            <h3 className="form-section-title">زکوٰۃ، عشر اور عطیات</h3>
+            <h3 className="form-section-title">{t(lang, "income.sec_funds")}</h3>
             <p className="sub">
-              زکوٰۃ، عشر اور عطیات کا ملا ہوا ریکارڈ — نیا اندراج کرتے
-              وقت "مد" بتائیں کہ پیسہ کس مد میں دے رہا ہے۔
+{t(lang, "income.sec_funds_desc")}
             </p>
             <div className="detail-rows">
               {zakatAllowed ? (
                 <div className="row">
-                  <span>کل وصول شدہ زکوٰۃ</span>
+                  <span>{t(lang, "income.total_zakat")}</span>
                   <strong>
                     {zakatTotal === null
                       ? "—"
-                      : `${zakatTotal.toLocaleString("ur-PK")} روپے`}
+                      : t(lang, "common.money", {
+                        n: zakatTotal.toLocaleString("ur-PK"),
+                      })}
                   </strong>
                 </div>
               ) : null}
               {ushrAllowed ? (
                 <div className="row">
-                  <span>کل وصول شدہ عشر</span>
+                  <span>{t(lang, "income.total_ushr")}</span>
                   <strong>
                     {ushrTotal === null
                       ? "—"
-                      : `${ushrTotal.toLocaleString("ur-PK")} روپے`}
+                      : t(lang, "common.money", {
+                        n: ushrTotal.toLocaleString("ur-PK"),
+                      })}
                   </strong>
                 </div>
               ) : null}
               {donationsAllowed ? (
                 <div className="row">
-                  <span>کل عطیات</span>
+                  <span>{t(lang, "income.total_donations")}</span>
                   <strong>
                     {donationsTotal === null
                       ? "—"
-                      : `${donationsTotal.toLocaleString("ur-PK")} روپے`}
+                      : t(lang, "common.money", {
+                        n: donationsTotal.toLocaleString("ur-PK"),
+                      })}
                   </strong>
                 </div>
               ) : null}
             </div>
             <div className="form-actions">
               <Link className="btn-primary" href="/departments/income/funds">
-                زکوٰۃ، عشر اور عطیات دیکھیں
+{t(lang, "income.view_funds")}
               </Link>
             </div>
           </>

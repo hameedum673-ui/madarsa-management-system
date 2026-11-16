@@ -14,11 +14,11 @@ import { getMyMadrasa,
   type SectionId,
 } from "@/lib/students";
 import {
-  FEE_PAYMENT_STATUS_LABELS,
-  PAYMENT_METHOD_LABELS,
   formatMonthUrdu,
   type FeePayment,
 } from "@/lib/fees";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import VoidButton from "@/app/departments/income/fees/[id]/VoidButton";
 import SaveReceiptImageButton from "@/app/departments/income/fees/[id]/SaveReceiptImageButton";
 
@@ -33,6 +33,7 @@ export default async function ReceiptPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const lang = await getMyLanguage();
 
   const { data, error } = await supabase
     .from("fee_payments")
@@ -50,7 +51,7 @@ export default async function ReceiptPage({
             <BackButton href="/departments/income/fees" />
           </div>
           <p className="empty-state">
-            فیس کی میز ابھی نہیں بنی — پہلے مرحلہ 8 کی SQL چلائیں۔
+            {t(lang, "fees.table_missing")}
           </p>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default async function ReceiptPage({
       <div className="page-card receipt receipt-slip">
         <div className="page-head">
           <BackButton href="/departments/income/fees" className="no-print" />
-          <h2>فیس کی رسید</h2>
+          <h2>{t(lang, "fee.receipt_title")}</h2>
           <span className="page-count">{payment.receipt_number}</span>
         </div>
 
@@ -103,46 +104,50 @@ export default async function ReceiptPage({
 
         <div className="detail-rows">
           <div className="row">
-            <span>رسید نمبر</span>
+<span>{t(lang, "col.receipt")}</span>
             <span>{payment.receipt_number}</span>
           </div>
           <div className="row">
-            <span>طالب علم</span>
+<span>{t(lang, "col.student")}</span>
             <span>{payment.students?.name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>والد کا نام</span>
+<span>{t(lang, "col.father")}</span>
             <span>{payment.students?.father_name ?? "—"}</span>
           </div>
           <div className="row">
-            <span>رجسٹریشن نمبر</span>
+<span>{t(lang, "col.reg")}</span>
             <span>{payment.students?.registration_number ?? "—"}</span>
           </div>
           <div className="row">
-            <span>مہینہ</span>
+<span>{t(lang, "fees.month")}</span>
             <span>{formatMonthUrdu(payment.fee_month)}</span>
           </div>
           <div className="row">
-            <span>رقم</span>
-            <span>{payment.amount.toLocaleString("ur-PK")} روپے</span>
+<span>{t(lang, "fee.amount_label")}</span>
+            <span>
+              {t(lang, "common.money", {
+                n: payment.amount.toLocaleString("ur-PK"),
+              })}
+            </span>
           </div>
           <div className="row">
-            <span>ادائیگی کی تاریخ</span>
+<span>{t(lang, "fee.date_label")}</span>
             <span>{formatDate(payment.payment_date)}</span>
           </div>
           <div className="row">
-            <span>ادائیگی کا طریقہ</span>
-            <span>{PAYMENT_METHOD_LABELS[payment.payment_method]}</span>
+<span>{t(lang, "fee.method_label")}</span>
+            <span>{t(lang, `fee.method.${payment.payment_method}`)}</span>
           </div>
           {payment.note ? (
             <div className="row">
-              <span>نوٹ</span>
+  <span>{t(lang, "fee.form.note")}</span>
               <span>{payment.note}</span>
             </div>
           ) : null}
           <div className="row">
-            <span>حالت</span>
-            <span>{FEE_PAYMENT_STATUS_LABELS[payment.status]}</span>
+<span>{t(lang, "col.status")}</span>
+            <span>{t(lang, `fee.status.${payment.status}`)}</span>
           </div>
         </div>
 
@@ -157,12 +162,14 @@ export default async function ReceiptPage({
               monthLabel: formatMonthUrdu(payment.fee_month),
               amountLabel: `${payment.amount.toLocaleString("ur-PK")} روپے`,
               paymentDate: formatDate(payment.payment_date),
-              paymentMethodLabel: PAYMENT_METHOD_LABELS[payment.payment_method],
+              paymentMethodLabel: t(lang, `fee.method.${payment.payment_method}`),
               note: payment.note,
-              statusLabel: FEE_PAYMENT_STATUS_LABELS[payment.status],
+              statusLabel: t(lang, `fee.status.${payment.status}`),
             }}
           />
-          {payment.status === "active" ? <VoidButton id={payment.id} /> : null}
+          {payment.status === "active" ? (
+            <VoidButton id={payment.id} lang={lang} />
+          ) : null}
         </div>
       </div>
     </div>
