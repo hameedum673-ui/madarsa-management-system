@@ -50,7 +50,7 @@ export type IssueStatus = "issued" | "returned";
 export const BORROWER_TYPES: BorrowerType[] = ["student", "teacher", "staff"];
 
 export const BORROWER_TYPE_LABELS: Record<BorrowerType, string> = {
-  student: "طالبہ",
+  student: "طالب علم",
   teacher: "استاد",
   staff: "عملہ",
 };

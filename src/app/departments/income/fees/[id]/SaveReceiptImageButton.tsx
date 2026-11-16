@@ -71,7 +71,7 @@ export default function SaveReceiptImageButton({
       }
 
       const rows: [string, string][] = [
-        ["طالبہ", data.studentName],
+        ["طالب علم", data.studentName],
         ["والد کا نام", data.fatherName],
         ["رجسٹریشن نمبر", data.registrationNumber],
         ["مہینہ", data.monthLabel],

@@ -49,7 +49,7 @@ export default function WelfareForm({
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">طالبہ *</span>
+          <span className="field-label">طالب علم *</span>
           <select className="field-input" name="student_id" required>
             <option value="">— منتخب کریں —</option>
             {students.map((s) => (

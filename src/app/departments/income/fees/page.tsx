@@ -173,7 +173,7 @@ export default async function IncomePage({
               <thead>
                 <tr>
                   <th>رسید نمبر</th>
-                  <th>طالبہ</th>
+                  <th>طالب علم</th>
                   <th>بنین / بنات</th>
                   <th>مہینہ</th>
                   <th>رقم (روپے)</th>

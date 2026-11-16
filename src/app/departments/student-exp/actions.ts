@@ -51,7 +51,7 @@ function validateFields(
   const expenseDate = clean(formData.get("expense_date"), 10);
   const note = clean(formData.get("note"), 500);
 
-  if (!studentId) return { error: "طالبہ منتخب کریں۔" };
+  if (!studentId) return { error: "طالب علم منتخب کریں۔" };
   if (!STUDENT_EXPENSE_CATEGORIES.includes(category as StudentExpenseCategory))
     return { error: "قسم درست منتخب کریں (کتابیں، کپڑے، علاج، کھانا یا دیگر)۔" };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
@@ -122,7 +122,7 @@ export async function addStudentExpense(
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
     .single();
-  if (!student) return { error: "طالبہ نہیں ملی — فعال طالبہ منتخب کریں۔" };
+  if (!student) return { error: "طالب علم نہیں ملا — فعال طالب علم منتخب کریں۔" };
   // مرحلہ 54 — بند شعبے کی طالبہ کا خرچ درج نہیں ہو سکے گا
   const allowedSections = await getMyAllowedSections(supabase);
   if (
@@ -130,7 +130,7 @@ export async function addStudentExpense(
       ((student as { section?: string | null }).section ?? "banat") as SectionId,
     )
   )
-    return { error: "اس شعبے کی طالبہ کا خرچ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: "اس شعبے کے طالب علم کا خرچ درج کرنے کی اجازت نہیں ہے۔" };
 
   // ریکارڈ نمبر: اس مدرسے کے طلبہ کے اخراجات کی گنتی + 1
   const { count } = await supabase

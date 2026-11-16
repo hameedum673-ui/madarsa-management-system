@@ -257,7 +257,7 @@ export default async function FeeSchedulePage({
 
             {dueRows.length === 0 ? (
               <p className="empty-state">
-                کوئی فعال طالبہ نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالبہ شامل کریں۔
+                کوئی فعال طالب علم نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالب علم شامل کریں۔
               </p>
             ) : (
               <div className="tbl-wrap">

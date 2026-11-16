@@ -92,14 +92,14 @@ export default function FeeForm({
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">طالبہ *</span>
+          <span className="field-label">طالب علم *</span>
           <select
             className="field-input"
             value={studentId}
             onChange={(e) => handleStudentChange(e.target.value)}
             required
           >
-            <option value="">طالبہ منتخب کریں</option>
+            <option value="">طالب علم منتخب کریں</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} — {s.father_name}

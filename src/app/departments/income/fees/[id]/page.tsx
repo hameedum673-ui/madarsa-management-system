@@ -107,7 +107,7 @@ export default async function ReceiptPage({
             <span>{payment.receipt_number}</span>
           </div>
           <div className="row">
-            <span>طالبہ</span>
+            <span>طالب علم</span>
             <span>{payment.students?.name ?? "—"}</span>
           </div>
           <div className="row">

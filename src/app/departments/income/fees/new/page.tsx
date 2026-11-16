@@ -48,7 +48,7 @@ export default async function NewFeePage() {
           <p className="empty-state">فارم نہیں کھل سکا — دوبارہ کوشش کریں۔</p>
         ) : students.length === 0 ? (
           <p className="empty-state">
-            کوئی فعال طالبہ نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالبہ شامل کریں۔
+            کوئی فعال طالب علم نہیں ہے — پہلے طلبہ کے ریکارڈ میں طالب علم شامل کریں۔
           </p>
         ) : (
           <FeeForm students={students} schedule={schedule} />

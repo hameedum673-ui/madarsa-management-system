@@ -124,7 +124,7 @@ export default async function StudentExpPage({
 
         <form className="filter-row" method="get">
           <label className="field">
-            <span className="field-label">طالبہ</span>
+            <span className="field-label">طالب علم</span>
             <select
               className="field-input"
               name="student"
@@ -159,7 +159,7 @@ export default async function StudentExpPage({
         </form>
 
         {selectedStudent !== "all" ? (
-          <p className="sub">طالبہ: {selectedStudentName || "—"}</p>
+          <p className="sub">طالب علم: {selectedStudentName || "—"}</p>
         ) : null}
 
         {tableMissing ? (
@@ -176,7 +176,7 @@ export default async function StudentExpPage({
               <thead>
                 <tr>
                   <th>ریکارڈ نمبر</th>
-                  <th>طالبہ</th>
+                  <th>طالب علم</th>
                   <th>بنین / بنات</th>
                   <th>قسم</th>
                   <th>رقم</th>

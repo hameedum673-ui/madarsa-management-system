@@ -103,7 +103,7 @@ export default async function IdCardPage({
           <div className="idcard-head">
             <strong>{madrasaName}</strong>
             <div className="idcard-sub">شادی لارج، ضلع بدین، سندھ</div>
-            <div className="idcard-title">طالبہ کا شناختی کارڈ</div>
+            <div className="idcard-title">طالب علم کا شناختی کارڈ</div>
           </div>
 
           <div className="idcard-body">

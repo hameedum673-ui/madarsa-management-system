@@ -74,7 +74,7 @@ export async function addFeePayment(
   const note = clean(formData.get("note"), 500);
 
   if (!/^[0-9a-f-]{36}$/i.test(studentId))
-    return { error: "طالبہ درست منتخب کریں۔" };
+    return { error: "طالب علم درست منتخب کریں۔" };
   if (!isValidMonth(feeMonth)) return { error: "مہینہ درست نہیں ہے۔" };
   const amount = Number(amountRaw);
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
@@ -106,7 +106,7 @@ export async function addFeePayment(
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
     .single();
-  if (!student) return { error: "طالبہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+  if (!student) return { error: "طالب علم کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
   // مرحلہ 54 — بند شعبے کی طالبہ کی فیس درج نہیں ہو سکے گی
   const allowedSections = await getMyAllowedSections(supabase);
   if (
@@ -114,7 +114,7 @@ export async function addFeePayment(
       ((student as { section?: string | null }).section ?? "banat") as SectionId,
     )
   )
-    return { error: "اس شعبے کی طالبہ کی فیس درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: "اس شعبے کے طالب علم کی فیس درج کرنے کی اجازت نہیں ہے۔" };
 
   // اگلا رسید نمبر: اپنے مدرسے کی فیس کی گنتی + 1
   const { count } = await supabase

@@ -83,7 +83,7 @@ export function feeReminderMessage(args: {
   const balance = args.expected - args.paid;
   return (
     `السلام علیکم ورحمة الله وبركاته! ${args.madrasaName} کی طرف سے اطلاع ہے ` +
-    `کہ طالبہ ${args.studentName} کی ${args.monthUrdu} کی فیس ${money(args.expected)} ہے۔ ` +
+    `کہ طالب علم ${args.studentName} کی ${args.monthUrdu} کی فیس ${money(args.expected)} ہے۔ ` +
     `ادا شدہ: ${money(args.paid)}۔ بقایا: ${money(balance)}۔ ` +
     `براہِ کرم بقایا فیس جلد ادا کر دیں۔ جزاک الله خیرا!`
   );
@@ -100,7 +100,7 @@ export function examResultMessage(args: {
   grade: string;
 }): string {
   return (
-    `السلام علیکم ورحمة الله وبركاته! ${args.madrasaName} کی طرف سے طالبہ ` +
+    `السلام علیکم ورحمة الله وبركاته! ${args.madrasaName} کی طرف سے طالب علم ` +
     `${args.studentName} کے امتحان ${args.examName} کا نتیجہ: کل نمبر ` +
     `${args.obtained.toLocaleString("ur-PK")} / ${args.possible.toLocaleString("ur-PK")}، ` +
     `فیصد ${args.percentage.toLocaleString("ur-PK", { maximumFractionDigits: 1 })}٪، ` +

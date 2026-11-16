@@ -80,7 +80,7 @@ export default async function WelfarePage({
               <thead>
                 <tr>
                   <th>ریکارڈ نمبر</th>
-                  <th>طالبہ</th>
+                  <th>طالب علم</th>
                   <th>قسم</th>
                   <th>رقم</th>
                   <th>تاریخ</th>

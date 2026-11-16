@@ -34,7 +34,7 @@ export default async function NewWelfarePage() {
           </p>
         ) : students.length === 0 ? (
           <p className="empty-state">
-            ابھی کوئی فعال طالبہ درج نہیں ہے — پہلے طلبہ والے حصے میں طالبہ
+            ابھی کوئی فعال طالب علم درج نہیں ہے — پہلے طلبہ والے حصے میں طالب علم
             شامل کریں۔
           </p>
         ) : (

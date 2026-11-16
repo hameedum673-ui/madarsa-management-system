@@ -41,7 +41,7 @@ export const GROUPS: DepartmentGroup[] = [
       { id: "ushr", label: "عشر", icon: "zakat", desc: "عشر کی وصولی اور مستحقین تک تقسیم کا الگ ریکارڈ یہاں ہوگا۔" },
       { id: "donations", label: "صدقات اور عطیات", icon: "gift", desc: "صدقات، عطیات اور عطیہ دہندگان کا ریکارڈ یہاں محفوظ ہوگا۔" },
       { id: "welfare", label: "وظائف اور مالی معاونت", icon: "support", desc: "مستحق طلبہ کے وظائف اور مالی معاونت کا ریکارڈ یہاں ہوگا۔" },
-      { id: "student-exp", label: "طلبہ کے اخراجات", icon: "studentExpense", desc: "فی طالبہ اخراجات اور ان کی تفصیل کا حساب یہاں ہوگا۔" },
+      { id: "student-exp", label: "طلبہ کے اخراجات", icon: "studentExpense", desc: "فی طالب علم اخراجات اور ان کی تفصیل کا حساب یہاں ہوگا۔" },
       { id: "fin-reports", label: "مالیاتی رپورٹس", icon: "report", desc: "آمدنی، اخراجات اور بیلنس کی مکمل مالیاتی رپورٹس یہاں تیار ہوں گی۔" },
     ],
   },

@@ -69,7 +69,7 @@ export default async function WelfareDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["طالبہ", record.students?.name ?? "—"],
+    ["طالب علم", record.students?.name ?? "—"],
     ["والد کا نام", record.students?.father_name ?? "—"],
     ["رجسٹریشن نمبر", record.students?.registration_number ?? "—"],
     ["قسم", WELFARE_KIND_LABELS[record.kind]],
@@ -107,7 +107,7 @@ export default async function WelfareDetailPage({
             <span>{record.record_number}</span>
           </div>
           <div className="row">
-            <span>طالبہ</span>
+            <span>طالب علم</span>
             <span>{record.students?.name ?? "—"}</span>
           </div>
           <div className="row">

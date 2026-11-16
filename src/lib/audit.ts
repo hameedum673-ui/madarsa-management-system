@@ -5,8 +5,8 @@
  */
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
-  student_created: "طالبہ شامل کی گئی",
-  student_updated: "طالبہ کا ریکارڈ بدلا گیا",
+  student_created: "طالب علم شامل کیا گیا",
+  student_updated: "طالب علم کا ریکارڈ بدلا گیا",
   teacher_created: "استاد شامل کیا گیا",
   teacher_updated: "استاد کا ریکارڈ بدلا گیا",
   staff_created: "عملے کا رکن شامل کیا گیا",
@@ -32,8 +32,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   donation_voided: "عطیہ منسوخ کیا گیا",
   welfare_created: "وظیفہ / معاونت درج کی گئی",
   welfare_voided: "وظیفہ / معاونت منسوخ کی گئی",
-  student_expense_created: "طالبہ کا خرچ درج کیا گیا",
-  student_expense_voided: "طالبہ کا خرچ منسوخ کیا گیا",
+  student_expense_created: "طالب علم کا خرچ درج کیا گیا",
+  student_expense_voided: "طالب علم کا خرچ منسوخ کیا گیا",
   salary_created: "تنخواہ دی گئی",
   salary_voided: "تنخواہ کی ادائیگی منسوخ کی گئی",
   salary_set: "مقررہ تنخواہ طے کی گئی",

@@ -24,7 +24,7 @@ const WELFARE_EXPENSE_MODULES = [
     id: "student-exp",
     table: "student_expenses",
     title: "طلبہ کے اخراجات",
-    desc: "فی طالبہ اخراجات اور ان کی تفصیل کا حساب۔",
+    desc: "فی طالب علم اخراجات اور ان کی تفصیل کا حساب۔",
     href: "/departments/student-exp",
   },
 ] as const;

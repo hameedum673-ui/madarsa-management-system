@@ -42,7 +42,7 @@ function validateFields(
   const recordDate = clean(formData.get("record_date"), 10);
   const note = clean(formData.get("note"), 500);
 
-  if (!studentId) return { error: "طالبہ منتخب کریں۔" };
+  if (!studentId) return { error: "طالب علم منتخب کریں۔" };
   if (!WELFARE_KINDS.includes(kind as WelfareKind))
     return { error: "قسم درست منتخب کریں (وظیفہ، مالی معاونت یا دیگر)۔" };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
@@ -113,7 +113,7 @@ export async function addWelfare(
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
     .single();
-  if (!student) return { error: "طالبہ نہیں ملی — فعال طالبہ منتخب کریں۔" };
+  if (!student) return { error: "طالب علم نہیں ملا — فعال طالب علم منتخب کریں۔" };
 
   // ریکارڈ نمبر: اس مدرسے کے فلاحی اندراجات کی گنتی + 1
   const { count } = await supabase

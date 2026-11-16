@@ -102,7 +102,7 @@ export default function SaveImageButton({
       ctx.fillText("شادی لارج، ضلع بدین، سندھ", W / 2, 66);
       ctx.font = `700 17px ${FONT}`;
       ctx.fillStyle = WHITE;
-      ctx.fillText("طالبہ کا شناختی کارڈ", W / 2, 94);
+      ctx.fillText("طالب علم کا شناختی کارڈ", W / 2, 94);
 
       // تصویر کا خالی خانہ
       const photoX = (W - 150) / 2;
