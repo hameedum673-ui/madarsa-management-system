@@ -538,6 +538,7 @@ export default async function DashboardPage() {
       {/* حصہ 4 کی درستگی — مالک کو بھی صارفین/تنخواہوں کے بٹن دکھیں */}
       <DepartmentGroups
         isAdmin={isAdmin || isOwner}
+        isOwner={isOwner}
         deniedModules={deniedModules}
         lang={lang}
       />

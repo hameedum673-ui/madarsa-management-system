@@ -13,12 +13,14 @@ import { t, type Lang } from "@/i18n/dictionary";
 function GroupSection({
   group,
   isAdmin,
+  isOwner,
   deniedModules,
   showReportsHub,
   lang = "ur",
 }: {
   group: DepartmentGroup;
   isAdmin: boolean;
+  isOwner: boolean;
   deniedModules: string[];
   showReportsHub: boolean;
   lang?: Lang;
@@ -30,12 +32,17 @@ function GroupSection({
   // (پہلے غیر ایڈمن کو یہ بٹن نظر آتا تھا، حالانکہ دبانے پر وہ ڈیش
   // بورڈ پر واپس جاتا تھا — بے کار بٹن)۔
   // مرحلہ 26 — بند شعبے کا بٹن بھی نظر نہیں آتا (middleware لنک بھی روکتا ہے)۔
+  // ڈیمو 404 کی درستگی — "بیک اپ" اور "مدرسے کا عمومی ریکارڈ" کے صفحے
+  // صرف مالک کے لیے ہیں (صفحہ خود مالک نہ ہونے پر 404 دیتا ہے)، اس لیے
+  // ان کے بٹن بھی صرف مالک کو نظر آئیں — مہمان/عملے کو نہ بٹن نظر
+  // آئے گا، نہ 404 ملے گا (صارفین/اختیارات/تنخواہوں والا ہی اصول)۔
   const modules = group.modules.filter(
     (m) =>
       (isAdmin ||
         (m.id !== "users" &&
           m.id !== "permissions" &&
           m.id !== "salaries")) &&
+      (isOwner || (m.id !== "backup" && m.id !== "general")) &&
       (isAdmin || !deniedModules.includes(m.id)),
   );
   // مرحلہ 47 — "طلبہ کا ریکارڈ" اور "نئے داخلے" ایک بٹن میں:
@@ -170,10 +177,12 @@ function GroupSection({
 
 export default function DepartmentGroups({
   isAdmin = false,
+  isOwner = false,
   deniedModules = [],
   lang = "ur",
 }: {
   isAdmin?: boolean;
+  isOwner?: boolean;
   deniedModules?: string[];
   lang?: Lang;
 } = {}) {
@@ -200,14 +209,14 @@ export default function DepartmentGroups({
       .length >= 2;
   return (
     <>
-      <GroupSection group={edu} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
-      <GroupSection group={fin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
+      <GroupSection group={edu} isAdmin={isAdmin} isOwner={isOwner} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
+      <GroupSection group={fin} isAdmin={isAdmin} isOwner={isOwner} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
       <div className="split">
         <div>
-          <GroupSection group={admin} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
+          <GroupSection group={admin} isAdmin={isAdmin} isOwner={isOwner} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
         </div>
         <div>
-          <GroupSection group={other} isAdmin={isAdmin} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
+          <GroupSection group={other} isAdmin={isAdmin} isOwner={isOwner} deniedModules={deniedModules} showReportsHub={showReportsHub} lang={lang} />
         </div>
       </div>
     </>
