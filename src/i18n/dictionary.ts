@@ -1017,6 +1017,15 @@ const ur: Dict = {
   "yearly.closed_success": "پورا سال بند کر دیا گیا ہے۔",
   "yearly.all_closed": "اس سال کے تمام مہینے بند ہیں۔",
   "yearly.err.invalid_year": "سال درست نہیں ہے۔",
+  "zakat.title": "زکوٰۃ کا حساب",
+  "zakat.total_received": "کل وصول شدہ: {total} روپے",
+  "zakat.total_received_label": "کل وصول شدہ زکوٰۃ",
+  "zakat.table_missing": "زکوٰۃ کی میز ابھی نہیں بنی — پہلے مرحلہ 19 کی SQL چلائیں۔",
+  "zakat.empty": "ابھی کوئی زکوٰۃ اندراج درج نہیں ہے۔",
+  "zakat.new_title": "نیا زکوٰۃ اندراج",
+  "zakat.detail_title": "زکوٰۃ اندراج",
+  "zakat.void": "اندراج منسوخ کریں",
+  "zakat.err.void_failed": "منسوخ نہیں ہو سکا — شاید یہ اندراج پہلے سے منسوخ ہے۔",
 };
 
 const ar: Dict = {
@@ -1991,6 +2000,15 @@ const ar: Dict = {
   "yearly.closed_success": "تم إغلاق السنة كاملة.",
   "yearly.all_closed": "جميع أشهر هذه السنة مغلقة.",
   "yearly.err.invalid_year": "السنة غير صحيحة.",
+  "zakat.title": "حساب الزكاة",
+  "zakat.total_received": "إجمالي المستلم: {total} روبية",
+  "zakat.total_received_label": "إجمالي الزكاة المستلمة",
+  "zakat.table_missing": "لم يُنشأ جدول الزكاة بعد — نفّذ أولًا SQL المرحلة 19.",
+  "zakat.empty": "لا توجد أي قيود زكاة مسجلة بعد.",
+  "zakat.new_title": "قيد زكاة جديد",
+  "zakat.detail_title": "قيد الزكاة",
+  "zakat.void": "إلغاء القيد",
+  "zakat.err.void_failed": "تعذّر الإلغاء — ربما أُلغي هذا القيد من قبل.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

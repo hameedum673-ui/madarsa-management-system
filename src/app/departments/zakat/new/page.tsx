@@ -6,9 +6,12 @@ import BackButton from "@/components/BackButton";
 import ZakatForm from "@/app/departments/zakat/ZakatForm";
 import { addZakatRecord } from "@/app/departments/zakat/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function NewZakatPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const { error } = await supabase
     .from("zakat_records")
     .select("id", { head: true })
@@ -22,14 +25,12 @@ export default async function NewZakatPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/zakat" />
-          <h2>نیا زکوٰۃ اندراج</h2>
+          <h2>{t(lang, "zakat.new_title")}</h2>
         </div>
         {tableMissing ? (
-          <p className="empty-state">
-            زکوٰۃ کی میز ابھی نہیں بنی — پہلے مرحلہ 19 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "zakat.table_missing")}</p>
         ) : (
-          <ZakatForm action={addZakatRecord} />
+          <ZakatForm action={addZakatRecord} lang={lang} />
         )}
       </div>
     </div>

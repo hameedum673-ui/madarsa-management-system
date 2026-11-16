@@ -6,6 +6,8 @@
 import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections } from "@/lib/permissions";
 import { SECTION_LABELS, type SectionId } from "@/lib/students";
 import { getMyMadrasa } from "@/lib/students";
@@ -31,6 +33,7 @@ export default async function ZakatDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const lang = await getMyLanguage();
 
   const { data, error } = await supabase
     .from("zakat_records")
@@ -44,11 +47,9 @@ export default async function ZakatDetailPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/zakat" />
-            <h2>زکوٰۃ اندراج</h2>
+            <h2>{t(lang, "zakat.detail_title")}</h2>
           </div>
-          <p className="empty-state">
-            زکوٰۃ کی میز ابھی نہیں بنی — پہلے مرحلہ 19 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "zakat.table_missing")}</p>
         </div>
       </div>
     );
@@ -98,7 +99,7 @@ export default async function ZakatDetailPage({
       <div className="page-card receipt receipt-slip">
         <div className="page-head">
           <BackButton href="/departments/zakat" />
-          <h2>زکوٰۃ اندراج</h2>
+          <h2>{t(lang, "zakat.detail_title")}</h2>
           <span className="page-count">{record.receipt_number}</span>
         </div>
 
@@ -109,44 +110,52 @@ export default async function ZakatDetailPage({
 
         <div className="detail-rows">
           <div className="row">
-            <span>رسید نمبر</span>
+            <span>{t(lang, "col.receipt")}</span>
             <span>{record.receipt_number}</span>
           </div>
           <div className="row">
-            <span>نام</span>
+            <span>{t(lang, "col.name")}</span>
             <span>{record.person_name}</span>
           </div>
           <div className="row">
-            <span>شعبہ (بنین / بنات)</span>
-            <span>{SECTION_LABELS[(record.section ?? "banat") as SectionId]}</span>
+            <span>{t(lang, "students.section_filter")}</span>
+            <span>
+              {t(lang, `section.${(record.section ?? "banat") as SectionId}`)}
+            </span>
           </div>
           <div className="row">
-            <span>رقم</span>
-            <span>{record.amount.toLocaleString("ur-PK")} روپے</span>
+            <span>{t(lang, "col.amount")}</span>
+            <span>
+              {t(lang, "common.money", {
+                n: record.amount.toLocaleString("ur-PK"),
+              })}
+            </span>
           </div>
           <div className="row">
-            <span>تاریخ</span>
+            <span>{t(lang, "col.date")}</span>
             <span>{formatDate(record.record_date)}</span>
           </div>
           <div className="row">
-            <span>ادائیگی کا طریقہ</span>
-            <span>{PAYMENT_METHOD_LABELS[record.payment_method]}</span>
+            <span>{t(lang, "fee.method_label")}</span>
+            <span>{t(lang, `fee.method.${record.payment_method}`)}</span>
           </div>
           {record.note ? (
             <div className="row">
-              <span>نوٹ</span>
+              <span>{t(lang, "fee.form.note")}</span>
               <span>{record.note}</span>
             </div>
           ) : null}
           <div className="row">
-            <span>حالت</span>
-            <span>{ZAKAT_STATUS_LABELS[record.status]}</span>
+            <span>{t(lang, "col.status")}</span>
+            <span>{t(lang, `fee.status.${record.status}`)}</span>
           </div>
         </div>
 
         <div className="form-actions no-print">
           <SaveSlipImageButton data={imageData} />
-          {record.status === "active" ? <VoidButton id={record.id} /> : null}
+          {record.status === "active" ? (
+            <VoidButton id={record.id} lang={lang} />
+          ) : null}
         </div>
       </div>
     </div>

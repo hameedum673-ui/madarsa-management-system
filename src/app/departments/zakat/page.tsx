@@ -9,15 +9,13 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
-import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
+import { SECTION_IDS, type SectionId } from "@/lib/students";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
-import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
-import {
-  ZAKAT_STATUS_LABELS,
-  type ZakatRecord,
-} from "@/lib/zakat";
+import { type ZakatRecord } from "@/lib/zakat";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -30,6 +28,7 @@ export default async function ZakatPage({
   searchParams: Promise<{ section?: string; page?: string }>;
 }) {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const params = await searchParams;
   // مرحلہ 62 — اجازت والے شعبے + چنا ہوا شعبہ (بنین / بنات / سب)
@@ -75,60 +74,66 @@ export default async function ZakatPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/income" />
-          <h2>زکوٰۃ کا حساب</h2>
+          <h2>{t(lang, "zakat.title")}</h2>
           <span className="page-count">
-            کل وصول شدہ: {totalReceived.toLocaleString("ur-PK")} روپے
+            {t(lang, "zakat.total_received", {
+              total: totalReceived.toLocaleString("ur-PK"),
+            })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/zakat/new">
-            + نیا اندراج
+            {t(lang, "funds.add")}
           </Link>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>کل وصول شدہ زکوٰۃ</span>
-            <span>{totalReceived.toLocaleString("ur-PK")} روپے</span>
+            <span>{t(lang, "zakat.total_received_label")}</span>
+            <span>
+              {t(lang, "common.money", {
+                n: totalReceived.toLocaleString("ur-PK"),
+              })}
+            </span>
           </div>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">
+              {t(lang, "students.section_filter")}
+            </span>
             <select className="field-input" name="section" defaultValue={section}>
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, `section.${s}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
         {tableMissing ? (
-          <p className="empty-state">
-            زکوٰۃ کی میز ابھی نہیں بنی — پہلے مرحلہ 19 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "zakat.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : records.length === 0 ? (
-          <p className="empty-state">ابھی کوئی زکوٰۃ اندراج درج نہیں ہے۔</p>
+          <p className="empty-state">{t(lang, "zakat.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>رسید نمبر</th>
-                  <th>نام</th>
-                  <th>بنین / بنات</th>
-                  <th>رقم</th>
-                  <th>تاریخ</th>
-                  <th>طریقہ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "col.receipt")}</th>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.amount")}</th>
+                  <th>{t(lang, "col.date")}</th>
+                  <th>{t(lang, "col.method")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,15 +149,17 @@ export default async function ZakatPage({
                         {r.person_name}
                       </Link>
                     </td>
-                    <td>{SECTION_LABELS[(r.section ?? "banat") as SectionId]}</td>
+                    <td>
+                      {t(lang, `section.${(r.section ?? "banat") as SectionId}`)}
+                    </td>
                     <td>{r.amount.toLocaleString("ur-PK")}</td>
                     <td>{formatDate(r.record_date)}</td>
-                    <td>{PAYMENT_METHOD_LABELS[r.payment_method]}</td>
+                    <td>{t(lang, `fee.method.${r.payment_method}`)}</td>
                     <td>
                       <span
                         className={`badge${r.status === "voided" ? " badge-withdrawn" : ""}`}
                       >
-                        {ZAKAT_STATUS_LABELS[r.status]}
+                        {t(lang, `fee.status.${r.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -162,7 +169,7 @@ export default async function ZakatPage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>
