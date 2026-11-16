@@ -7,7 +7,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
+import { t, type Lang } from "@/i18n/dictionary";
 import { getMyMadrasa } from "@/lib/students";
 import { upsertClosing } from "@/lib/monthClosing";
 
@@ -19,20 +20,20 @@ const MONTHS = [
 ];
 
 /** پورا سال بند کریں — 12 مہینے ایک ساتھ */
-export async function closeYear(year: string): Promise<ActionResult> {
+export async function closeYear(year: string, lang: Lang): Promise<ActionResult> {
   if (!/^\d{4}$/.test(year)) {
-    return { error: "سال درست نہیں ہے۔" };
+    return { error: t(lang, "yearly.err.invalid_year") };
   }
   const y = Number(year);
   if (y < 2000 || y > 2100) {
-    return { error: "سال درست نہیں ہے۔" };
+    return { error: t(lang, "yearly.err.invalid_year") };
   }
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "yearly"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   for (const m of MONTHS) {
@@ -43,7 +44,7 @@ export async function closeYear(year: string): Promise<ActionResult> {
       true,
       mine.userId,
     );
-    if ("error" in saved) return { error: saved.error };
+    if ("error" in saved) return { error: t(lang, "monthly.err.save_failed") };
   }
 
   try {

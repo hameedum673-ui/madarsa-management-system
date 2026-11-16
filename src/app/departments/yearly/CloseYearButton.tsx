@@ -6,14 +6,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 import { closeYear } from "@/app/departments/yearly/actions";
 
 export default function CloseYearButton({
   year,
   allClosed,
+  lang,
 }: {
   year: string;
   allClosed: boolean;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -29,20 +32,20 @@ export default function CloseYearButton({
     setError("");
     setSuccess("");
     setLoading(true);
-    const res = await closeYear(year);
+    const res = await closeYear(year, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
       setConfirming(false);
       return;
     }
-    setSuccess("پورا سال بند کر دیا گیا ہے۔");
+    setSuccess(t(lang, "yearly.closed_success"));
     setConfirming(false);
     router.refresh();
   }
 
   if (allClosed) {
-    return <p className="empty-state">اس سال کے تمام مہینے بند ہیں۔</p>;
+    return <p className="empty-state">{t(lang, "yearly.all_closed")}</p>;
   }
 
   return (
@@ -54,10 +57,10 @@ export default function CloseYearButton({
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.wait")
           : confirming
-            ? "پکا پورا سال بند کریں؟"
-            : "پورا سال بند کریں"}
+            ? t(lang, "yearly.confirm_close")
+            : t(lang, "yearly.close")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
       {success ? (

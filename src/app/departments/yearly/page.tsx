@@ -9,6 +9,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
 import {
   getMyAllowedSections,
@@ -16,18 +18,15 @@ import {
 } from "@/lib/permissions";
 import {
   formatMonthUrdu,
-  PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
   type PaymentMethod,
 } from "@/lib/fees";
 import {
   EXPENSE_CATEGORIES,
-  EXPENSE_CATEGORY_LABELS,
   type ExpenseCategory,
 } from "@/lib/expenses";
 import {
   DONATION_KINDS,
-  DONATION_KIND_LABELS,
   type DonationKind,
 } from "@/lib/donations";
 import { getBalanceBefore } from "@/lib/monthClosing";
@@ -62,6 +61,7 @@ export default async function YearlyPage({
   const year = isValidYear(rawYear) ? rawYear : currentYearInKarachi();
 
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
@@ -247,13 +247,13 @@ export default async function YearlyPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>سالانہ حسابات</h2>
+          <h2>{t(lang, "yearly.title")}</h2>
           <span className="page-count">{year}</span>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">سال</span>
+            <span className="field-label">{t(lang, "yearly.year_label")}</span>
             <input
               className="field-input"
               name="year"
@@ -265,13 +265,13 @@ export default async function YearlyPage({
             />
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
                   {SECTION_LABELS[s]}
@@ -280,94 +280,89 @@ export default async function YearlyPage({
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
-        <p className="sub">
-          شعبہ چنیں تو فیس، عطیات، زکوٰۃ، عشر، اخراجات اور ابتدائی
-          بقیہ اسی شعبے کے حساب سے دکھائے جاتے ہیں۔
-        </p>
+        <p className="sub">{t(lang, "monthly.section_note")}</p>
 
         {tableMissing ? (
-          <p className="empty-state">
-            فیس یا اخراجات کی میز ابھی نہیں بنی — پہلے مرحلہ 8 اور مرحلہ 16 کی SQL
-            چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "monthly.table_missing")}</p>
         ) : (
           <>
-            <h3 className="form-section-title">سال کی بندش</h3>
+            <h3 className="form-section-title">{t(lang, "yearly.closing_title")}</h3>
             <div className="form-actions">
               <CloseYearButton
                 year={year}
                 allClosed={closedMonths.size === 12}
+                lang={lang}
               />
             </div>
 
-            <h3 className="form-section-title">خلاصہ</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.summary_title")}</h3>
             <div className="detail-rows">
               <div className="row">
-                <span>سال کا ابتدائی بقیہ</span>
-                <span>{openingBalance.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "yearly.opening_balance")}</span>
+                <span>{t(lang, "common.money", { n: openingBalance.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>پورے سال کی فیس</span>
+                <span>{t(lang, "yearly.fees")}</span>
                 <span>
-                  {feesTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: feesTotal.toLocaleString("ur-PK") })}
                   {" — "}
-                  {fees.length.toLocaleString("ur-PK")} رسیدیں
+                  {t(lang, "monthly.fees_receipts", { n: fees.length.toLocaleString("ur-PK") })}
                 </span>
               </div>
               <div className="row">
-                <span>پورے سال کے عطیات</span>
+                <span>{t(lang, "yearly.donations")}</span>
                 <span>
-                  {donationsTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: donationsTotal.toLocaleString("ur-PK") })}
                   {" — "}
-                  {donations.length.toLocaleString("ur-PK")} عطیات
+                  {t(lang, "monthly.donations_count", { n: donations.length.toLocaleString("ur-PK") })}
                 </span>
               </div>
               <div className="row">
-                <span>پورے سال کی زکوٰۃ (وصولی)</span>
-                <span>{zakatNet.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "yearly.zakat")}</span>
+                <span>{t(lang, "common.money", { n: zakatNet.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>پورے سال کا عشر (وصولی)</span>
-                <span>{ushrNet.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "yearly.ushr")}</span>
+                <span>{t(lang, "common.money", { n: ushrNet.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>پورے سال کی کل آمدنی</span>
-                <span>{incomeTotal.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "yearly.total_income")}</span>
+                <span>{t(lang, "common.money", { n: incomeTotal.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>پورے سال کے اخراجات</span>
+                <span>{t(lang, "yearly.total_expenses")}</span>
                 <span>
-                  {expensesTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: expensesTotal.toLocaleString("ur-PK") })}
                   {" — "}
-                  {expenses.length.toLocaleString("ur-PK")} اخراجات
+                  {t(lang, "monthly.expenses_count", { n: expenses.length.toLocaleString("ur-PK") })}
                 </span>
               </div>
               <div className="row">
-                <span>پورے سال کا بیلنس</span>
-                <span>{balance.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "yearly.balance")}</span>
+                <span>{t(lang, "common.money", { n: balance.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>سال کا اختتامی بقیہ</span>
+                <span>{t(lang, "yearly.closing_balance")}</span>
                 <span>
-                  {(openingBalance + balance).toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: (openingBalance + balance).toLocaleString("ur-PK") })}
                 </span>
               </div>
             </div>
 
-            <h3 className="form-section-title">مہینہ بہ مہینہ</h3>
+            <h3 className="form-section-title">{t(lang, "yearly.by_month")}</h3>
             <div className="tbl-wrap">
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>مہینہ</th>
-                    <th>آمدنی</th>
-                    <th>اخراجات</th>
-                    <th>بیلنس</th>
-                    <th>حالت</th>
+                    <th>{t(lang, "fees.month")}</th>
+                    <th>{t(lang, "yearly.col_income")}</th>
+                    <th>{t(lang, "yearly.col_expenses")}</th>
+                    <th>{t(lang, "yearly.col_balance")}</th>
+                    <th>{t(lang, "col.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -385,7 +380,7 @@ export default async function YearlyPage({
                         <span
                           className={`badge${closedMonths.has(row.key) ? " badge-withdrawn" : ""}`}
                         >
-                          {closedMonths.has(row.key) ? "بند ہے" : "کھلا ہے"}
+                          {closedMonths.has(row.key) ? t(lang, "monthly.closed") : t(lang, "monthly.open")}
                         </span>
                       </td>
                     </tr>
@@ -394,24 +389,24 @@ export default async function YearlyPage({
               </table>
             </div>
 
-            <h3 className="form-section-title">اخراجات — زمرے کے حساب سے</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.expenses_by_category")}</h3>
             {categoryRows.length === 0 ? (
-              <p className="empty-state">اس سال کا کوئی خرچ درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "yearly.no_expenses")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>زمرہ</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "exp.col_category")}</th>
+                      <th>{t(lang, "exp.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {categoryRows.map((c) => (
                       <tr key={c}>
-                        <td>{EXPENSE_CATEGORY_LABELS[c]}</td>
+                        <td>{t(lang, `exp.cat.${c}`)}</td>
                         <td>
-                          {(byCategory.get(c) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", { n: (byCategory.get(c) ?? 0).toLocaleString("ur-PK") })}
                         </td>
                       </tr>
                     ))}
@@ -420,24 +415,24 @@ export default async function YearlyPage({
               </div>
             )}
 
-            <h3 className="form-section-title">فیس — طریقے کے حساب سے</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.fees_by_method")}</h3>
             {methodRows.length === 0 ? (
-              <p className="empty-state">اس سال کی کوئی فیس درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "yearly.no_fees")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>طریقہ</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "col.method")}</th>
+                      <th>{t(lang, "exp.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {methodRows.map((m) => (
                       <tr key={m}>
-                        <td>{PAYMENT_METHOD_LABELS[m]}</td>
+                        <td>{t(lang, `fee.method.${m}`)}</td>
                         <td>
-                          {(byMethod.get(m) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", { n: (byMethod.get(m) ?? 0).toLocaleString("ur-PK") })}
                         </td>
                       </tr>
                     ))}
@@ -446,24 +441,24 @@ export default async function YearlyPage({
               </div>
             )}
 
-            <h3 className="form-section-title">عطیات — قسم کے حساب سے</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.donations_by_kind")}</h3>
             {kindRows.length === 0 ? (
-              <p className="empty-state">اس سال کا کوئی عطیہ درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "yearly.no_donations")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>قسم</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "col.type")}</th>
+                      <th>{t(lang, "exp.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {kindRows.map((k) => (
                       <tr key={k}>
-                        <td>{DONATION_KIND_LABELS[k]}</td>
+                        <td>{t(lang, `monthly.kind.${k}`)}</td>
                         <td>
-                          {(byKind.get(k) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", { n: (byKind.get(k) ?? 0).toLocaleString("ur-PK") })}
                         </td>
                       </tr>
                     ))}
