@@ -9,7 +9,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
-import { SECTION_IDS, SECTION_LABELS, type SectionId } from "@/lib/students";
+import { SECTION_IDS, type SectionId } from "@/lib/students";
 import {
   getMyAllowedSections,
   getMySectionFilter,
@@ -17,20 +17,19 @@ import {
 import { todayInKarachi } from "@/lib/attendance";
 import {
   currentMonthInKarachi,
-  PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
   type PaymentMethod,
 } from "@/lib/fees";
 import {
   EXPENSE_CATEGORIES,
-  EXPENSE_CATEGORY_LABELS,
   type ExpenseCategory,
 } from "@/lib/expenses";
 import {
   DONATION_KINDS,
-  DONATION_KIND_LABELS,
   type DonationKind,
 } from "@/lib/donations";
+import { t } from "@/i18n/dictionary";
+import { getMyLanguage } from "@/lib/language";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -49,6 +48,7 @@ export default async function FinReportsPage({
   searchParams: Promise<{ from?: string; to?: string; section?: string }>;
 }) {
   const params = await searchParams;
+  const lang = await getMyLanguage();
   const today = todayInKarachi();
   const defaultFrom = `${currentMonthInKarachi()}-01`;
   const rawFrom = params.from ?? defaultFrom;
@@ -192,15 +192,18 @@ export default async function FinReportsPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>مالیاتی رپورٹس</h2>
+          <h2>{t(lang, "finreports.title")}</h2>
           <span className="page-count">
-            {formatDate(from)} سے {formatDate(to)}
+            {t(lang, "finreports.range", {
+              from: formatDate(from),
+              to: formatDate(to),
+            })}
           </span>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">سے (تاریخ)</span>
+            <span className="field-label">{t(lang, "finreports.from_label")}</span>
             <input
               className="field-input"
               name="from"
@@ -209,7 +212,7 @@ export default async function FinReportsPage({
             />
           </label>
           <label className="field">
-            <span className="field-label">تک (تاریخ)</span>
+            <span className="field-label">{t(lang, "finreports.to_label")}</span>
             <input
               className="field-input"
               name="to"
@@ -218,116 +221,154 @@ export default async function FinReportsPage({
             />
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, s === "banin" ? "section.banin" : "section.banat")}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
-        <p className="sub">
-          شعبہ چنیں تو فیس اسی شعبے کے حساب سے دکھائی جاتی ہے۔
-          عطیات، زکوٰۃ، عشر اور اخراجات کا شعبہ نہیں ہوتا — وہ پورے
-          دکھائے جاتے ہیں۔
-        </p>
+        <p className="sub">{t(lang, "finreports.note")}</p>
 
         {tableMissing ? (
-          <p className="empty-state">
-            فیس، اخراجات، عطیات یا زکوٰۃ کی میز ابھی نہیں بنی — پہلے متعلقہ
-            مرحلوں کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "finreports.table_missing")}</p>
         ) : (
           <>
-            <h3 className="form-section-title">خلاصہ</h3>
+            <h3 className="form-section-title">
+              {t(lang, "monthly.summary_title")}
+            </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>فیس</span>
+                <span>{t(lang, "finreports.fees")}</span>
                 <span>
-                  {feesTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", {
+                    n: feesTotal.toLocaleString("ur-PK"),
+                  })}
                   {" — "}
-                  {fees.length.toLocaleString("ur-PK")} رسیدیں
+                  {fees.length.toLocaleString("ur-PK")}{" "}
+                  {t(lang, "finreports.receipts")}
                 </span>
               </div>
               <div className="row">
-                <span>عطیات</span>
+                <span>{t(lang, "finreports.donations")}</span>
                 <span>
-                  {donationsTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", {
+                    n: donationsTotal.toLocaleString("ur-PK"),
+                  })}
                   {" — "}
-                  {donations.length.toLocaleString("ur-PK")} عطیات
+                  {donations.length.toLocaleString("ur-PK")}{" "}
+                  {t(lang, "finreports.donations")}
                 </span>
               </div>
               <div className="row">
-                <span>زکوٰۃ (وصولی)</span>
-                <span>{zakatReceived.toLocaleString("ur-PK")} روپے</span>
-              </div>
-              <div className="row">
-                <span>عشر (وصولی)</span>
-                <span>{ushrReceived.toLocaleString("ur-PK")} روپے</span>
-              </div>
-              <div className="row">
-                <span>کل آمدنی</span>
-                <span>{incomeTotal.toLocaleString("ur-PK")} روپے</span>
-              </div>
-              <div className="row">
-                <span>اخراجات</span>
+                <span>{t(lang, "finreports.zakat_received")}</span>
                 <span>
-                  {expensesTotal.toLocaleString("ur-PK")} روپے
-                  {" — "}
-                  {expenses.length.toLocaleString("ur-PK")} اخراجات
+                  {t(lang, "common.money", {
+                    n: zakatReceived.toLocaleString("ur-PK"),
+                  })}
                 </span>
               </div>
               <div className="row">
-                <span>بیلنس</span>
-                <span>{balance.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "finreports.ushr_received")}</span>
+                <span>
+                  {t(lang, "common.money", {
+                    n: ushrReceived.toLocaleString("ur-PK"),
+                  })}
+                </span>
+              </div>
+              <div className="row">
+                <span>{t(lang, "finreports.total_income")}</span>
+                <span>
+                  {t(lang, "common.money", {
+                    n: incomeTotal.toLocaleString("ur-PK"),
+                  })}
+                </span>
+              </div>
+              <div className="row">
+                <span>{t(lang, "finreports.expenses")}</span>
+                <span>
+                  {t(lang, "common.money", {
+                    n: expensesTotal.toLocaleString("ur-PK"),
+                  })}
+                  {" — "}
+                  {expenses.length.toLocaleString("ur-PK")}{" "}
+                  {t(lang, "finreports.expenses")}
+                </span>
+              </div>
+              <div className="row">
+                <span>{t(lang, "finreports.balance")}</span>
+                <span>
+                  {t(lang, "common.money", {
+                    n: balance.toLocaleString("ur-PK"),
+                  })}
+                </span>
               </div>
             </div>
 
-            <h3 className="form-section-title">زکوٰۃ</h3>
+            <h3 className="form-section-title">
+              {t(lang, "fund.cat.zakat")}
+            </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>کل وصول شدہ زکوٰۃ</span>
-                <span>{zakatReceived.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "finreports.zakat_received_total")}</span>
+                <span>
+                  {t(lang, "common.money", {
+                    n: zakatReceived.toLocaleString("ur-PK"),
+                  })}
+                </span>
               </div>
             </div>
 
-            <h3 className="form-section-title">عشر</h3>
+            <h3 className="form-section-title">
+              {t(lang, "fund.cat.ushr")}
+            </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>کل وصول شدہ عشر</span>
-                <span>{ushrReceived.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "finreports.ushr_received_total")}</span>
+                <span>
+                  {t(lang, "common.money", {
+                    n: ushrReceived.toLocaleString("ur-PK"),
+                  })}
+                </span>
               </div>
             </div>
 
-            <h3 className="form-section-title">اخراجات — زمرے کے حساب سے</h3>
+            <h3 className="form-section-title">
+              {t(lang, "finreports.by_category")}
+            </h3>
             {categoryRows.length === 0 ? (
-              <p className="empty-state">اس مدت کا کوئی خرچ درج نہیں ہے۔</p>
+              <p className="empty-state">
+                {t(lang, "finreports.no_expenses")}
+              </p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>زمرہ</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "finreports.col_category")}</th>
+                      <th>{t(lang, "finreports.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {categoryRows.map((c) => (
                       <tr key={c}>
-                        <td>{EXPENSE_CATEGORY_LABELS[c]}</td>
+                        <td>{t(lang, `exp.cat.${c}`)}</td>
                         <td>
-                          {(byCategory.get(c) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", {
+                            n: (byCategory.get(c) ?? 0).toLocaleString("ur-PK"),
+                          })}
                         </td>
                       </tr>
                     ))}
@@ -336,24 +377,28 @@ export default async function FinReportsPage({
               </div>
             )}
 
-            <h3 className="form-section-title">فیس — طریقے کے حساب سے</h3>
+            <h3 className="form-section-title">
+              {t(lang, "finreports.by_method")}
+            </h3>
             {methodRows.length === 0 ? (
-              <p className="empty-state">اس مدت کی کوئی فیس درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "finreports.no_fees")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>طریقہ</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "col.method")}</th>
+                      <th>{t(lang, "finreports.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {methodRows.map((m) => (
                       <tr key={m}>
-                        <td>{PAYMENT_METHOD_LABELS[m]}</td>
+                        <td>{t(lang, `fee.method.${m}`)}</td>
                         <td>
-                          {(byMethod.get(m) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", {
+                            n: (byMethod.get(m) ?? 0).toLocaleString("ur-PK"),
+                          })}
                         </td>
                       </tr>
                     ))}
@@ -362,24 +407,30 @@ export default async function FinReportsPage({
               </div>
             )}
 
-            <h3 className="form-section-title">عطیات — قسم کے حساب سے</h3>
+            <h3 className="form-section-title">
+              {t(lang, "finreports.by_kind")}
+            </h3>
             {kindRows.length === 0 ? (
-              <p className="empty-state">اس مدت کا کوئی عطیہ درج نہیں ہے۔</p>
+              <p className="empty-state">
+                {t(lang, "finreports.no_donations")}
+              </p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>قسم</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "col.type")}</th>
+                      <th>{t(lang, "finreports.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {kindRows.map((k) => (
                       <tr key={k}>
-                        <td>{DONATION_KIND_LABELS[k]}</td>
+                        <td>{t(lang, `monthly.kind.${k}`)}</td>
                         <td>
-                          {(byKind.get(k) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", {
+                            n: (byKind.get(k) ?? 0).toLocaleString("ur-PK"),
+                          })}
                         </td>
                       </tr>
                     ))}
@@ -390,10 +441,10 @@ export default async function FinReportsPage({
 
             <div className="form-actions">
               <Link className="btn-ghost" href="/departments/monthly">
-                ماہانہ حسابات دیکھیں
+                {t(lang, "finreports.view_monthly")}
               </Link>
               <Link className="btn-ghost" href="/departments/yearly">
-                سالانہ حسابات دیکھیں
+                {t(lang, "finreports.view_yearly")}
               </Link>
             </div>
           </>

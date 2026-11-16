@@ -20,12 +20,12 @@ import {
 } from "@/lib/fees";
 import {
   DEPARTMENT_IDS,
-  DEPARTMENT_LABELS,
   SECTION_IDS,
-  SECTION_LABELS,
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
+import { t } from "@/i18n/dictionary";
+import { getMyLanguage } from "@/lib/language";
 
 /** "2026-11" کا اگلا مہینہ — "2026-12-01" */
 function nextMonthStart(month: string): string {
@@ -38,16 +38,15 @@ function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("ur-PK");
 }
 
-function money(value: number): string {
-  return `${value.toLocaleString("ur-PK")} روپے`;
-}
-
 export default async function ReportsPage({
   searchParams,
 }: {
   searchParams: Promise<{ section?: string }>;
 }) {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
+  const money = (value: number): string =>
+    t(lang, "common.money", { n: value.toLocaleString("ur-PK") });
   // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
   const allowedSections = await getMyAllowedSections(supabase);
   const sp = await searchParams;
@@ -260,63 +259,63 @@ export default async function ReportsPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>رپورٹس</h2>
-          <PrintButton />
+          <h2>{t(lang, "hub.reports")}</h2>
+          <PrintButton lang={lang} />
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
-                  {SECTION_LABELS[s]}
+                  {t(lang, s === "banin" ? "section.banin" : "section.banat")}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
-        <p className="sub">
-          شعبہ چنیں تو طلبہ، اساتذہ، عملہ، حاضری، امتحانات اور فیس اسی
-          شعبے کے حساب سے دکھائے جاتے ہیں۔ عطیات، اخراجات، زکوٰۃ،
-          اطلاعات اور دستاویزات کا شعبہ نہیں ہوتا — وہ پورے دکھائے
-          جاتے ہیں۔
-        </p>
+        <p className="sub">{t(lang, "reports.note")}</p>
 
         {tableMissing ? (
-          <p className="empty-state">
-            کوئی میز ابھی نہیں بنی — پہلے متعلقہ مرحلے کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "reports.table_missing")}</p>
         ) : (
           <>
             <p className="sub">
-              آج کی تاریخ: {formatDate(today)} — مالی خلاصہ اس مہینے کا ہے:{" "}
-              {formatMonthUrdu(month)}
+              {t(lang, "reports.today_line", {
+                date: formatDate(today),
+                month: formatMonthUrdu(month),
+              })}
             </p>
 
-            <h3 className="form-section-title">طلبہ</h3>
+            <h3 className="form-section-title">
+              {t(lang, "reports.students")}
+            </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>کل فعال طلبہ</span>
+                <span>{t(lang, "reports.total_active_students")}</span>
                 <strong>{studentsActive.length}</strong>
               </div>
               <div className="row">
-                <span>خارج شدہ طلبہ</span>
+                <span>{t(lang, "reports.withdrawn_students")}</span>
                 <strong>{studentsWithdrawn.length}</strong>
               </div>
               {DEPARTMENT_IDS.map(
                 (dept) => (
                   <div className="row" key={dept}>
-                    <span>{DEPARTMENT_LABELS[dept]} (فعال)</span>
+                    <span>
+                      {t(lang, `dept.${dept}`)} (
+                      {t(lang, "student.status.active")})
+                    </span>
                     <strong>
                       {
                         studentsActive.filter((s) => s.department === dept)
@@ -328,49 +327,73 @@ export default async function ReportsPage({
               )}
             </div>
 
-            <h3 className="form-section-title">اساتذہ اور عملہ</h3>
+            <h3 className="form-section-title">
+              {t(lang, "reports.teachers_staff")}
+            </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>کل فعال اساتذہ</span>
+                <span>{t(lang, "reports.total_active_teachers")}</span>
                 <strong>{countStatus(teachers, "active")}</strong>
               </div>
               <div className="row">
-                <span>کل فعال عملہ</span>
+                <span>{t(lang, "reports.total_active_staff")}</span>
                 <strong>{countStatus(staff, "active")}</strong>
               </div>
             </div>
 
-            <h3 className="form-section-title">آج کی حاضری</h3>
+            <h3 className="form-section-title">
+              {t(lang, "reports.today_attendance")}
+            </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>طلبہ — حاضر</span>
+                <span>
+                  {t(lang, "reports.students")} —{" "}
+                  {t(lang, "att.status.present")}
+                </span>
                 <strong>{countStatus(attStudents, "present")}</strong>
               </div>
               <div className="row">
-                <span>طلبہ — غیر حاضر</span>
+                <span>
+                  {t(lang, "reports.students")} —{" "}
+                  {t(lang, "att.status.absent")}
+                </span>
                 <strong>{countStatus(attStudents, "absent")}</strong>
               </div>
               <div className="row">
-                <span>طلبہ — رخصت</span>
+                <span>
+                  {t(lang, "reports.students")} —{" "}
+                  {t(lang, "att.status.leave")}
+                </span>
                 <strong>{countStatus(attStudents, "leave")}</strong>
               </div>
               <div className="row">
-                <span>طلبہ — مریض</span>
+                <span>
+                  {t(lang, "reports.students")} —{" "}
+                  {t(lang, "att.status.sick")}
+                </span>
                 <strong>{countStatus(attStudents, "sick")}</strong>
               </div>
               <div className="row">
-                <span>اساتذہ — حاضر</span>
+                <span>
+                  {t(lang, "reports.teachers")} —{" "}
+                  {t(lang, "att.status.present")}
+                </span>
                 <strong>{countStatus(attTeachers, "present")}</strong>
               </div>
               <div className="row">
-                <span>اساتذہ — غیر حاضر</span>
+                <span>
+                  {t(lang, "reports.teachers")} —{" "}
+                  {t(lang, "att.status.absent")}
+                </span>
                 <strong>{countStatus(attTeachers, "absent")}</strong>
               </div>
             </div>
 
-            <h3 className="form-section-title">امتحانات</h3>
+            <h3 className="form-section-title">
+              {t(lang, "reports.exams")}
+            </h3>
             {exams.length === 0 ? (
-              <p className="empty-state">ابھی کوئی امتحان درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "reports.no_exams")}</p>
             ) : (
               <div className="detail-rows">
                 {exams.map((exam) => (
@@ -379,7 +402,8 @@ export default async function ReportsPage({
                       {exam.name} — {formatDate(exam.exam_date)}
                     </span>
                     <strong>
-                      {participantsByExam.get(exam.id)?.size ?? 0} شرکاء
+                      {participantsByExam.get(exam.id)?.size ?? 0}{" "}
+                      {t(lang, "reports.participants")}
                     </strong>
                   </div>
                 ))}
@@ -387,70 +411,74 @@ export default async function ReportsPage({
             )}
 
             <h3 className="form-section-title">
-              اس مہینے کا مالی خلاصہ ({formatMonthUrdu(month)})
+              {t(lang, "reports.month_summary", {
+                month: formatMonthUrdu(month),
+              })}
             </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>فیس</span>
+                <span>{t(lang, "finreports.fees")}</span>
                 <strong>{money(feesTotal)}</strong>
               </div>
               <div className="row">
-                <span>عطیات</span>
+                <span>{t(lang, "finreports.donations")}</span>
                 <strong>{money(donationsTotal)}</strong>
               </div>
               <div className="row">
-                <span>کل آمدنی</span>
+                <span>{t(lang, "finreports.total_income")}</span>
                 <strong>{money(feesTotal + donationsTotal)}</strong>
               </div>
               <div className="row">
-                <span>اخراجات</span>
+                <span>{t(lang, "finreports.expenses")}</span>
                 <strong>{money(expensesTotal)}</strong>
               </div>
               <div className="row">
-                <span>بیلنس</span>
+                <span>{t(lang, "finreports.balance")}</span>
                 <strong>
                   {money(feesTotal + donationsTotal - expensesTotal)}
                 </strong>
               </div>
               <div className="row">
-                <span>زکوٰۃ — وصولی (الگ فنڈ)</span>
+                <span>{t(lang, "reports.zakat_received")}</span>
                 <strong>{money(zakatReceived)}</strong>
               </div>
               <div className="row">
-                <span>زکوٰۃ — تقسیم (الگ فنڈ)</span>
+                <span>{t(lang, "reports.zakat_distributed")}</span>
                 <strong>{money(zakatDistributed)}</strong>
               </div>
               <div className="row">
-                <span>زکوٰۃ — باقی (الگ فنڈ)</span>
+                <span>{t(lang, "reports.zakat_remaining")}</span>
                 <strong>{money(zakatReceived - zakatDistributed)}</strong>
               </div>
             </div>
 
-            <h3 className="form-section-title">اطلاعات اور دستاویزات</h3>
+            <h3 className="form-section-title">
+              {t(lang, "reports.notices_docs")}
+            </h3>
             <div className="detail-rows">
               <div className="row">
-                <span>فعال اطلاعات</span>
+                <span>{t(lang, "reports.active_notices")}</span>
                 <strong>{countStatus(notices, "active")}</strong>
               </div>
               <div className="row">
-                <span>کل دستاویزات</span>
+                <span>{t(lang, "reports.total_documents")}</span>
                 <strong>{documents.length}</strong>
               </div>
               <div className="row">
-                <span>میعاد ختم والی دستاویزات</span>
+                <span>{t(lang, "reports.expired_documents")}</span>
                 <strong>{expiredDocs}</strong>
               </div>
             </div>
 
             <div className="form-actions">
               <Link className="btn-ghost" href="/departments/fin-reports">
-                مالیاتی رپورٹس
+                {t(lang, "finreports.title")}
               </Link>
               <Link className="btn-ghost" href="/departments/monthly">
-                ماہانہ حسابات
+                {t(lang, "hub.reports_page.monthly_title")}
               </Link>
               <Link className="btn-ghost" href="/departments/yearly">
-                سالانہ حسابات
+                {t(lang, "hub.reports_page.yearly_title")}
               </Link>
             </div>
           </>

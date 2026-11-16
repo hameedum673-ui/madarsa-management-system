@@ -10,36 +10,39 @@ import { redirect } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { isAppAdmin } from "@/lib/approval";
+import { t } from "@/i18n/dictionary";
+import { getMyLanguage } from "@/lib/language";
 
 const REPORT_MODULES = [
   {
     id: "monthly",
-    title: "ماہانہ حسابات",
-    desc: "ہر مہینے کی آمدنی، اخراجات، بقیہ اور مہینے کی بندش۔",
+    titleKey: "hub.reports_page.monthly_title",
+    descKey: "hub.reports_page.monthly_desc",
     href: "/departments/monthly",
   },
   {
     id: "yearly",
-    title: "سالانہ حسابات",
-    desc: "پورے سال کا مہینہ وار حساب اور سال کی بندش۔",
+    titleKey: "hub.reports_page.yearly_title",
+    descKey: "hub.reports_page.yearly_desc",
     href: "/departments/yearly",
   },
   {
     id: "fin-reports",
-    title: "مالیاتی رپورٹس",
-    desc: "تاریخ چن کر آمدنی، اخراجات اور بیلنس کی رپورٹ۔",
+    titleKey: "hub.reports_page.finreports_title",
+    descKey: "hub.reports_page.finreports_desc",
     href: "/departments/fin-reports",
   },
   {
     id: "reports",
-    title: "رپورٹس",
-    desc: "مدرسے کا مجموعی خلاصہ — طلبہ، اساتذہ، حاضری اور مالی خلاصہ۔",
+    titleKey: "hub.reports_page.reports_title",
+    descKey: "hub.reports_page.reports_desc",
     href: "/departments/reports",
   },
 ] as const;
 
 export default async function ReportsHubPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const admin = await isAppAdmin(supabase);
 
   const allowed: Record<string, boolean> = {};
@@ -65,16 +68,16 @@ export default async function ReportsHubPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>رپورٹس</h2>
+          <h2>{t(lang, "hub.reports")}</h2>
         </div>
 
         {REPORT_MODULES.filter((m) => allowed[m.id]).map((m) => (
           <div key={m.id}>
-            <h3 className="form-section-title">{m.title}</h3>
-            <p className="sub">{m.desc}</p>
+            <h3 className="form-section-title">{t(lang, m.titleKey)}</h3>
+            <p className="sub">{t(lang, m.descKey)}</p>
             <div className="form-actions">
               <Link className="btn-primary" href={m.href}>
-                {m.title} کھولیں
+                {t(lang, m.titleKey)} {t(lang, "hub.reports_page.open")}
               </Link>
             </div>
           </div>
