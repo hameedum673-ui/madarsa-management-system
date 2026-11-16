@@ -37,6 +37,7 @@ const LANGUAGE_ICON_SVG =
 
 export default function TopBar({
   madrasaName,
+  madrasaAddress,
   madrasaLogoUrl,
   isAdmin = true,
   userName,
@@ -46,6 +47,7 @@ export default function TopBar({
   lang = "ur",
 }: {
   madrasaName?: string | null;
+  madrasaAddress?: string | null;
   madrasaLogoUrl?: string | null;
   isAdmin?: boolean;
   userName?: string | null;
@@ -132,7 +134,7 @@ export default function TopBar({
 
   return (
     <header className="topbar">
-      <div className="brand">
+      <div className={`brand${madrasaAddress ? " has-address" : ""}`}>
         <div className="logo" aria-hidden="true">
           {/* مرحلہ 79 — سفید JMS لوگو (شفاف PNG؛ سرنامہ gradient ہے،
               اس لیے چوکور نیلا آئیکن نہیں چلے گا) */}
@@ -147,6 +149,9 @@ export default function TopBar({
             )}
           </h1>
           <div className="sysname">{t(lang, "app.sysname")}</div>
+          {madrasaAddress ? (
+            <div className="address">{madrasaAddress}</div>
+          ) : null}
         </div>
       </div>
       <div className="spacer"></div>

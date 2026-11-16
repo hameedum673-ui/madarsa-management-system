@@ -75,6 +75,16 @@
   html.lang-ar .mod-card h2,
   html.lang-ar .page-head h2{font-family:var(--font-naskh),"Noto Naskh Arabic",serif}
   .brand .sysname{font-size:.8rem;color:#c8d8ec;margin-top:-6px}
+  /* لیپ ٹاپ عنوان — پتہ صرف بڑی اسکرین پر (فون پر چھپا رہتا ہے) */
+  .brand .address{display:none;font-size:.85rem;color:#c8d8ec;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media (min-width:901px){
+    header.topbar{flex-wrap:nowrap}
+    .brand{flex:1 1 auto;flex-basis:auto}
+    .brand>div{min-width:0}
+    .brand h1{font-size:1.6rem}
+    .brand .address{display:block}
+    .brand.has-address .sysname{display:none}
+  }
   .topbar .spacer{flex:1;order:3}
   .datebox{order:2;text-align:center;color:#dbe7f5;font-size:.86rem;line-height:1.5}
   .datebox .hijri{color:var(--gold);font-weight:600}

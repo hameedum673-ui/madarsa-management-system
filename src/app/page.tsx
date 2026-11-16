@@ -497,6 +497,7 @@ export default async function DashboardPage() {
     <>
       <TopBar
         madrasaName={madrasaName}
+        madrasaAddress={madrasaAddress}
         madrasaLogoUrl={madrasaLogoUrl}
         isAdmin={isAdmin || isOwner}
         userName={userName}
