@@ -10,19 +10,22 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getMyAllowedSections,
   isModuleAllowedForMe,
-  MODULE_DENIED_ERROR,
 } from "@/lib/permissions";
+import { t, isLang, type Lang } from "@/i18n/dictionary";
 import { SECTION_IDS, getMyMadrasa, type SectionId } from "@/lib/students";
-import {
-  CLOSED_MONTH_ERROR,
-  isMonthClosed,
-  monthOfDate,
-} from "@/lib/monthClosing";
+import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/fees";
 import { DONATION_KINDS, type DonationKind } from "@/lib/donations";
 
 type ActionResult = { ok: true; id?: string } | { error: string };
+
+// مرحلہ 119 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو)
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -38,10 +41,11 @@ interface DonationFields {
   note: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
 ): { fields: DonationFields } | { error: string } {
+  const lang = formLang(formData);
   const kind = clean(formData.get("kind"), 20);
   const donorName = clean(formData.get("donor_name"), 100);
   const amountRaw = clean(formData.get("amount"), 12);
@@ -52,18 +56,18 @@ function validateFields(
   const section = clean(formData.get("section"), 20);
 
   if (!DONATION_KINDS.includes(kind as DonationKind))
-    return { error: "قسم درست منتخب کریں (صدقہ، عطیہ یا دیگر)۔" };
-  if (!donorName) return { error: "عطیہ دینے والے کا نام ضروری ہے۔" };
+    return { error: t(lang, "donations.err.kind_invalid") };
+  if (!donorName) return { error: t(lang, "funds.err.name_required") };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
-    return { error: "رقم 1 سے 10,000,000 کے درمیان ہونی چاہیے۔" };
+    return { error: t(lang, "funds.err.amount_invalid") };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(donationDate))
-    return { error: "تاریخ درست شکل میں لکھیں۔" };
+    return { error: t(lang, "funds.err.date_invalid") };
   if (donationDate > todayInKarachi())
-    return { error: "تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "funds.err.date_future") };
   if (!PAYMENT_METHODS.includes(paymentMethod as PaymentMethod))
-    return { error: "ادائیگی کا طریقہ درست منتخب کریں۔" };
+    return { error: t(lang, "exp.err.method_invalid") };
   if (!SECTION_IDS.includes(section as SectionId))
-    return { error: "شعبہ (بنین / بنات) درست منتخب کریں۔" };
+    return { error: t(lang, "funds.err.section_invalid") };
 
   return {
     fields: {
@@ -102,27 +106,28 @@ async function writeAudit(
 export async function addDonation(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const checked = validateFields(formData);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "donations"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
   // مرحلہ 62 — شعبہ بند ہو تو اس شعبے میں اندراج نہیں ہو سکتا
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(f.section)) {
-    return { error: "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔" };
+    return { error: t(lang, "funds.err.section_denied") };
   }
 
   // مرحلہ 39 — بند مہینے کا عطیہ درج نہیں ہو سکتا
   if (
     await isMonthClosed(supabase, mine.madrasaId, monthOfDate(f.donationDate))
   ) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
 
   // رسید نمبر: اس مدرسے کے عطیات کی گنتی + 1
@@ -153,9 +158,9 @@ export async function addDonation(
   if (error || !data) {
     // رسید نمبر دو بار بن جائے تو صاف غلطی
     if ((error as { code?: string } | null)?.code === "23505") {
-      return { error: "رسید نمبر دو بار بن گیا — دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "funds.err.receipt_clash") };
     }
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "funds.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "donation_created", {
@@ -172,12 +177,15 @@ export async function addDonation(
 }
 
 /** غلط اندراج منسوخ کریں — ریکارڈ رہتا ہے، رقم کل سے نکل جاتی ہے */
-export async function voidDonation(id: string): Promise<ActionResult> {
+export async function voidDonation(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "donations"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 39 — بند مہینے کا عطیہ منسوخ نہیں ہو سکتا
@@ -196,7 +204,7 @@ export async function voidDonation(id: string): Promise<ActionResult> {
       monthOfDate(row.donation_date as string),
     ))
   ) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
 
   const { data, error } = await supabase
@@ -209,7 +217,7 @@ export async function voidDonation(id: string): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "منسوخ نہیں ہو سکا — شاید یہ اندراج پہلے سے منسوخ ہے۔" };
+    return { error: t(lang, "donations.err.void_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "donation_voided", {

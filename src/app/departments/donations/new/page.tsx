@@ -6,9 +6,12 @@ import BackButton from "@/components/BackButton";
 import DonationForm from "@/app/departments/donations/DonationForm";
 import { addDonation } from "@/app/departments/donations/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function NewDonationPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const { error } = await supabase
     .from("donations")
     .select("id", { head: true })
@@ -22,14 +25,12 @@ export default async function NewDonationPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/donations" />
-          <h2>نیا عطیہ درج کریں</h2>
+          <h2>{t(lang, "donations.new_title")}</h2>
         </div>
         {tableMissing ? (
-          <p className="empty-state">
-            عطیات کی میز ابھی نہیں بنی — پہلے مرحلہ 20 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "donations.table_missing")}</p>
         ) : (
-          <DonationForm action={addDonation} />
+          <DonationForm action={addDonation} lang={lang} />
         )}
       </div>
     </div>

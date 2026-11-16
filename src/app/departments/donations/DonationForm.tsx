@@ -8,15 +8,22 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
-import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS } from "@/lib/fees";
-import { SECTION_IDS, SECTION_LABELS } from "@/lib/students";
-import { DONATION_KINDS, DONATION_KIND_LABELS } from "@/lib/donations";
+import { PAYMENT_METHODS } from "@/lib/fees";
+import { SECTION_IDS } from "@/lib/students";
+import { DONATION_KINDS } from "@/lib/donations";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
 ) => Promise<{ ok: true; id?: string } | { error: string }>;
 
-export default function DonationForm({ action }: { action: FormAction }) {
+export default function DonationForm({
+  action,
+  lang,
+}: {
+  action: FormAction;
+  lang: Lang;
+}) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,6 +33,8 @@ export default function DonationForm({ action }: { action: FormAction }) {
     setError("");
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    // مرحلہ 119 — چھپا ہوا خانہ: سرور کو زبان بتاتا ہے
+    formData.set("lang", lang);
     const res = await action(formData);
     setLoading(false);
     if ("error" in res) {
@@ -44,30 +53,34 @@ export default function DonationForm({ action }: { action: FormAction }) {
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">قسم *</span>
+          <span className="field-label">
+            {t(lang, "donations.form.kind")}
+          </span>
           <select className="field-input" name="kind" required>
             {DONATION_KINDS.map((k) => (
               <option key={k} value={k}>
-                {DONATION_KIND_LABELS[k]}
+                {t(lang, `monthly.kind.${k}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">عطیہ دینے والے کا نام *</span>
+          <span className="field-label">
+            {t(lang, "donations.form.donor_name")}
+          </span>
           <input
             className="field-input"
             name="donor_name"
             type="text"
             required
             maxLength={100}
-            placeholder="مثلاً محمد احمد"
+            placeholder={t(lang, "donations.form.donor_name_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">رقم (روپے) *</span>
+          <span className="field-label">{t(lang, "fee.form.amount")}</span>
           <input
             className="field-input"
             name="amount"
@@ -76,12 +89,12 @@ export default function DonationForm({ action }: { action: FormAction }) {
             required
             min={1}
             max={10000000}
-            placeholder="مثلاً 5000"
+            placeholder={t(lang, "funds.form.amount_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">تاریخ *</span>
+          <span className="field-label">{t(lang, "funds.form.date")}</span>
           <input
             className="field-input"
             name="donation_date"
@@ -92,11 +105,11 @@ export default function DonationForm({ action }: { action: FormAction }) {
         </label>
 
         <label className="field">
-          <span className="field-label">ادائیگی کا طریقہ *</span>
+          <span className="field-label">{t(lang, "fee.form.method")}</span>
           <select className="field-input" name="payment_method" required>
             {PAYMENT_METHODS.map((m) => (
               <option key={m} value={m}>
-                {PAYMENT_METHOD_LABELS[m]}
+                {t(lang, `fee.method.${m}`)}
               </option>
             ))}
           </select>
@@ -104,24 +117,24 @@ export default function DonationForm({ action }: { action: FormAction }) {
       </div>
 
       <label className="field">
-        <span className="field-label">شعبہ (بنین / بنات) *</span>
+        <span className="field-label">{t(lang, "funds.form.section")}</span>
         <select className="field-input" name="section" required defaultValue="banat">
           {SECTION_IDS.map((s) => (
             <option key={s} value={s}>
-              {SECTION_LABELS[s]}
+              {t(lang, `section.${s}`)}
             </option>
           ))}
         </select>
       </label>
 
       <label className="field">
-        <span className="field-label">نوٹ (اگر کوئی ہو)</span>
+        <span className="field-label">{t(lang, "funds.form.note")}</span>
         <textarea
           className="field-input"
           name="note"
           rows={2}
           maxLength={500}
-          placeholder="مثلاً کس مقصد کے لیے"
+          placeholder={t(lang, "funds.form.note_ph")}
         />
       </label>
 
@@ -129,10 +142,10 @@ export default function DonationForm({ action }: { action: FormAction }) {
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "common.save")}
         </button>
         <Link className="btn-ghost" href="/departments/donations">
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

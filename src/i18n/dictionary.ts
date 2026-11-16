@@ -1035,6 +1035,19 @@ const ur: Dict = {
   "ushr.detail_title": "عشر اندراج",
   "ushr.void": "اندراج منسوخ کریں",
   "ushr.err.void_failed": "منسوخ نہیں ہو سکا — شاید یہ اندراج پہلے سے منسوخ ہے۔",
+  "donations.title": "صدقات اور عطیات",
+  "donations.total_received": "کل: {total} روپے",
+  "donations.table_missing": "عطیات کی میز ابھی نہیں بنی — پہلے مرحلہ 20 کی SQL چلائیں۔",
+  "donations.empty": "ابھی کوئی عطیہ درج نہیں ہے۔",
+  "donations.new_title": "نیا عطیہ درج کریں",
+  "donations.detail_title": "عطیہ",
+  "donations.void": "عطیہ منسوخ کریں",
+  "donations.add": "+ نیا عطیہ",
+  "donations.err.void_failed": "منسوخ نہیں ہو سکا — شاید یہ اندراج پہلے سے منسوخ ہے۔",
+  "donations.err.kind_invalid": "قسم درست منتخب کریں (صدقہ، عطیہ یا دیگر)۔",
+  "donations.form.kind": "قسم *",
+  "donations.form.donor_name": "عطیہ دینے والے کا نام *",
+  "donations.form.donor_name_ph": "مثلاً محمد احمد",
 };
 
 const ar: Dict = {
@@ -2027,6 +2040,19 @@ const ar: Dict = {
   "ushr.detail_title": "قيد العشر",
   "ushr.void": "إلغاء القيد",
   "ushr.err.void_failed": "تعذّر الإلغاء — ربما أُلغي هذا القيد من قبل.",
+  "donations.title": "الصدقات والتبرعات",
+  "donations.total_received": "إجمالي المستلم: {total} روبية",
+  "donations.table_missing": "لم يُنشأ جدول التبرعات بعد — نفّذ أولًا SQL المرحلة 20.",
+  "donations.empty": "لا توجد أي تبرعات مسجلة بعد.",
+  "donations.new_title": "تسجيل تبرع جديد",
+  "donations.detail_title": "التبرع",
+  "donations.void": "إلغاء التبرع",
+  "donations.add": "+ تبرع جديد",
+  "donations.err.void_failed": "تعذّر الإلغاء — ربما أُلغي هذا القيد من قبل.",
+  "donations.err.kind_invalid": "اختر النوع بشكل صحيح (صدقة، تبرع أو أخرى).",
+  "donations.form.kind": "النوع *",
+  "donations.form.donor_name": "اسم المتبرع *",
+  "donations.form.donor_name_ph": "مثال: محمد أحمد",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */
