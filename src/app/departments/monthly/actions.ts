@@ -6,7 +6,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
+import { t, type Lang } from "@/i18n/dictionary";
 import { getMyMadrasa } from "@/lib/students";
 import { isValidMonth } from "@/lib/fees";
 import { upsertClosing } from "@/lib/monthClosing";
@@ -33,15 +34,19 @@ async function writeAudit(
   }
 }
 
-async function setClosed(month: string, closed: boolean): Promise<ActionResult> {
+async function setClosed(
+  month: string,
+  closed: boolean,
+  lang: Lang,
+): Promise<ActionResult> {
   if (!isValidMonth(month)) {
-    return { error: "مہینہ درست نہیں ہے۔" };
+    return { error: t(lang, "monthly.err.invalid_month") };
   }
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "monthly"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const saved = await upsertClosing(
@@ -51,7 +56,7 @@ async function setClosed(month: string, closed: boolean): Promise<ActionResult> 
     closed,
     mine.userId,
   );
-  if ("error" in saved) return { error: saved.error };
+  if ("error" in saved) return { error: t(lang, "monthly.err.save_failed") };
 
   await writeAudit(
     supabase,
@@ -68,11 +73,17 @@ async function setClosed(month: string, closed: boolean): Promise<ActionResult> 
 }
 
 /** مہینہ بند کریں — اس کے بعد اس مہینے میں کوئی مالیاتی اندراج نہیں ہوگا */
-export async function closeMonth(month: string): Promise<ActionResult> {
-  return setClosed(month, true);
+export async function closeMonth(
+  month: string,
+  lang: Lang,
+): Promise<ActionResult> {
+  return setClosed(month, true, lang);
 }
 
 /** بند مہینہ دوبارہ کھولیں (غلطی درست کرنے کے لیے) */
-export async function reopenMonth(month: string): Promise<ActionResult> {
-  return setClosed(month, false);
+export async function reopenMonth(
+  month: string,
+  lang: Lang,
+): Promise<ActionResult> {
+  return setClosed(month, false, lang);
 }

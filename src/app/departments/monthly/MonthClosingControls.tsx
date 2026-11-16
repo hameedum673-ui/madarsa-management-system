@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Lang } from "@/i18n/dictionary";
 import {
   closeMonth,
   reopenMonth,
@@ -14,9 +15,11 @@ import {
 export default function MonthClosingControls({
   month,
   isClosed,
+  lang,
 }: {
   month: string;
   isClosed: boolean;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -33,15 +36,19 @@ export default function MonthClosingControls({
     setSuccess("");
     setLoading(true);
     const res = isClosed
-      ? await reopenMonth(month)
-      : await closeMonth(month);
+      ? await reopenMonth(month, lang)
+      : await closeMonth(month, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
       setConfirming(false);
       return;
     }
-    setSuccess(isClosed ? "مہینہ دوبارہ کھول دیا گیا ہے۔" : "مہینہ بند کر دیا گیا ہے۔");
+    setSuccess(
+      isClosed
+        ? t(lang, "monthly.reopened_success")
+        : t(lang, "monthly.closed_success"),
+    );
     setConfirming(false);
     router.refresh();
   }
@@ -55,14 +62,14 @@ export default function MonthClosingControls({
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.wait")
           : confirming
             ? isClosed
-              ? "پکا دوبارہ کھولیں؟"
-              : "پکا بند کریں؟"
+              ? t(lang, "monthly.confirm_reopen")
+              : t(lang, "monthly.confirm_close")
             : isClosed
-              ? "مہینہ دوبارہ کھولیں"
-              : "مہینہ بند کریں"}
+              ? t(lang, "monthly.reopen")
+              : t(lang, "monthly.close")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
       {success ? (

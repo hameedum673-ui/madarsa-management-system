@@ -8,6 +8,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import {
   getMyAllowedSections,
   getMySectionFilter,
@@ -16,18 +18,15 @@ import {
   currentMonthInKarachi,
   formatMonthUrdu,
   isValidMonth,
-  PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
   type PaymentMethod,
 } from "@/lib/fees";
 import {
   EXPENSE_CATEGORIES,
-  EXPENSE_CATEGORY_LABELS,
   type ExpenseCategory,
 } from "@/lib/expenses";
 import {
   DONATION_KINDS,
-  DONATION_KIND_LABELS,
   type DonationKind,
 } from "@/lib/donations";
 import { getBalanceBefore, isMonthClosed } from "@/lib/monthClosing";
@@ -56,6 +55,7 @@ export default async function MonthlyPage({
   const month = isValidMonth(rawMonth) ? rawMonth : currentMonthInKarachi();
 
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   // مرحلہ 55 — چنا ہوا شعبہ (بنین / بنات / سب)
@@ -198,13 +198,13 @@ export default async function MonthlyPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>ماہانہ حسابات</h2>
+          <h2>{t(lang, "monthly.title")}</h2>
           <span className="page-count">{formatMonthUrdu(month)}</span>
         </div>
 
         <form className="att-controls" method="get">
           <label className="field">
-            <span className="field-label">مہینہ</span>
+            <span className="field-label">{t(lang, "fees.month")}</span>
             <input
               className="field-input"
               name="month"
@@ -213,13 +213,13 @@ export default async function MonthlyPage({
             />
           </label>
           <label className="field">
-            <span className="field-label">شعبہ (بنین / بنات)</span>
+            <span className="field-label">{t(lang, "students.section_filter")}</span>
             <select
               className="field-input"
               name="section"
               defaultValue={section}
             >
-              <option value="all">سب</option>
+              <option value="all">{t(lang, "common.all")}</option>
               {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
                 <option key={s} value={s}>
                   {SECTION_LABELS[s]}
@@ -228,111 +228,105 @@ export default async function MonthlyPage({
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
 
-        <p className="sub">
-          شعبہ چنیں تو فیس، عطیات، زکوٰۃ، عشر، اخراجات اور ابتدائی
-          بقیہ اسی شعبے کے حساب سے دکھائے جاتے ہیں۔
-        </p>
+        <p className="sub">{t(lang, "monthly.section_note")}</p>
 
         {tableMissing ? (
-          <p className="empty-state">
-            فیس یا اخراجات کی میز ابھی نہیں بنی — پہلے مرحلہ 8 اور مرحلہ 16 کی SQL
-            چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "monthly.table_missing")}</p>
         ) : (
           <>
-            <h3 className="form-section-title">مہینے کی بندش</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.closing_title")}</h3>
             <div className="detail-rows">
               <div className="row">
-                <span>مہینے کی حالت</span>
+                <span>{t(lang, "monthly.closing_status")}</span>
                 <span>
                   <span
                     className={`badge${monthClosed ? " badge-withdrawn" : ""}`}
                   >
-                    {monthClosed ? "بند ہے" : "کھلا ہے"}
+                    {monthClosed ? t(lang, "monthly.closed") : t(lang, "monthly.open")}
                   </span>
                 </span>
               </div>
             </div>
             <div className="form-actions">
-              <MonthClosingControls month={month} isClosed={monthClosed} />
+              <MonthClosingControls month={month} isClosed={monthClosed} lang={lang} />
             </div>
 
-            <h3 className="form-section-title">خلاصہ</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.summary_title")}</h3>
             <div className="detail-rows">
               <div className="row">
-                <span>پچھلے مہینے کا بقیہ</span>
-                <span>{openingBalance.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "monthly.opening_balance")}</span>
+                <span>{t(lang, "common.money", { n: openingBalance.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>اس مہینے کی فیس</span>
+                <span>{t(lang, "monthly.fees")}</span>
                 <span>
-                  {feesTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: feesTotal.toLocaleString("ur-PK") })}
                   {" — "}
-                  {fees.length.toLocaleString("ur-PK")} رسیدیں
+                  {t(lang, "monthly.fees_receipts", { n: fees.length.toLocaleString("ur-PK") })}
                 </span>
               </div>
               <div className="row">
-                <span>اس مہینے کے عطیات</span>
+                <span>{t(lang, "monthly.donations")}</span>
                 <span>
-                  {donationsTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: donationsTotal.toLocaleString("ur-PK") })}
                   {" — "}
-                  {donations.length.toLocaleString("ur-PK")} عطیات
+                  {t(lang, "monthly.donations_count", { n: donations.length.toLocaleString("ur-PK") })}
                 </span>
               </div>
               <div className="row">
-                <span>اس مہینے کی زکوٰۃ (وصولی)</span>
-                <span>{zakatNet.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "monthly.zakat")}</span>
+                <span>{t(lang, "common.money", { n: zakatNet.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>اس مہینے کا عشر (وصولی)</span>
-                <span>{ushrNet.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "monthly.ushr")}</span>
+                <span>{t(lang, "common.money", { n: ushrNet.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>اس مہینے کی کل آمدنی</span>
-                <span>{incomeTotal.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "monthly.total_income")}</span>
+                <span>{t(lang, "common.money", { n: incomeTotal.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>اس مہینے کے اخراجات</span>
+                <span>{t(lang, "monthly.total_expenses")}</span>
                 <span>
-                  {expensesTotal.toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: expensesTotal.toLocaleString("ur-PK") })}
                   {" — "}
-                  {expenses.length.toLocaleString("ur-PK")} اخراجات
+                  {t(lang, "monthly.expenses_count", { n: expenses.length.toLocaleString("ur-PK") })}
                 </span>
               </div>
               <div className="row">
-                <span>اس مہینے کا بیلنس</span>
-                <span>{balance.toLocaleString("ur-PK")} روپے</span>
+                <span>{t(lang, "monthly.balance")}</span>
+                <span>{t(lang, "common.money", { n: balance.toLocaleString("ur-PK") })}</span>
               </div>
               <div className="row">
-                <span>اختتامی بقیہ</span>
+                <span>{t(lang, "monthly.closing_balance")}</span>
                 <span>
-                  {(openingBalance + balance).toLocaleString("ur-PK")} روپے
+                  {t(lang, "common.money", { n: (openingBalance + balance).toLocaleString("ur-PK") })}
                 </span>
               </div>
             </div>
 
-            <h3 className="form-section-title">اخراجات — زمرے کے حساب سے</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.expenses_by_category")}</h3>
             {categoryRows.length === 0 ? (
-              <p className="empty-state">اس مہینے کا کوئی خرچ درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "monthly.no_expenses")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>زمرہ</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "exp.col_category")}</th>
+                      <th>{t(lang, "exp.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {categoryRows.map((c) => (
                       <tr key={c}>
-                        <td>{EXPENSE_CATEGORY_LABELS[c]}</td>
+                        <td>{t(lang, `exp.cat.${c}`)}</td>
                         <td>
-                          {(byCategory.get(c) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", { n: (byCategory.get(c) ?? 0).toLocaleString("ur-PK") })}
                         </td>
                       </tr>
                     ))}
@@ -341,24 +335,24 @@ export default async function MonthlyPage({
               </div>
             )}
 
-            <h3 className="form-section-title">فیس — طریقے کے حساب سے</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.fees_by_method")}</h3>
             {methodRows.length === 0 ? (
-              <p className="empty-state">اس مہینے کی کوئی فیس درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "monthly.no_fees")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>طریقہ</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "col.method")}</th>
+                      <th>{t(lang, "exp.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {methodRows.map((m) => (
                       <tr key={m}>
-                        <td>{PAYMENT_METHOD_LABELS[m]}</td>
+                        <td>{t(lang, `fee.method.${m}`)}</td>
                         <td>
-                          {(byMethod.get(m) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", { n: (byMethod.get(m) ?? 0).toLocaleString("ur-PK") })}
                         </td>
                       </tr>
                     ))}
@@ -367,24 +361,24 @@ export default async function MonthlyPage({
               </div>
             )}
 
-            <h3 className="form-section-title">عطیات — قسم کے حساب سے</h3>
+            <h3 className="form-section-title">{t(lang, "monthly.donations_by_kind")}</h3>
             {kindRows.length === 0 ? (
-              <p className="empty-state">اس مہینے کا کوئی عطیہ درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "monthly.no_donations")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>قسم</th>
-                      <th>رقم</th>
+                      <th>{t(lang, "col.type")}</th>
+                      <th>{t(lang, "exp.col_amount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {kindRows.map((k) => (
                       <tr key={k}>
-                        <td>{DONATION_KIND_LABELS[k]}</td>
+                        <td>{t(lang, `monthly.kind.${k}`)}</td>
                         <td>
-                          {(byKind.get(k) ?? 0).toLocaleString("ur-PK")} روپے
+                          {t(lang, "common.money", { n: (byKind.get(k) ?? 0).toLocaleString("ur-PK") })}
                         </td>
                       </tr>
                     ))}
@@ -398,13 +392,13 @@ export default async function MonthlyPage({
                 className="btn-ghost"
                 href={`/departments/income/fees?month=${month}`}
               >
-                آمدنی کی تفصیل دیکھیں
+                {t(lang, "monthly.view_income")}
               </Link>
               <Link
                 className="btn-ghost"
                 href={`/departments/expenses?month=${month}`}
               >
-                اخراجات کی تفصیل دیکھیں
+                {t(lang, "monthly.view_expenses")}
               </Link>
             </div>
           </>
