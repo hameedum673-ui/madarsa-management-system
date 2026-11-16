@@ -157,6 +157,7 @@ const ur: Dict = {
 
   "common.save": "محفوظ کریں",
   "common.back": "واپس",
+  "common.home": "مین ڈیش بورڈ",
   "common.search": "تلاش",
   "common.new": "نیا",
   "common.edit": "ترمیم",
@@ -1110,6 +1111,7 @@ const ar: Dict = {
 
   "common.save": "حفظ",
   "common.back": "رجوع",
+  "common.home": "لوحة التحكم الرئيسية",
   "common.search": "بحث",
   "common.new": "جديد",
   "common.edit": "تعديل",
