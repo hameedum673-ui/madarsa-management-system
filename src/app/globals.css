@@ -382,6 +382,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
    درستی: صرف گھر کا آئکن، کوئی لفظ نہیں (تیر جتنا گول بٹن)؛ ہوم پہلے، تیر بعد میں */
 .home-btn{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:2px solid var(--gold);color:var(--navy);background:#fff;text-decoration:none}
 .home-btn svg{width:22px;height:22px;stroke:currentColor}
+/* آئکن درستی (16 نومبر 2026، شام) — صارف کی شکایت: تیر اور گھر کا آئکن
+   دائرے کے اوپر کی طرف تھے، نیچے خالی جگہ نظر آتی تھی۔ وجہ: svg لکھائی
+   کی لائن پر بیٹھا تھا (baseline)، اس لیے اس کے نیچے خالی جگہ رہ جاتی
+   تھی اور آئکن اوپر دکھتا تھا۔ display:block سے span کی اونچائی بالکل
+   آئکن جتنی ہو جاتی ہے، اور flex اسے دائرے کے بیچ میں رکھتا ہے۔ */
+.back-arrow svg,.home-btn svg{display:block}
 .home-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .home-btn + .back-arrow{margin-inline-start:8px}
 
