@@ -6,15 +6,18 @@
 
 import { useState } from "react";
 import type { MadrasaProfileFormValues } from "@/lib/madrasaProfile";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (formData: FormData) => Promise<{ ok: true } | { error: string }>;
 
 export default function ProfileForm({
   initial,
   action,
+  lang = "ur",
 }: {
   initial: MadrasaProfileFormValues;
   action: FormAction;
+  lang?: Lang;
 }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -37,9 +40,10 @@ export default function ProfileForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">مدرسے کا نام *</span>
+          <span className="field-label">{t(lang, "general.form.name")}</span>
           <input
             className="field-input"
             name="name"
@@ -51,7 +55,7 @@ export default function ProfileForm({
         </label>
 
         <label className="field">
-          <span className="field-label">مہتمم کا نام</span>
+          <span className="field-label">{t(lang, "general.form.mohtamim")}</span>
           <input
             className="field-input"
             name="mohtamim_name"
@@ -62,7 +66,7 @@ export default function ProfileForm({
         </label>
 
         <label className="field">
-          <span className="field-label">فون نمبر</span>
+          <span className="field-label">{t(lang, "general.form.phone")}</span>
           <input
             className="field-input"
             name="phone"
@@ -75,7 +79,7 @@ export default function ProfileForm({
         </label>
 
         <label className="field">
-          <span className="field-label">واٹس ایپ نمبر</span>
+          <span className="field-label">{t(lang, "general.form.whatsapp")}</span>
           <input
             className="field-input"
             name="whatsapp"
@@ -88,7 +92,7 @@ export default function ProfileForm({
         </label>
 
         <label className="field">
-          <span className="field-label">ای میل</span>
+          <span className="field-label">{t(lang, "general.form.email")}</span>
           <input
             className="field-input"
             name="email"
@@ -100,7 +104,7 @@ export default function ProfileForm({
         </label>
 
         <label className="field">
-          <span className="field-label">قیام کا سال</span>
+          <span className="field-label">{t(lang, "general.form.year")}</span>
           <input
             className="field-input"
             name="established_year"
@@ -114,7 +118,7 @@ export default function ProfileForm({
         </label>
 
         <label className="field">
-          <span className="field-label">رجسٹریشن نمبر</span>
+          <span className="field-label">{t(lang, "general.form.reg_no")}</span>
           <input
             className="field-input"
             name="registration_no"
@@ -126,7 +130,7 @@ export default function ProfileForm({
       </div>
 
       <label className="field">
-        <span className="field-label">پتہ</span>
+        <span className="field-label">{t(lang, "general.form.address")}</span>
         <textarea
           className="field-input"
           name="address"
@@ -138,7 +142,7 @@ export default function ProfileForm({
       </label>
 
       <label className="field">
-        <span className="field-label">نوٹ (اگر کوئی ہو)</span>
+        <span className="field-label">{t(lang, "general.form.note")}</span>
         <textarea
           className="field-input"
           name="note"
@@ -150,12 +154,12 @@ export default function ProfileForm({
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? (
-        <p className="att-success">معلومات محفوظ ہو گئیں۔</p>
+        <p className="att-success">{t(lang, "general.form.saved")}</p>
       ) : null}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "تبدیلی محفوظ کریں"}
+          {loading ? t(lang, "general.form.saving") : t(lang, "general.form.save")}
         </button>
       </div>
     </form>

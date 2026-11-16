@@ -17,9 +17,12 @@ import type {
 } from "@/lib/madrasaProfile";
 import ProfileForm from "@/app/departments/general/ProfileForm";
 import { updateMadrasaProfile } from "@/app/departments/general/actions";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function GeneralPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
 
   const mine = await getMyMadrasa(supabase);
   if (!mine) {
@@ -63,25 +66,25 @@ export default async function GeneralPage() {
     note: profile?.note ?? "",
   };
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>مدرسے کا عمومی ریکارڈ</h2>
+          <h2>{t(lang, "general.title")}</h2>
         </div>
         {tableMissing ? (
-          <p className="empty-state">
-            مدرسے کے ریکارڈ کی میز ابھی نہیں بنی — پہلے مرحلہ 24 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "general.table_missing")}</p>
         ) : (
           <>
-            <p className="sub">
-              یہ معلومات صرف آپ کے اپنے مدرسے کی ہیں۔ نام بدلنے پر ڈیش بورڈ
-              کے اوپر والے حصے، نیچے والے حصے اور رسیدوں/کارڈوں پر نیا نام
-              نظر آئے گا۔
-            </p>
-            <ProfileForm initial={initial} action={updateMadrasaProfile} />
+            <p className="sub">{t(lang, "general.sub")}</p>
+            <ProfileForm
+              initial={initial}
+              action={updateMadrasaProfile}
+              lang={lang}
+            />
           </>
         )}
       </div>

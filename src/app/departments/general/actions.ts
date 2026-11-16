@@ -9,10 +9,18 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 type ActionResult = { ok: true } | { error: string };
+
+/** مرحلہ 123 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 300): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -24,6 +32,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export async function updateMadrasaProfile(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const name = clean(formData.get("name"), 200);
   const address = clean(formData.get("address"), 300);
   const phone = clean(formData.get("phone"), 20);
@@ -34,30 +43,30 @@ export async function updateMadrasaProfile(
   const registrationNo = clean(formData.get("registration_no"), 100);
   const note = clean(formData.get("note"), 500);
 
-  if (!name) return { error: "مدرسے کا نام لکھیں۔" };
+  if (!name) return { error: t(lang, "general.err.name_required") };
   if (phone && !PHONE_RE.test(phone))
-    return { error: "فون نمبر درست شکل میں لکھیں۔" };
+    return { error: t(lang, "general.err.phone_invalid") };
   if (whatsapp && !PHONE_RE.test(whatsapp))
-    return { error: "واٹس ایپ نمبر درست شکل میں لکھیں۔" };
+    return { error: t(lang, "general.err.whatsapp_invalid") };
   if (email && !EMAIL_RE.test(email))
-    return { error: "ای میل درست شکل میں لکھیں۔" };
+    return { error: t(lang, "general.err.email_invalid") };
   let establishedYear: number | null = null;
   if (establishedYearRaw) {
     const y = Number(establishedYearRaw);
     if (!Number.isInteger(y) || y < 1900 || y > 2100)
-      return { error: "قیام کا سال 1900 سے 2100 کے درمیان ہونا چاہیے۔" };
+      return { error: t(lang, "general.err.year_invalid") };
     establishedYear = y;
   }
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   // حصہ 4 کی درستگی — عمومی ریکارڈ بدلنا صرف مالک کا کام ہے (سپر ایڈمن ہونا ضروری نہیں)
   if (!(await isMadrasaOwner(supabase))) {
-    return { error: "صرف مدرسے کا مالک عمومی ریکارڈ بدل سکتا ہے۔" };
+    return { error: t(lang, "general.err.owner_only") };
   }
   if (!(await isModuleAllowedForMe(supabase, "general"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // 1) نام — madrasas میز میں (صرف اپنا مدرسہ — RLS پالیسی)
@@ -65,7 +74,8 @@ export async function updateMadrasaProfile(
     .from("madrasas")
     .update({ name })
     .eq("id", mine.madrasaId);
-  if (nameError) return { error: "نام محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+  if (nameError)
+    return { error: t(lang, "general.err.name_save_failed") };
 
   // 2) باقی معلومات — madrasa_profile میں (نہ ہو تو نیا ریکارڈ)
   const profileData = {
@@ -84,7 +94,7 @@ export async function updateMadrasaProfile(
     .from("madrasa_profile")
     .upsert(profileData, { onConflict: "madrasa_id" });
   if (profileError) {
-    return { error: "معلومات محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "general.err.save_failed") };
   }
 
   try {
