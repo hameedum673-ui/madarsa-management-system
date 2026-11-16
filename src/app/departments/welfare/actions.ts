@@ -7,17 +7,21 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
+import { t, isLang, type Lang } from "@/i18n/dictionary";
 import { getMyMadrasa } from "@/lib/students";
-import {
-  CLOSED_MONTH_ERROR,
-  isMonthClosed,
-  monthOfDate,
-} from "@/lib/monthClosing";
+import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import { WELFARE_KINDS, type WelfareKind } from "@/lib/welfare";
 
 type ActionResult = { ok: true; id?: string } | { error: string };
+
+// مرحلہ 120 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو)
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -31,10 +35,11 @@ interface WelfareFields {
   note: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
 ): { fields: WelfareFields } | { error: string } {
+  const lang = formLang(formData);
   const studentId = clean(formData.get("student_id"), 50);
   const kind = clean(formData.get("kind"), 20);
   const amountRaw = clean(formData.get("amount"), 12);
@@ -42,15 +47,15 @@ function validateFields(
   const recordDate = clean(formData.get("record_date"), 10);
   const note = clean(formData.get("note"), 500);
 
-  if (!studentId) return { error: "طالب علم منتخب کریں۔" };
+  if (!studentId) return { error: t(lang, "welfare.err.student_required") };
   if (!WELFARE_KINDS.includes(kind as WelfareKind))
-    return { error: "قسم درست منتخب کریں (وظیفہ، مالی معاونت یا دیگر)۔" };
+    return { error: t(lang, "welfare.err.kind_invalid") };
   if (!Number.isInteger(amount) || amount < 1 || amount > 10000000)
-    return { error: "رقم 1 سے 10,000,000 کے درمیان ہونی چاہیے۔" };
+    return { error: t(lang, "funds.err.amount_invalid") };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(recordDate))
-    return { error: "تاریخ درست شکل میں لکھیں۔" };
+    return { error: t(lang, "funds.err.date_invalid") };
   if (recordDate > todayInKarachi())
-    return { error: "تاریخ آج سے آگے نہیں ہو سکتی۔" };
+    return { error: t(lang, "funds.err.date_future") };
 
   return {
     fields: {
@@ -87,22 +92,23 @@ async function writeAudit(
 export async function addWelfare(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const checked = validateFields(formData);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "welfare"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 39 — بند مہینے کی امداد درج نہیں ہو سکتی
   if (
     await isMonthClosed(supabase, mine.madrasaId, monthOfDate(f.recordDate))
   ) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
 
   // طالبہ اسی مدرسے کی اور فعال ہونی چاہیے
@@ -113,7 +119,8 @@ export async function addWelfare(
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
     .single();
-  if (!student) return { error: "طالب علم نہیں ملا — فعال طالب علم منتخب کریں۔" };
+  if (!student)
+    return { error: t(lang, "welfare.err.student_not_found") };
 
   // ریکارڈ نمبر: اس مدرسے کے فلاحی اندراجات کی گنتی + 1
   const { count } = await supabase
@@ -141,9 +148,9 @@ export async function addWelfare(
   if (error || !data) {
     // ریکارڈ نمبر دو بار بن جائے تو صاف غلطی
     if ((error as { code?: string } | null)?.code === "23505") {
-      return { error: "ریکارڈ نمبر دو بار بن گیا — دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "welfare.err.record_clash") };
     }
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "funds.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "welfare_created", {
@@ -158,12 +165,15 @@ export async function addWelfare(
 }
 
 /** غلط اندراج منسوخ کریں — ریکارڈ رہتا ہے، رقم کل سے نکل جاتی ہے */
-export async function voidWelfare(id: string): Promise<ActionResult> {
+export async function voidWelfare(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "welfare"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // مرحلہ 39 — بند مہینے کی امداد منسوخ نہیں ہو سکتی
@@ -182,7 +192,7 @@ export async function voidWelfare(id: string): Promise<ActionResult> {
       monthOfDate(row.record_date as string),
     ))
   ) {
-    return { error: CLOSED_MONTH_ERROR };
+    return { error: t(lang, "common.closed_month") };
   }
 
   const { data, error } = await supabase
@@ -195,7 +205,7 @@ export async function voidWelfare(id: string): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "منسوخ نہیں ہو سکا — شاید یہ اندراج پہلے سے منسوخ ہے۔" };
+    return { error: t(lang, "welfare.err.void_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "welfare_voided", {

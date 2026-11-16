@@ -9,7 +9,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
 import type { Student } from "@/lib/students";
-import { WELFARE_KINDS, WELFARE_KIND_LABELS } from "@/lib/welfare";
+import { WELFARE_KINDS } from "@/lib/welfare";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -18,9 +19,11 @@ type FormAction = (
 export default function WelfareForm({
   students,
   action,
+  lang,
 }: {
   students: Student[];
   action: FormAction;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -31,6 +34,8 @@ export default function WelfareForm({
     setError("");
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    // مرحلہ 120 — چھپا ہوا خانہ: سرور کو زبان بتاتا ہے
+    formData.set("lang", lang);
     const res = await action(formData);
     setLoading(false);
     if ("error" in res) {
@@ -49,9 +54,9 @@ export default function WelfareForm({
     <form onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">طالب علم *</span>
+          <span className="field-label">{t(lang, "welfare.form.student")}</span>
           <select className="field-input" name="student_id" required>
-            <option value="">— منتخب کریں —</option>
+            <option value="">{t(lang, "library.issue_form.select")}</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} — {s.father_name}
@@ -62,18 +67,18 @@ export default function WelfareForm({
         </label>
 
         <label className="field">
-          <span className="field-label">قسم *</span>
+          <span className="field-label">{t(lang, "welfare.form.kind")}</span>
           <select className="field-input" name="kind" required>
             {WELFARE_KINDS.map((k) => (
               <option key={k} value={k}>
-                {WELFARE_KIND_LABELS[k]}
+                {t(lang, `welfare.kind.${k}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">رقم (روپے) *</span>
+          <span className="field-label">{t(lang, "fee.form.amount")}</span>
           <input
             className="field-input"
             name="amount"
@@ -82,12 +87,12 @@ export default function WelfareForm({
             required
             min={1}
             max={10000000}
-            placeholder="مثلاً 2000"
+            placeholder={t(lang, "welfare.form.amount_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">تاریخ *</span>
+          <span className="field-label">{t(lang, "funds.form.date")}</span>
           <input
             className="field-input"
             name="record_date"
@@ -99,13 +104,13 @@ export default function WelfareForm({
       </div>
 
       <label className="field">
-        <span className="field-label">نوٹ (اگر کوئی ہو)</span>
+        <span className="field-label">{t(lang, "funds.form.note")}</span>
         <textarea
           className="field-input"
           name="note"
           rows={2}
           maxLength={500}
-          placeholder="مثلاً کس مہینے کا وظیفہ ہے"
+          placeholder={t(lang, "welfare.form.note_ph")}
         />
       </label>
 
@@ -113,10 +118,10 @@ export default function WelfareForm({
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "common.save")}
         </button>
         <Link className="btn-ghost" href="/departments/welfare">
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </Link>
       </div>
     </form>

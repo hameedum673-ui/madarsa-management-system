@@ -7,13 +7,11 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
-import {
-  WELFARE_KIND_LABELS,
-  WELFARE_STATUS_LABELS,
-  type WelfareRecord,
-} from "@/lib/welfare";
+import { type WelfareRecord } from "@/lib/welfare";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -26,6 +24,7 @@ export default async function WelfarePage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const params = await searchParams;
   const page = parsePage(params.page);
@@ -56,35 +55,35 @@ export default async function WelfarePage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/welfare-expenses" />
-          <h2>فلاحی کام</h2>
+          <h2>{t(lang, "welfare.title")}</h2>
           <span className="page-count">
-            کل معاونت: {totalAid.toLocaleString("ur-PK")} روپے
+            {t(lang, "welfare.total_aid", {
+              total: totalAid.toLocaleString("ur-PK"),
+            })}
           </span>
           <span className="spacer" />
           <Link className="btn-primary" href="/departments/welfare/new">
-            + نیا اندراج
+            {t(lang, "welfare.add")}
           </Link>
         </div>
 
         {tableMissing ? (
-          <p className="empty-state">
-            فلاحی کام کی میز ابھی نہیں بنی — پہلے مرحلہ 21 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "welfare.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : records.length === 0 ? (
-          <p className="empty-state">ابھی کوئی معاونت درج نہیں ہے۔</p>
+          <p className="empty-state">{t(lang, "welfare.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>ریکارڈ نمبر</th>
-                  <th>طالب علم</th>
-                  <th>قسم</th>
-                  <th>رقم</th>
-                  <th>تاریخ</th>
-                  <th>حالت</th>
+                  <th>{t(lang, "welfare.col_record")}</th>
+                  <th>{t(lang, "col.student")}</th>
+                  <th>{t(lang, "col.type")}</th>
+                  <th>{t(lang, "col.amount")}</th>
+                  <th>{t(lang, "col.date")}</th>
+                  <th>{t(lang, "col.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,14 +99,14 @@ export default async function WelfarePage({
                         {r.students?.name ?? "—"}
                       </Link>
                     </td>
-                    <td>{WELFARE_KIND_LABELS[r.kind]}</td>
+                    <td>{t(lang, `welfare.kind.${r.kind}`)}</td>
                     <td>{r.amount.toLocaleString("ur-PK")}</td>
                     <td>{formatDate(r.record_date)}</td>
                     <td>
                       <span
                         className={`badge${r.status === "voided" ? " badge-withdrawn" : ""}`}
                       >
-                        {WELFARE_STATUS_LABELS[r.status]}
+                        {t(lang, `fee.status.${r.status}`)}
                       </span>
                     </td>
                   </tr>
@@ -117,7 +116,7 @@ export default async function WelfarePage({
           </div>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

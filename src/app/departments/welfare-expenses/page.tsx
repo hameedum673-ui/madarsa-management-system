@@ -9,6 +9,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { isAppAdmin } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 
@@ -16,21 +18,22 @@ const WELFARE_EXPENSE_MODULES = [
   {
     id: "welfare",
     table: "welfare_records",
-    title: "وظائف اور مالی معاونت",
-    desc: "مستحق طلبہ کے وظائف اور مالی معاونت کا ریکارڈ۔",
+    titleKey: "module.welfare",
+    descKey: "hub.welfare_expenses.welfare_desc",
     href: "/departments/welfare",
   },
   {
     id: "student-exp",
     table: "student_expenses",
-    title: "طلبہ کے اخراجات",
-    desc: "فی طالب علم اخراجات اور ان کی تفصیل کا حساب۔",
+    titleKey: "module.student-exp",
+    descKey: "hub.welfare_expenses.student_exp_desc",
     href: "/departments/student-exp",
   },
 ] as const;
 
 export default async function WelfareExpensesHubPage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const admin = await isAppAdmin(supabase);
 
   const allowed: Record<string, boolean> = {};
@@ -71,18 +74,23 @@ export default async function WelfareExpensesHubPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>وظائف اور طلبہ کے اخراجات</h2>
+          <h2>{t(lang, "hub.welfare_expenses.title")}</h2>
         </div>
 
         {WELFARE_EXPENSE_MODULES.filter((m) => allowed[m.id]).map((m) => (
           <div key={m.id}>
-            <h3 className="form-section-title">{m.title}</h3>
+            <h3 className="form-section-title">{t(lang, m.titleKey)}</h3>
             <p className="sub">
-              {m.desc} کل: {counts[m.id].toLocaleString("ur-PK")}
+              {t(lang, m.descKey)}{" "}
+              {t(lang, "hub.welfare_expenses.total", {
+                n: counts[m.id].toLocaleString("ur-PK"),
+              })}
             </p>
             <div className="form-actions">
               <Link className="btn-primary" href={m.href}>
-                {m.title} کھولیں
+                {t(lang, "hub.welfare_expenses.open", {
+                  title: t(lang, m.titleKey),
+                })}
               </Link>
             </div>
           </div>
