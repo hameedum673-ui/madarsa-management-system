@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { BACK_ARROW_SVG, HOME_SVG } from "@/components/icons";
-import { t } from "@/i18n/dictionary";
 
 /**
  * واپس جانے کا تیر — دوست کی تجویز (9 نومبر 2026):
@@ -13,27 +11,30 @@ import { t } from "@/i18n/dictionary";
  * جانا پڑتا ہے۔ تیر کے ساتھ ہی گھر والا بٹن لگا دیا — ایک ٹیپ میں
  * سیدھا مین ڈیش بورڈ، چاہے آپ کتنے ہی صفحے اندر ہوں۔
  *
- * زبان کوکی سے پڑھی جاتی ہے — root layout ہر درخواست پر getMyLanguage
- * سے کوکی کو پروفائل والی زبان سے ملا دیتا ہے، اس لیے یہاں ڈیٹا بیس
- * کا سوال نہیں ہوتا۔ کوکی نہ ملے تو اردو۔
+ * درستی (16 نومبر 2026، دوپہر) — صارف کی شکایت: ہوم بٹن پر لفظ لکھا
+ * تھا ("مین ڈیش بورڈ" / "لوحة التحكم الرئيسية")، اس لیے اردو کرنے
+ * پر بھی عربی دکھتا رہا۔ حل: بٹن پر کوئی لفظ ہی نہیں — صرف گھر کا
+ * ہلکا سا آئکن (پروفیشنل ہوم پیج والا)۔ لفظ نہ ہو تو زبان کا مسئلہ
+ * ہی ختم۔ ترتیب بھی بدلی: ہوم بٹن پہلے (اصل کونے پر)، تیر اس کے
+ * ساتھ بعد میں۔
  */
-export default async function BackButton({
+export default function BackButton({
   href = "/",
   className = "",
 }: {
   href?: string;
   className?: string;
 }) {
-  let lang: "ur" | "ar" = "ur";
-  try {
-    const c = (await cookies()).get("lang")?.value;
-    if (c === "ar") lang = "ar";
-  } catch {
-    /* کوکی نہ پڑھی جا سکے تو اردو */
-  }
-  const homeLabel = t(lang, "common.home");
   return (
     <>
+      <Link
+        className="home-btn"
+        href="/"
+        aria-label="Home"
+        title="Home"
+      >
+        <span dangerouslySetInnerHTML={{ __html: HOME_SVG }} />
+      </Link>
       <Link
         className={`back-arrow${className ? ` ${className}` : ""}`}
         href={href}
@@ -41,15 +42,6 @@ export default async function BackButton({
         title="واپس جائیں"
       >
         <span dangerouslySetInnerHTML={{ __html: BACK_ARROW_SVG }} />
-      </Link>
-      <Link
-        className="home-btn"
-        href="/"
-        aria-label={homeLabel}
-        title={homeLabel}
-      >
-        <span dangerouslySetInnerHTML={{ __html: HOME_SVG }} />
-        {homeLabel}
       </Link>
     </>
   );
