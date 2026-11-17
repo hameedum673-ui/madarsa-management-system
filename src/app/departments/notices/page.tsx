@@ -10,10 +10,10 @@ import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import {
   NOTICE_KINDS,
-  NOTICE_KIND_LABELS,
-  NOTICE_STATUS_LABELS,
   type Notice,
 } from "@/lib/notices";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("ur-PK");
@@ -25,6 +25,7 @@ export default async function NoticesPage({
   searchParams: Promise<{ kind?: string; page?: string }>;
 }) {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const params = await searchParams;
   const kind = params.kind ?? "all";
   const kindValid = kind === "all" || NOTICE_KINDS.includes(kind as (typeof NOTICE_KINDS)[number]);
@@ -48,59 +49,56 @@ export default async function NoticesPage({
   const pages = pageCount(count);
   const tableMissing = (error as { code?: string } | null)?.code === "42P01";
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>اطلاعات اور اعلانات</h2>
+          <h2>{t(lang, "notices.title")}</h2>
           <Link className="btn-primary" href="/departments/notices/new">
-            نئی اطلاع لکھیں
+            {t(lang, "notices.new")}
           </Link>
         </div>
 
         {tableMissing ? (
-          <p className="empty-state">
-            اطلاعات کی میز ابھی نہیں بنی — پہلے مرحلہ 27 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "notices.table_missing")}</p>
         ) : (
           <>
             <form className="filter-row" method="get">
               <label className="field">
-                <span className="field-label">قسم</span>
+                <span className="field-label">{t(lang, "col.type")}</span>
                 <select
                   className="field-input"
                   name="kind"
                   defaultValue={kindValid ? kind : "all"}
                 >
-                  <option value="all">سب</option>
+                  <option value="all">{t(lang, "common.all")}</option>
                   {NOTICE_KINDS.map((k) => (
                     <option key={k} value={k}>
-                      {NOTICE_KIND_LABELS[k]}
+                      {t(lang, `notice.kind.${k}`)}
                     </option>
                   ))}
                 </select>
               </label>
               <button className="btn-primary" type="submit">
-                دکھائیں
+                {t(lang, "common.show")}
               </button>
             </form>
 
-            <p className="sub">
-              پہلے اوپر والے خانے میں قسم چنیں، پھر "دکھائیں" دبائیں — اگر
-              "سب" چنا ہو تو "دکھائیں" دبانے سے فہرست ویسے ہی رہے گی۔
-            </p>
+            <p className="sub">{t(lang, "notices.filter_note")}</p>
 
             {notices.length === 0 ? (
-              <p className="empty-state">ابھی کوئی اطلاع درج نہیں ہے۔</p>
+              <p className="empty-state">{t(lang, "notices.empty")}</p>
             ) : (
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>عنوان</th>
-                    <th>قسم</th>
-                    <th>تاریخ</th>
-                    <th>حالت</th>
+                    <th>{t(lang, "notices.col_title")}</th>
+                    <th>{t(lang, "col.type")}</th>
+                    <th>{t(lang, "col.date")}</th>
+                    <th>{t(lang, "col.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -111,11 +109,11 @@ export default async function NoticesPage({
                           {n.title}
                         </Link>
                       </td>
-                      <td>{NOTICE_KIND_LABELS[n.kind]}</td>
+                      <td>{t(lang, `notice.kind.${n.kind}`)}</td>
                       <td>{formatDate(n.notice_date)}</td>
                       <td>
                         <span className="badge">
-                          {NOTICE_STATUS_LABELS[n.status]}
+                          {t(lang, `library.status.${n.status}`)}
                         </span>
                       </td>
                     </tr>
@@ -126,7 +124,7 @@ export default async function NoticesPage({
           </>
         )}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
       </div>
     </div>
   );

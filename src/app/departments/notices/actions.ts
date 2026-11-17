@@ -8,15 +8,23 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
   NOTICE_KINDS,
   type NoticeKind,
   type NoticeStatus,
 } from "@/lib/notices";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 type ActionResult = { ok: true } | { error: string };
+
+/** مرحلہ 125 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -35,19 +43,20 @@ interface NoticeFields {
   noticeDate: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
 ): { fields: NoticeFields } | { error: string } {
+  const lang = formLang(formData);
   const title = clean(formData.get("title"), 200);
   const body = clean(formData.get("body"), 2000);
   const kind = clean(formData.get("kind"), 20);
   const noticeDate = clean(formData.get("notice_date"), 10);
 
-  if (!title) return { error: "عنوان ضروری ہے۔" };
+  if (!title) return { error: t(lang, "notice.err.title_required") };
   if (!NOTICE_KINDS.includes(kind as NoticeKind))
-    return { error: "قسم درست منتخب کریں (اطلاع، اعلان یا تعطیل)۔" };
-  if (!validDate(noticeDate)) return { error: "تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "notice.err.kind_invalid") };
+  if (!validDate(noticeDate)) return { error: t(lang, "notice.err.date_invalid") };
 
   return {
     fields: {
@@ -81,15 +90,16 @@ async function writeAudit(
 
 /** نئی اطلاع شامل کریں */
 export async function addNotice(formData: FormData): Promise<ActionResult> {
+  const lang = formLang(formData);
   const checked = validateFields(formData);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "notices"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -107,7 +117,7 @@ export async function addNotice(formData: FormData): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "notice.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "notice_created", {
@@ -125,19 +135,20 @@ export async function updateNotice(
   id: string,
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const checked = validateFields(formData);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const status = clean(formData.get("status"), 20);
   if (status !== "active" && status !== "archived")
-    return { error: "حالت درست منتخب کریں (فعال یا محفوظ شدہ)۔" };
+    return { error: t(lang, "notice.err.status_invalid") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "notices"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // RLS خود یقین دلاتی ہے کہ یہ اطلاع اسی مدرسے کی ہے
@@ -157,7 +168,7 @@ export async function updateNotice(
     .single();
 
   if (error || !data) {
-    return { error: "تبدیلی محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "notice.err.update_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "notice_updated", {
@@ -172,12 +183,15 @@ export async function updateNotice(
 }
 
 /** اطلاع محفوظ کریں (archive) — حذف نہیں ہوتی، ریکارڈ رہتا ہے */
-export async function archiveNotice(id: string): Promise<ActionResult> {
+export async function archiveNotice(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "notices"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -193,7 +207,7 @@ export async function archiveNotice(id: string): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "notice.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "notice_archived", {

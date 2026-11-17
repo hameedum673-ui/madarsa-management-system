@@ -9,11 +9,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   NOTICE_KINDS,
-  NOTICE_KIND_LABELS,
-  NOTICE_STATUS_LABELS,
   type Notice,
 } from "@/lib/notices";
 import { todayInKarachi } from "@/lib/attendance";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction =
   | ((formData: FormData) => Promise<{ ok: true } | { error: string }>)
@@ -26,10 +25,12 @@ export default function NoticeForm({
   notice,
   action,
   detailId,
+  lang = "ur",
 }: {
   notice?: Notice;
   action: FormAction;
   detailId?: string;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -58,23 +59,24 @@ export default function NoticeForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <h3 className="form-section-title">
-        {isEdit ? "اطلاع تبدیل کریں" : "نئی اطلاع لکھیں"}
+        {isEdit ? t(lang, "notice.form.edit_title") : t(lang, "notices.new")}
       </h3>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">عنوان *</span>
+          <span className="field-label">{t(lang, "notice.form.title")}</span>
           <input
             className="field-input"
             name="title"
             defaultValue={notice?.title ?? ""}
-            placeholder="مثلاً عید کی تعطیلات"
+            placeholder={t(lang, "notice.form.title_ph")}
             required
           />
         </label>
 
         <label className="field">
-          <span className="field-label">قسم *</span>
+          <span className="field-label">{t(lang, "notice.form.kind")}</span>
           <select
             className="field-input"
             name="kind"
@@ -82,14 +84,14 @@ export default function NoticeForm({
           >
             {NOTICE_KINDS.map((k) => (
               <option key={k} value={k}>
-                {NOTICE_KIND_LABELS[k]}
+                {t(lang, `notice.kind.${k}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">تاریخ *</span>
+          <span className="field-label">{t(lang, "notice.form.date")}</span>
           <input
             className="field-input"
             type="date"
@@ -101,26 +103,26 @@ export default function NoticeForm({
 
         {isEdit ? (
           <label className="field">
-            <span className="field-label">حالت *</span>
+            <span className="field-label">{t(lang, "notice.form.status")}</span>
             <select
               className="field-input"
               name="status"
               defaultValue={notice?.status ?? "active"}
             >
-              <option value="active">{NOTICE_STATUS_LABELS.active}</option>
-              <option value="archived">{NOTICE_STATUS_LABELS.archived}</option>
+              <option value="active">{t(lang, "library.status.active")}</option>
+              <option value="archived">{t(lang, "library.status.archived")}</option>
             </select>
           </label>
         ) : null}
 
         <label className="field field-wide">
-          <span className="field-label">تفصیل</span>
+          <span className="field-label">{t(lang, "notice.form.body")}</span>
           <textarea
             className="field-input"
             name="body"
             rows={4}
             defaultValue={notice?.body ?? ""}
-            placeholder="اطلاع کی مکمل تفصیل یہاں لکھیں"
+            placeholder={t(lang, "notice.form.body_ph")}
           />
         </label>
       </div>
@@ -130,10 +132,10 @@ export default function NoticeForm({
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
           {loading
-            ? "براہِ کرم انتظار کریں…"
+            ? t(lang, "common.waiting")
             : isEdit
-              ? "تبدیلی محفوظ کریں"
-              : "اطلاع محفوظ کریں"}
+              ? t(lang, "general.form.save")
+              : t(lang, "notice.form.save_new")}
         </button>
       </div>
     </form>
