@@ -17,7 +17,9 @@ import {
 } from "@/lib/admissions";
 import type { AdmissionType } from "@/lib/students";
 import {
+  DEPARTMENT_IDS,
   SECTION_IDS,
+  type DepartmentId,
   type SectionId,
 } from "@/lib/students";
 import { getMyLanguage } from "@/lib/language";
@@ -35,6 +37,7 @@ export default async function AdmissionsPage({
     status?: string;
     section?: string;
     admission_type?: string;
+    department?: string;
     page?: string;
   }>;
 }) {
@@ -66,6 +69,12 @@ export default async function AdmissionsPage({
     allowedSections.has(rawSection as SectionId)
       ? (rawSection as SectionId)
       : "all";
+  // شعبہ جات کا فلٹر (پہلے سے "سب")
+  const rawDepartment = params.department ?? "all";
+  const department: DepartmentId | "all" =
+    (DEPARTMENT_IDS as string[]).includes(rawDepartment)
+      ? (rawDepartment as DepartmentId)
+      : "all";
 
   // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
@@ -77,6 +86,7 @@ export default async function AdmissionsPage({
     .order("created_at", { ascending: false });
   if (status !== "all") query = query.eq("status", status);
   if (section !== "all") query = query.eq("section", section);
+  if (department !== "all") query = query.eq("department", department);
   if (admissionType !== "all")
     query = query.eq("admission_type", admissionType);
   if (allowedSections.size < 2)
@@ -146,6 +156,21 @@ export default async function AdmissionsPage({
               {ADMISSION_TYPE_IDS.map((t2) => (
                 <option key={t2} value={t2}>
                   {t(lang, `admission.type.${t2}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="att-field">
+            <span className="att-label">{t(lang, "col.dept")}</span>
+            <select
+              className="att-input"
+              name="department"
+              defaultValue={department}
+            >
+              <option value="all">{t(lang, "common.all")}</option>
+              {DEPARTMENT_IDS.map((d) => (
+                <option key={d} value={d}>
+                  {t(lang, `dept.${d}`)}
                 </option>
               ))}
             </select>
