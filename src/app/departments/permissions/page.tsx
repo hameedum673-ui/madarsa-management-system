@@ -14,6 +14,8 @@ import { SECTION_IDS } from "@/lib/students";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
 import PermissionsForm from "@/app/departments/permissions/PermissionsForm";
 import { savePermissions } from "@/app/departments/permissions/actions";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function PermissionsPage({
   searchParams,
@@ -21,6 +23,7 @@ export default async function PermissionsPage({
   searchParams: Promise<{ user?: string }>;
 }) {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const admin = await isSystemAdmin(supabase);
   if (!admin) {
     notFound();
@@ -80,27 +83,27 @@ export default async function PermissionsPage({
     }
   }
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/users-permissions" />
-          <h2>اختیارات اور اجازتیں</h2>
+          <h2>{t(lang, "permissions.title")}</h2>
         </div>
 
         {tableMissing ? (
-          <p className="empty-state">
-            صارفین کی میز ابھی نہیں بنی — پہلے مرحلہ 11 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "users.table_missing")}</p>
         ) : users.length === 0 ? (
-          <p className="empty-state">
-            ابھی کوئی منظور شدہ صارف نہیں ہے — پہلے صارف منظور کریں۔
-          </p>
+          <p className="empty-state">{t(lang, "permissions.empty")}</p>
         ) : (
           <>
             <form className="filter-row" method="get">
               <label className="field">
-                <span className="field-label">صارف</span>
+                <span className="field-label">
+                  {t(lang, "permissions.user")}
+                </span>
                 <select
                   className="field-input"
                   name="user"
@@ -114,18 +117,11 @@ export default async function PermissionsPage({
                 </select>
               </label>
               <button className="btn-primary" type="submit">
-                دکھائیں
+                {t(lang, "common.show")}
               </button>
             </form>
 
-            <p className="sub">
-              پہلے سے سب کچھ اجازت شدہ ہے — جس شعبے کا ٹک ہٹائیں گے، وہ
-              شعبہ اس صارف کو نظر نہیں آئے گا اور لنک بھی نہیں کھلے گا۔
-              "صارفین اور اکاؤنٹس" اور "اختیارات اور اجازتیں" صرف ایڈمن کے
-              لیے ہیں، اس لیے یہاں نہیں دکھائے گئے۔ شعبے (بنین / بنات) کی
-              اجازت اوپر والے حصے میں طے ہوتی ہے — اس سے ابھی کچھ بند
-              نہیں ہوگا (روک مرحلہ 54 میں لگے گی)۔
-            </p>
+            <p className="sub">{t(lang, "permissions.sub")}</p>
 
             {selectedUser ? (
               <PermissionsForm
@@ -134,6 +130,7 @@ export default async function PermissionsPage({
                 allowedModules={allowedModules}
                 allowedSections={allowedSections}
                 action={savePermissions}
+                lang={lang}
               />
             ) : null}
           </>

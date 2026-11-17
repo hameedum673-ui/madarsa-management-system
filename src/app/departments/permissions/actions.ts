@@ -14,8 +14,16 @@ import { getMyMadrasa } from "@/lib/students";
 import { isSystemAdmin } from "@/lib/approval";
 import { SECTION_IDS } from "@/lib/students";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 type ActionResult = { ok: true } | { error: string };
+
+/** مرحلہ 124 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -25,22 +33,23 @@ function clean(value: FormDataEntryValue | null, max = 200): string {
 export async function savePermissions(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const userEmail = clean(formData.get("user_email"), 200).toLowerCase();
   if (!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail))
-    return { error: "صارف کا Gmail درست نہیں ہے۔" };
+    return { error: t(lang, "permissions.err.email_invalid") };
 
   const supabase = await createClient();
   const admin = await isSystemAdmin(supabase);
-  if (!admin) return { error: "صرف نظام کا ایڈمن یہ کام کر سکتا ہے۔" };
+  if (!admin) return { error: t(lang, "user.err.admin_only") };
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
 
   // ایڈمن اپنی اجازتیں نہیں بدل سکتا
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (user?.email?.toLowerCase() === userEmail)
-    return { error: "ایڈمن اپنی اجازتیں نہیں بدل سکتا۔" };
+    return { error: t(lang, "permissions.err.self") };
 
   // صارف منظور شدہ ہونا چاہیے
   const { data: approved } = await supabase
@@ -49,7 +58,7 @@ export async function savePermissions(
     .eq("email", userEmail)
     .eq("status", "approved")
     .single();
-  if (!approved) return { error: "یہ صارف منظور شدہ نہیں ہے۔" };
+  if (!approved) return { error: t(lang, "permissions.err.not_approved") };
 
   // ہر شعبے کی اجازت — ٹک لگا ہو تو true، نہ ہو تو false
   const rows = PERMISSION_MODULE_IDS.map((module) => ({
@@ -64,7 +73,7 @@ export async function savePermissions(
     .from("user_permissions")
     .upsert(rows, { onConflict: "user_email,module" });
   if (error) {
-    return { error: "اجازتیں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "permissions.err.save_failed") };
   }
 
   // مرحلہ 53 — شعبے کی اجازت (بنین / بنات) — ٹک لگا ہو تو اجازت، نہ ہو تو بند
@@ -84,10 +93,9 @@ export async function savePermissions(
     // SQL چلا کر دوبارہ محفوظ کریں
     if ((sectionError as { code?: string }).code === "42P01")
       return {
-        error:
-          "شعبے کی اجازتیں محفوظ نہیں ہو سکیں — پہلے مرحلہ 53 کی SQL چلائیں۔ شعبوں کی اجازتیں محفوظ ہو چکی ہیں، SQL چلا کر دوبارہ محفوظ کریں۔",
+        error: t(lang, "permissions.err.section_table"),
       };
-    return { error: "شعبے کی اجازتیں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "permissions.err.section_failed") };
   }
 
   try {

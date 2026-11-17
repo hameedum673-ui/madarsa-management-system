@@ -13,33 +13,30 @@ import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { isAppAdmin, isMadrasaOwner, isSystemAdmin } from "@/lib/approval";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 const USERS_PERMISSIONS_MODULES = [
   {
     id: "users",
-    title: "صارفین اور اکاؤنٹس",
-    desc: "نظام استعمال کرنے والے تمام صارفین کے اکاؤنٹس کا انتظام — مہمان رسائی کی ترتیب بھی یہیں ہے۔",
     href: "/departments/users",
   },
   {
     id: "permissions",
-    title: "اختیارات اور اجازتیں",
-    desc: "ہر صارف کے اختیارات اور شعبہ جات تک رسائی کی اجازتیں مقرر کریں۔",
     href: "/departments/permissions",
   },
 ] as const;
 
-type HubModule = { id: string; title: string; desc: string; href: string };
+type HubModule = { id: string; href: string };
 
 const STAFF_MODULE: HubModule = {
   id: "staff",
-  title: "عملے کے ارکان",
-  desc: "اپنے مدرسے کے عملے (ناظم تعلیمات، ناظم مالیات وغیرہ) کو شامل کریں اور ان کی اجازتیں مقرر کریں۔",
   href: "/departments/staff-members",
 };
 
 export default async function UsersPermissionsHubPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const admin = await isAppAdmin(supabase);
   // حصہ 4 کی درستگی — حب مالک کے لیے بھی کھلا ہے (اسے صرف عملے والا حصہ دکھتا ہے)
   const owner = await isMadrasaOwner(supabase);
@@ -69,28 +66,34 @@ export default async function UsersPermissionsHubPage() {
     staffCount = sc ?? 0;
   }
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>صارفین اور اختیارات</h2>
+          <h2>{t(lang, "hub.users_perms.title")}</h2>
         </div>
 
         {modules.map((m) => (
           <div key={m.id}>
-            <h3 className="form-section-title">{m.title}</h3>
+            <h3 className="form-section-title">
+              {t(lang, `hub.users_perms.${m.id}_title`)}
+            </h3>
             <p className="sub">
-              {m.desc}
+              {t(lang, `hub.users_perms.${m.id}_desc`)}
               {m.id === "users"
-                ? ` منظور شدہ صارفین: ${approvedUsers.toLocaleString("ur-PK")}`
+                ? ` ${t(lang, "hub.users_perms.users_count", { count: approvedUsers.toLocaleString("ur-PK") })}`
                 : m.id === "staff"
-                  ? ` فعال عملہ: ${staffCount.toLocaleString("ur-PK")}`
+                  ? ` ${t(lang, "hub.users_perms.staff_count", { count: staffCount.toLocaleString("ur-PK") })}`
                   : ""}
             </p>
             <div className="form-actions">
               <Link className="btn-primary" href={m.href}>
-                {m.title} کھولیں
+                {t(lang, "hub.users_perms.open", {
+                  title: t(lang, `hub.users_perms.${m.id}_title`),
+                })}
               </Link>
             </div>
           </div>

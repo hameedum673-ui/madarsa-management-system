@@ -11,12 +11,12 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
-  APPROVAL_STATUS_LABELS,
-  ROLE_LABELS,
   isSystemAdmin,
   isPrimaryAdmin,
   type ApprovedUser,
 } from "@/lib/approval";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 import { getMyMadrasa } from "@/lib/students";
 import {
   AddUserForm,
@@ -54,6 +54,7 @@ function formatDateTime(value: string | null): string {
 
 export default async function UsersPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const admin = await isSystemAdmin(supabase);
   if (!admin) {
     notFound();
@@ -93,48 +94,50 @@ export default async function UsersPage() {
     .order("created_at", { ascending: false });
   const guests = (guestData ?? []) as GuestRow[];
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/users-permissions" />
-          <h2>صارفین اور اکاؤنٹس</h2>
+          <h2>{t(lang, "users.title")}</h2>
           <span className="page-count">
-            کل: {users.length.toLocaleString("ur-PK")} — زیرِ منظوری:{" "}
-            {pending.length.toLocaleString("ur-PK")}
+            {t(lang, "users.count", {
+              total: users.length.toLocaleString("ur-PK"),
+              pending: pending.length.toLocaleString("ur-PK"),
+            })}
           </span>
           <span className="spacer" />
           <Link className="btn-ghost" href="/departments/audit">
-            سرگرمیوں کا ریکارڈ دیکھیں
+            {t(lang, "users.audit_link")}
           </Link>
         </div>
 
         {tableMissing ? (
-          <p className="empty-state">
-            صارفین کی میز ابھی نہیں بنی — پہلے مرحلہ 11 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "users.table_missing")}</p>
         ) : error ? (
-          <p className="empty-state">فہرست نہیں کھل سکی — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "common.list_error")}</p>
         ) : (
           <>
-            <h3 className="form-section-title">نیا صارف شامل کریں</h3>
-            <AddUserForm />
+            <h3 className="form-section-title">
+              {t(lang, "users.add_title")}
+            </h3>
+            <AddUserForm lang={lang} />
 
             {users.length === 0 ? (
-              <p className="empty-state">
-                ابھی کوئی صارف درج نہیں ہے۔
-              </p>
+              <p className="empty-state">{t(lang, "users.empty")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>نام</th>
+                      <th>{t(lang, "col.name")}</th>
                       <th>Gmail</th>
-                      <th>واٹس ایپ</th>
-                      <th>کردار</th>
-                      <th>حالت</th>
-                      <th>کارروائی</th>
+                      <th>{t(lang, "users.col_whatsapp")}</th>
+                      <th>{t(lang, "users.col_role")}</th>
+                      <th>{t(lang, "col.status")}</th>
+                      <th>{t(lang, "col.action")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -145,37 +148,39 @@ export default async function UsersPage() {
                         <td dir="ltr">{u.whatsapp ?? "—"}</td>
                         <td>
                           {u.assigned_role
-                            ? ROLE_LABELS[u.assigned_role]
+                            ? t(lang, `role.${u.assigned_role}`)
                             : "—"}
                         </td>
                         <td>
                           <span
                             className={`badge${u.status === "disabled" ? " badge-withdrawn" : ""}`}
                           >
-                            {APPROVAL_STATUS_LABELS[u.status]}
+                            {t(lang, `approval.status.${u.status}`)}
                           </span>
                         </td>
                         <td>
                           {u.status === "pending" ? (
-                            <ApproveForm id={u.id} />
+                            <ApproveForm id={u.id} lang={lang} />
                           ) : u.status === "approved" ? (
                             <StatusForm
                               id={u.id}
                               status="disabled"
-                              label="غیر فعال کریں"
+                              label={t(lang, "users.disable")}
+                              lang={lang}
                             />
                           ) : (
                             <StatusForm
                               id={u.id}
                               status="approved"
-                              label="دوبارہ فعال کریں"
+                              label={t(lang, "users.reactivate")}
                               primary
+                              lang={lang}
                             />
                           )}
                           {u.status === "approved" &&
                           u.assigned_role !== "super_admin" ? (
                             <span style={{ marginInlineStart: "6px" }}>
-                              <PromoteAdminForm id={u.id} />
+                              <PromoteAdminForm id={u.id} lang={lang} />
                             </span>
                           ) : null}
                           {u.status === "approved" &&
@@ -183,7 +188,7 @@ export default async function UsersPage() {
                           primary &&
                           u.assigned_madrasa_id !== mine?.madrasaId ? (
                             <span style={{ marginInlineStart: "6px" }}>
-                              <DemoteAdminForm id={u.id} />
+                              <DemoteAdminForm id={u.id} lang={lang} />
                             </span>
                           ) : null}
                         </td>
@@ -194,38 +199,35 @@ export default async function UsersPage() {
               </div>
             )}
 
-            <p className="form-note">
-              منظور شدہ صارف کا profile اگلے لاگ اِن پر خود بن جائے گا۔ صارف کا
-              ریکارڈ کبھی حذف نہیں ہوتا — رسائی بند کرنی ہو تو «غیر فعال» کریں۔
-              «ایڈمن بنائیں» سے دوسرا ایڈمن بنتا ہے — وہ صارفین منظور کر سکے
-              گا مگر آپ کا ڈیٹا نہیں دیکھ سکے گا؛ ایڈمن ختم کرنا صرف پہلا
-              ایڈمن کر سکتا ہے۔
-            </p>
+            <p className="form-note">{t(lang, "users.note")}</p>
 
-            <h3 className="form-section-title">مہمان رسائی (ڈیمو)</h3>
+            <h3 className="form-section-title">
+              {t(lang, "guest.title")}
+            </h3>
             {guestTableMissing ? (
               <p className="empty-state">
-                مہمان کی میز ابھی نہیں بنی — پہلے مرحلہ 67 کی SQL چلائیں۔
+                {t(lang, "guest.table_missing")}
               </p>
             ) : (
               <>
                 <GuestSettingsForm
                   allowGuests={guestSettings?.allow_guests ?? false}
                   guestHours={guestSettings?.guest_hours ?? 2}
+                  lang={lang}
                 />
 
                 {guests.length === 0 ? (
-                  <p className="empty-state">ابھی کوئی مہمان نہیں آیا۔</p>
+                  <p className="empty-state">{t(lang, "guest.empty")}</p>
                 ) : (
                   <div className="tbl-wrap">
                     <table className="tbl">
                       <thead>
                         <tr>
-                          <th>نام</th>
-                          <th>بنا</th>
-                          <th>ختم ہوگا</th>
-                          <th>حالت</th>
-                          <th>کارروائی</th>
+                          <th>{t(lang, "col.name")}</th>
+                          <th>{t(lang, "guest.col_created")}</th>
+                          <th>{t(lang, "guest.col_expires")}</th>
+                          <th>{t(lang, "col.status")}</th>
+                          <th>{t(lang, "col.action")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -242,14 +244,16 @@ export default async function UsersPage() {
                                 <span
                                   className={`badge${expired ? " badge-withdrawn" : ""}`}
                                 >
-                                  {expired ? "ختم" : "فعال"}
+                                  {expired
+                                    ? t(lang, "guest.expired")
+                                    : t(lang, "guest.active")}
                                 </span>
                               </td>
                               <td>
                                 {expired ? (
-                                  <DeleteGuestForm id={g.id} />
+                                  <DeleteGuestForm id={g.id} lang={lang} />
                                 ) : (
-                                  <CloseGuestForm id={g.id} />
+                                  <CloseGuestForm id={g.id} lang={lang} />
                                 )}
                               </td>
                             </tr>
@@ -260,22 +264,15 @@ export default async function UsersPage() {
                   </div>
                 )}
 
-                <p className="form-note">
-                  بند کرنا = رسائی بند؛ مہمان کا ڈیٹا رہتا ہے — صفائی الگ
-                  کام ہے۔
-                </p>
+                <p className="form-note">{t(lang, "guest.note")}</p>
               </>
             )}
 
             <h3 className="form-section-title">
-              Gmail بدلنا (مدرسے کی منتقلی)
+              {t(lang, "users.transfer_title")}
             </h3>
-            <p className="form-note">
-              اگر کسی مدرسے کے مالک کی Gmail کھو جائے تو اس کا مدرسہ نئی
-              Gmail پر منتقل کریں — ڈیٹا وہی رہے گا۔ پہلے آزمائشی کھاتے
-              پر جانچیں (مرحلہ 82)۔
-            </p>
-            <TransferWorkspaceForm />
+            <p className="form-note">{t(lang, "users.transfer_note")}</p>
+            <TransferWorkspaceForm lang={lang} />
           </>
         )}
       </div>

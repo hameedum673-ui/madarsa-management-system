@@ -20,8 +20,16 @@ import {
 } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 import type { MadrasaRole } from "@/lib/tenancy";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 type ActionResult = { ok: true } | { error: string };
+
+/** مرحلہ 124 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -60,12 +68,12 @@ type AdminContext =
       userId: string;
     };
 
-async function requireSystemAdmin(): Promise<AdminContext> {
+async function requireSystemAdmin(lang: Lang): Promise<AdminContext> {
   const supabase = await createClient();
   const admin = await isSystemAdmin(supabase);
-  if (!admin) return { error: "صرف نظام کا ایڈمن یہ کام کر سکتا ہے۔" };
+  if (!admin) return { error: t(lang, "user.err.admin_only") };
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "ایڈمن کا مدرسہ نہیں ملا۔" };
+  if (!mine) return { error: t(lang, "user.err.admin_madrasa_missing") };
   return { supabase, ...mine };
 }
 
@@ -78,6 +86,7 @@ async function requireSystemAdmin(): Promise<AdminContext> {
 async function createWorkspace(
   supabase: Awaited<ReturnType<typeof createClient>>,
   displayName: string,
+  lang: Lang,
 ): Promise<{ id: string } | { error: string }> {
   const base = displayName || "نیا صارف";
   const newId = randomUUID();
@@ -85,20 +94,21 @@ async function createWorkspace(
     .from("madrasas")
     .insert({ id: newId, name: `${base} کا مدرسہ` });
   if (error) {
-    return { error: "نیا مدرسہ نہیں بن سکا — پہلے مرحلہ 25 کی SQL چلائیں۔" };
+    return { error: t(lang, "user.err.workspace_failed") };
   }
   return { id: newId };
 }
 
 /** صارف کو منظور کریں — کردار چننا ضروری ہے؛ اسے اپنا الگ مدرسہ ملتا ہے */
 export async function approveUser(formData: FormData): Promise<ActionResult> {
+  const lang = formLang(formData);
   const id = clean(formData.get("id"), 100);
   const role = clean(formData.get("role"), 30);
-  if (!id) return { error: "صارف نہیں ملا۔" };
+  if (!id) return { error: t(lang, "user.err.not_found") };
   if (!(ASSIGNABLE_ROLES as string[]).includes(role))
-    return { error: "کردار درست منتخب کریں۔" };
+    return { error: t(lang, "user.err.role_invalid") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -108,12 +118,13 @@ export async function approveUser(formData: FormData): Promise<ActionResult> {
     .select("id, email, name")
     .eq("id", id)
     .single();
-  if (!existing) return { error: "صارف نہیں ملا۔" };
+  if (!existing) return { error: t(lang, "user.err.not_found") };
 
   const workspace = await createWorkspace(
     supabase,
     (existing.name as string) ||
       (existing.email as string).split("@")[0],
+    lang,
   );
   if ("error" in workspace) return { error: workspace.error };
 
@@ -131,7 +142,7 @@ export async function approveUser(formData: FormData): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "منظوری نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "user.err.approve_failed") };
   }
 
   await writeAudit(supabase, madrasaId, userId, "user_approved", {
@@ -147,13 +158,14 @@ export async function approveUser(formData: FormData): Promise<ActionResult> {
 
 /** صارف کی حالت بدلیں — غیر فعال یا دوبارہ فعال */
 export async function setUserStatus(formData: FormData): Promise<ActionResult> {
+  const lang = formLang(formData);
   const id = clean(formData.get("id"), 100);
   const status = clean(formData.get("status"), 20);
-  if (!id) return { error: "صارف نہیں ملا۔" };
+  if (!id) return { error: t(lang, "user.err.not_found") };
   if (status !== "approved" && status !== "disabled")
-    return { error: "حالت درست منتخب کریں۔" };
+    return { error: t(lang, "user.err.status_invalid") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -168,7 +180,7 @@ export async function setUserStatus(formData: FormData): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "حالت نہیں بدلی جا سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "user.err.status_failed") };
   }
 
   await writeAudit(
@@ -190,14 +202,15 @@ export async function setUserStatus(formData: FormData): Promise<ActionResult> {
  * ترقی کوئی بھی super_admin کر سکتا ہے؛ تنزلی کی جانچ RPC میں ہے
  * (صرف پہلا ایڈمن، اور پہلے ایڈمن کو کوئی نہیں ہٹا سکتا) */
 export async function setUserRole(formData: FormData): Promise<ActionResult> {
+  const lang = formLang(formData);
   const id = clean(formData.get("id"), 100);
   const role = clean(formData.get("role"), 30);
-  if (!id) return { error: "صارف نہیں ملا۔" };
+  if (!id) return { error: t(lang, "user.err.not_found") };
   const ALL_ROLES: string[] = ["super_admin", ...ASSIGNABLE_ROLES];
   if (!ALL_ROLES.includes(role))
-    return { error: "کردار درست منتخب کریں۔" };
+    return { error: t(lang, "user.err.role_invalid") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -206,7 +219,7 @@ export async function setUserRole(formData: FormData): Promise<ActionResult> {
     .select("id, email, name, assigned_role")
     .eq("id", id)
     .single();
-  if (!target) return { error: "صارف نہیں ملا۔" };
+  if (!target) return { error: t(lang, "user.err.not_found") };
 
   const { data, error } = await supabase.rpc("set_user_role", {
     p_approved_user_id: id,
@@ -215,11 +228,11 @@ export async function setUserRole(formData: FormData): Promise<ActionResult> {
   if (error) {
     const code = (error as { code?: string } | null)?.code;
     if (code === "PGRST202" || code === "42883")
-      return { error: "میز نہیں بنی — پہلے مرحلہ 81 کی SQL چلائیں۔" };
-    return { error: "کردار نہیں بدلا جا سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "user.err.table_81") };
+    return { error: t(lang, "user.err.role_failed_retry") };
   }
   if (data !== true) {
-    return { error: "کردار نہیں بدلا جا سکا۔" };
+    return { error: t(lang, "user.err.role_failed") };
   }
 
   await writeAudit(
@@ -244,14 +257,15 @@ export async function setUserRole(formData: FormData): Promise<ActionResult> {
 export async function transferWorkspace(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const oldEmail = clean(formData.get("old_email"), 100);
   const newEmail = clean(formData.get("new_email"), 100);
   if (!oldEmail || !newEmail)
-    return { error: "دونوں Gmail لکھیں۔" };
+    return { error: t(lang, "user.err.both_emails") };
   if (oldEmail.toLowerCase() === newEmail.toLowerCase())
-    return { error: "پرانی اور نئی Gmail ایک جیسی نہیں ہو سکتیں۔" };
+    return { error: t(lang, "user.err.same_email") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase } = checked;
 
@@ -262,14 +276,14 @@ export async function transferWorkspace(
   if (error) {
     const code = (error as { code?: string } | null)?.code;
     if (code === "PGRST202" || code === "42883")
-      return { error: "میز نہیں بنی — پہلے مرحلہ 82 کی SQL چلائیں۔" };
+      return { error: t(lang, "user.err.table_82") };
     // فنکشن کے اپنے اردو پیغام دکھائیں؛ تکنیکی انگریزی چھپائیں
     const msg = (error as { message?: string } | null)?.message ?? "";
     if (msg && /[؀-ۿ]/.test(msg)) return { error: msg };
-    return { error: "منتقلی نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "user.err.transfer_failed_retry") };
   }
   if (data !== true) {
-    return { error: "منتقلی نہیں ہو سکی۔" };
+    return { error: t(lang, "user.err.transfer_failed") };
   }
   return { ok: true };
 }
@@ -278,21 +292,22 @@ export async function transferWorkspace(
 export async function addApprovedUser(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const email = clean(formData.get("email"), 200).toLowerCase();
   const name = clean(formData.get("name"), 100);
   const whatsapp = clean(formData.get("whatsapp"), 20);
   const role = clean(formData.get("role"), 30);
-  if (!validEmail(email)) return { error: "Gmail درست لکھیں۔" };
-  if (!name) return { error: "صارف کا نام ضروری ہے۔" };
+  if (!validEmail(email)) return { error: t(lang, "user.err.email_invalid") };
+  if (!name) return { error: t(lang, "user.err.name_required") };
   if (!(ASSIGNABLE_ROLES as string[]).includes(role))
-    return { error: "کردار درست منتخب کریں۔" };
+    return { error: t(lang, "user.err.role_invalid") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
   // نیا صارف شامل کرنے سے پہلے اس کا اپنا الگ مدرسہ بنائیں
-  const workspace = await createWorkspace(supabase, name);
+  const workspace = await createWorkspace(supabase, name, lang);
   if ("error" in workspace) return { error: workspace.error };
 
   const { data, error } = await supabase
@@ -311,8 +326,8 @@ export async function addApprovedUser(
 
   if (error || !data) {
     if ((error as { code?: string } | null)?.code === "23505")
-      return { error: "یہ Gmail پہلے سے درج ہے۔" };
-    return { error: "صارف شامل نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "user.err.email_exists") };
+    return { error: t(lang, "user.err.add_failed") };
   }
 
   await writeAudit(supabase, madrasaId, userId, "user_added", {
@@ -330,13 +345,14 @@ export async function addApprovedUser(
 export async function saveGuestSettings(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const allowGuests = formData.get("allow_guests") === "on";
   const hoursRaw = clean(formData.get("guest_hours"), 10);
   const hours = Number(hoursRaw);
   if (!Number.isInteger(hours) || hours < 1 || hours > 24)
-    return { error: "گھنٹے 1 سے 24 کے درمیان لکھیں۔" };
+    return { error: t(lang, "guest.err.hours_invalid") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -350,8 +366,8 @@ export async function saveGuestSettings(
     .eq("id", 1);
   if (error) {
     if ((error as { code?: string } | null)?.code === "42P01")
-      return { error: "میز نہیں بنی — پہلے مرحلہ 67 کی SQL چلائیں۔" };
-    return { error: "ترتیب نہیں بدلی جا سکی۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "guest.err.table_67") };
+    return { error: t(lang, "guest.err.settings_failed") };
   }
 
   await writeAudit(supabase, madrasaId, userId, "guest_settings_updated", {
@@ -364,10 +380,11 @@ export async function saveGuestSettings(
 
 /** مہمان کی رسائی ابھی بند کریں — ختم ہونے کا وقت ابھی کر دیں (صرف ایڈمن) */
 export async function closeGuest(formData: FormData): Promise<ActionResult> {
+  const lang = formLang(formData);
   const id = clean(formData.get("id"), 100);
-  if (!id) return { error: "مہمان نہیں ملا۔" };
+  if (!id) return { error: t(lang, "guest.err.not_found") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -380,8 +397,8 @@ export async function closeGuest(formData: FormData): Promise<ActionResult> {
     .single();
   if (error || !data) {
     if ((error as { code?: string } | null)?.code === "42P01")
-      return { error: "میز نہیں بنی — پہلے مرحلہ 67 کی SQL چلائیں۔" };
-    return { error: "مہمان بند نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "guest.err.table_67") };
+    return { error: t(lang, "guest.err.close_failed") };
   }
 
   await writeAudit(supabase, madrasaId, userId, "guest_closed", {
@@ -393,10 +410,14 @@ export async function closeGuest(formData: FormData): Promise<ActionResult> {
 }
 
 /** ختم شدہ مہمان کا ڈیٹا مٹائیں — مستقل ہے، واپسی نہیں (صرف ایڈمن) */
-export async function deleteGuest(id: string): Promise<ActionResult> {
-  if (!id || typeof id !== "string") return { error: "مہمان نہیں ملا۔" };
+export async function deleteGuest(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
+  if (!id || typeof id !== "string")
+    return { error: t(lang, "guest.err.not_found") };
 
-  const checked = await requireSystemAdmin();
+  const checked = await requireSystemAdmin(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -406,16 +427,16 @@ export async function deleteGuest(id: string): Promise<ActionResult> {
     .eq("id", id.slice(0, 100))
     .not("guest_expires_at", "is", null)
     .single();
-  if (!guest) return { error: "مہمان نہیں ملا۔" };
+  if (!guest) return { error: t(lang, "guest.err.not_found") };
 
   const { data, error } = await supabase.rpc("delete_guest_data", {
     p_guest_id: id.slice(0, 100),
   });
   if (error) {
-    return { error: "مہمان مٹایا نہیں جا سکا — پہلے مرحلہ 68 کی SQL چلائیں۔" };
+    return { error: t(lang, "guest.err.delete_table_68") };
   }
   if (data !== true) {
-    return { error: "مہمان مٹایا نہیں جا سکا — پہلے اسے بند کریں۔" };
+    return { error: t(lang, "guest.err.delete_first_close") };
   }
 
   await writeAudit(supabase, madrasaId, userId, "guest_deleted", {

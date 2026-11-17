@@ -13,6 +13,7 @@ import {
   deleteGuest,
   saveGuestSettings,
 } from "@/app/departments/users/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type SimpleAction = (
   formData: FormData,
@@ -42,27 +43,30 @@ function useSubmit(action: SimpleAction) {
 export function GuestSettingsForm({
   allowGuests,
   guestHours,
+  lang = "ur",
 }: {
   allowGuests: boolean;
   guestHours: number;
+  lang?: Lang;
 }) {
   const { error, loading, submit } = useSubmit(saveGuestSettings);
   return (
     <form onSubmit={submit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">مہمان رسائی</span>
+          <span className="field-label">{t(lang, "guest.form.access")}</span>
           <span>
             <input
               name="allow_guests"
               type="checkbox"
               defaultChecked={allowGuests}
             />{" "}
-            آن کریں — لاگ ان والے صفحے پر "ڈیمو دیکھیں" کا بٹن نظر آئے گا
+            {t(lang, "guest.form.access_note")}
           </span>
         </label>
         <label className="field">
-          <span className="field-label">نئے مہمان کے لیے گھنٹے *</span>
+          <span className="field-label">{t(lang, "guest.form.hours")}</span>
           <input
             className="field-input"
             name="guest_hours"
@@ -77,31 +81,40 @@ export function GuestSettingsForm({
       </div>
       {error ? <p className="login11-error">{error}</p> : null}
       <button className="btn-primary" type="submit" disabled={loading}>
-        {loading ? "براہِ کرم انتظار کریں…" : "ترتیب محفوظ کریں"}
+        {loading ? t(lang, "common.waiting") : t(lang, "guest.form.save")}
       </button>
-      <p className="form-note">
-        بند ہو تو ڈیمو بٹن غائب ہو جاتا ہے؛ جو مہمان اندر ہیں، ان کی رسائی
-        بھی بند ہو جاتی ہے۔ گھنٹے بدلنے پر پرانے مہمانوں کا وقت نہیں بدلتا،
-        صرف نئے مہمانوں کا۔
-      </p>
+      <p className="form-note">{t(lang, "guest.form.note")}</p>
     </form>
   );
 }
 
-export function CloseGuestForm({ id }: { id: string }) {
+export function CloseGuestForm({
+  id,
+  lang = "ur",
+}: {
+  id: string;
+  lang?: Lang;
+}) {
   const { error, loading, submit } = useSubmit(closeGuest);
   return (
     <form onSubmit={submit}>
       <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="lang" value={lang} />
       <button className="btn-ghost" type="submit" disabled={loading}>
-        {loading ? "براہِ کرم انتظار کریں…" : "ابھی بند کریں"}
+        {loading ? t(lang, "common.waiting") : t(lang, "guest.close")}
       </button>
       {error ? <p className="login11-error">{error}</p> : null}
     </form>
   );
 }
 
-export function DeleteGuestForm({ id }: { id: string }) {
+export function DeleteGuestForm({
+  id,
+  lang = "ur",
+}: {
+  id: string;
+  lang?: Lang;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -114,7 +127,7 @@ export function DeleteGuestForm({ id }: { id: string }) {
     }
     setError("");
     setLoading(true);
-    const res = await deleteGuest(id);
+    const res = await deleteGuest(id, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
@@ -133,10 +146,10 @@ export function DeleteGuestForm({ id }: { id: string }) {
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.waiting")
           : confirming
-            ? "پکا مٹائیں؟"
-            : "ڈیٹا مٹائیں"}
+            ? t(lang, "guest.delete_confirm")
+            : t(lang, "guest.delete")}
       </button>
       {error ? <p className="login11-error">{error}</p> : null}
     </span>

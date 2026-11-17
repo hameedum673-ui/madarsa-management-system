@@ -7,7 +7,8 @@
 
 import { useState } from "react";
 import { GROUPS } from "@/data/departments";
-import { SECTION_IDS, SECTION_LABELS } from "@/lib/students";
+import { SECTION_IDS } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (formData: FormData) => Promise<{ ok: true } | { error: string }>;
 
@@ -17,6 +18,7 @@ export default function PermissionsForm({
   allowedModules,
   allowedSections,
   action,
+  lang = "ur",
 }: {
   userEmail: string;
   userName: string;
@@ -24,6 +26,7 @@ export default function PermissionsForm({
   // مرحلہ 53 — شعبے کی اجازت (بنین / بنات)
   allowedSections: Set<string>;
   action: FormAction;
+  lang?: Lang;
 }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -47,17 +50,16 @@ export default function PermissionsForm({
   return (
     <form onSubmit={handleSubmit}>
       <input type="hidden" name="user_email" value={userEmail} />
+      <input type="hidden" name="lang" value={lang} />
       <h3 className="form-section-title">
-        {userName} ({userEmail}) کی اجازتیں
+        {t(lang, "permissions.user_title", { name: userName, email: userEmail })}
       </h3>
 
       {/* مرحلہ 53 — شعبہ (بنین / بنات) کی اجازت */}
-      <h3 className="form-section-title">شعبہ (بنین / بنات)</h3>
-      <p className="sub">
-        جس شعبے کا ٹک ہٹائیں گے، وہ شعبہ اس صارف کو نظر نہیں آئے گا۔
-        پہلے سے دونوں کی اجازت ہے۔ اس سے ابھی کچھ بند نہیں ہوگا —
-        روک مرحلہ 54 میں لگے گی۔
-      </p>
+      <h3 className="form-section-title">
+        {t(lang, "permissions.section_title")}
+      </h3>
+      <p className="sub">{t(lang, "permissions.section_sub")}</p>
       <div className="form-grid">
         {SECTION_IDS.map((s) => (
           <label className="field" key={s}>
@@ -67,7 +69,7 @@ export default function PermissionsForm({
                 name={`sec_${s}`}
                 defaultChecked={allowedSections.has(s)}
               />{" "}
-              {SECTION_LABELS[s]}
+              {t(lang, `section.${s}`)}
             </span>
           </label>
         ))}
@@ -83,7 +85,9 @@ export default function PermissionsForm({
         if (modules.length === 0) return null;
         return (
           <div key={group.id}>
-            <h3 className="form-section-title">{group.title}</h3>
+            <h3 className="form-section-title">
+              {t(lang, `group.${group.id}`)}
+            </h3>
             <div className="form-grid">
               {modules.map((m) => (
                 <label className="field" key={m.id}>
@@ -93,7 +97,7 @@ export default function PermissionsForm({
                       name={`mod_${m.id}`}
                       defaultChecked={allowedModules.has(m.id)}
                     />{" "}
-                    {m.label}
+                    {t(lang, `module.${m.id}`)}
                   </span>
                 </label>
               ))}
@@ -104,12 +108,14 @@ export default function PermissionsForm({
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? (
-        <p className="att-success">اجازتیں محفوظ ہو گئیں۔</p>
+        <p className="att-success">{t(lang, "permissions.saved")}</p>
       ) : null}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "اجازتیں محفوظ کریں"}
+          {loading
+            ? t(lang, "common.waiting")
+            : t(lang, "permissions.save")}
         </button>
       </div>
     </form>

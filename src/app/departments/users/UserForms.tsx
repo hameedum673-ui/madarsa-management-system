@@ -7,7 +7,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ASSIGNABLE_ROLES, ROLE_LABELS } from "@/lib/approval";
+import { ASSIGNABLE_ROLES } from "@/lib/approval";
+import { t, type Lang } from "@/i18n/dictionary";
 import {
   addApprovedUser,
   approveUser,
@@ -41,13 +42,14 @@ function useSubmit(action: SimpleAction) {
   return { error, loading, submit };
 }
 
-export function AddUserForm() {
+export function AddUserForm({ lang = "ur" }: { lang?: Lang }) {
   const { error, loading, submit } = useSubmit(addApprovedUser);
   return (
     <form onSubmit={submit}>
+      <input type="hidden" name="lang" value={lang} />
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">صارف کا نام *</span>
+          <span className="field-label">{t(lang, "user.form.name")}</span>
           <input
             className="field-input"
             name="name"
@@ -58,7 +60,7 @@ export function AddUserForm() {
           />
         </label>
         <label className="field">
-          <span className="field-label">Gmail *</span>
+          <span className="field-label">{t(lang, "user.form.email")}</span>
           <input
             className="field-input"
             name="email"
@@ -70,7 +72,9 @@ export function AddUserForm() {
           />
         </label>
         <label className="field">
-          <span className="field-label">واٹس ایپ نمبر</span>
+          <span className="field-label">
+            {t(lang, "user.form.whatsapp")}
+          </span>
           <input
             className="field-input"
             name="whatsapp"
@@ -81,7 +85,7 @@ export function AddUserForm() {
           />
         </label>
         <label className="field">
-          <span className="field-label">کردار *</span>
+          <span className="field-label">{t(lang, "user.form.role")}</span>
           <select
             className="field-input"
             name="role"
@@ -90,7 +94,7 @@ export function AddUserForm() {
           >
             {ASSIGNABLE_ROLES.map((r) => (
               <option key={r} value={r}>
-                {ROLE_LABELS[r]}
+                {t(lang, `role.${r}`)}
               </option>
             ))}
           </select>
@@ -99,18 +103,19 @@ export function AddUserForm() {
       {error ? <p className="form-error">{error}</p> : null}
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "صارف شامل کریں (منظور شدہ)"}
+          {loading ? t(lang, "common.waiting") : t(lang, "user.form.add")}
         </button>
       </div>
     </form>
   );
 }
 
-export function ApproveForm({ id }: { id: string }) {
+export function ApproveForm({ id, lang = "ur" }: { id: string; lang?: Lang }) {
   const { error, loading, submit } = useSubmit(approveUser);
   return (
     <form onSubmit={submit} style={{ display: "inline" }}>
       <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="lang" value={lang} />
       <select
         className="field-input"
         name="role"
@@ -120,12 +125,12 @@ export function ApproveForm({ id }: { id: string }) {
       >
         {ASSIGNABLE_ROLES.map((r) => (
           <option key={r} value={r}>
-            {ROLE_LABELS[r]}
+            {t(lang, `role.${r}`)}
           </option>
         ))}
       </select>{" "}
       <button className="btn-primary" type="submit" disabled={loading}>
-        منظور کریں
+        {t(lang, "user.form.approve")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </form>
@@ -133,7 +138,13 @@ export function ApproveForm({ id }: { id: string }) {
 }
 
 /** مرحلہ 81 — صارف کو ایڈمن بنائیں (دو قدمی تصدیق) */
-export function PromoteAdminForm({ id }: { id: string }) {
+export function PromoteAdminForm({
+  id,
+  lang = "ur",
+}: {
+  id: string;
+  lang?: Lang;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -149,6 +160,7 @@ export function PromoteAdminForm({ id }: { id: string }) {
     const formData = new FormData();
     formData.set("id", id);
     formData.set("role", "super_admin");
+    formData.set("lang", lang);
     const res = await setUserRole(formData);
     setLoading(false);
     if ("error" in res) {
@@ -168,10 +180,10 @@ export function PromoteAdminForm({ id }: { id: string }) {
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.waiting")
           : confirming
-            ? "پکا ایڈمن بنائیں؟"
-            : "ایڈمن بنائیں"}
+            ? t(lang, "user.form.make_admin_confirm")
+            : t(lang, "user.form.make_admin")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </span>
@@ -179,7 +191,13 @@ export function PromoteAdminForm({ id }: { id: string }) {
 }
 
 /** مرحلہ 81 — ایڈمن ختم کریں (نیا کردار چن کر؛ دو قدمی تصدیق) */
-export function DemoteAdminForm({ id }: { id: string }) {
+export function DemoteAdminForm({
+  id,
+  lang = "ur",
+}: {
+  id: string;
+  lang?: Lang;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -196,6 +214,7 @@ export function DemoteAdminForm({ id }: { id: string }) {
     const formData = new FormData();
     formData.set("id", id);
     formData.set("role", role);
+    formData.set("lang", lang);
     const res = await setUserRole(formData);
     setLoading(false);
     if ("error" in res) {
@@ -216,7 +235,7 @@ export function DemoteAdminForm({ id }: { id: string }) {
       >
         {ASSIGNABLE_ROLES.map((r) => (
           <option key={r} value={r}>
-            {ROLE_LABELS[r]}
+            {t(lang, `role.${r}`)}
           </option>
         ))}
       </select>{" "}
@@ -227,10 +246,10 @@ export function DemoteAdminForm({ id }: { id: string }) {
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.waiting")
           : confirming
-            ? "پکا ختم کریں؟"
-            : "ایڈمن ختم کریں"}
+            ? t(lang, "user.form.remove_admin_confirm")
+            : t(lang, "user.form.remove_admin")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </span>
@@ -242,17 +261,20 @@ export function StatusForm({
   status,
   label,
   primary,
+  lang = "ur",
 }: {
   id: string;
   status: "approved" | "disabled";
   label: string;
   primary?: boolean;
+  lang?: Lang;
 }) {
   const { error, loading, submit } = useSubmit(setUserStatus);
   return (
     <form onSubmit={submit} style={{ display: "inline" }}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="lang" value={lang} />
       <button
         className={primary ? "btn-primary" : "btn-ghost"}
         type="submit"
@@ -266,7 +288,7 @@ export function StatusForm({
 }
 
 /** مرحلہ 82 — Gmail بدلنا (منتقلی) — دو قدمی تصدیق */
-export function TransferWorkspaceForm() {
+export function TransferWorkspaceForm({ lang = "ur" }: { lang?: Lang }) {
   const router = useRouter();
   const [oldEmail, setOldEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -278,7 +300,7 @@ export function TransferWorkspaceForm() {
   async function handleClick() {
     if (!confirming) {
       if (!oldEmail.trim() || !newEmail.trim()) {
-        setError("دونوں Gmail لکھیں۔");
+        setError(t(lang, "user.err.both_emails"));
         return;
       }
       setError("");
@@ -290,6 +312,7 @@ export function TransferWorkspaceForm() {
     const formData = new FormData();
     formData.set("old_email", oldEmail.trim());
     formData.set("new_email", newEmail.trim());
+    formData.set("lang", lang);
     const res = await transferWorkspace(formData);
     setLoading(false);
     if ("error" in res) {
@@ -306,7 +329,7 @@ export function TransferWorkspaceForm() {
     <div>
       <div className="form-grid">
         <label>
-          پرانی Gmail (جسے بدلنا ہے)
+          {t(lang, "user.form.old_email")}
           <input
             type="email"
             dir="ltr"
@@ -316,7 +339,7 @@ export function TransferWorkspaceForm() {
           />
         </label>
         <label>
-          نئی Gmail (جس پر مدرسہ جائے گا)
+          {t(lang, "user.form.new_email")}
           <input
             type="email"
             dir="ltr"
@@ -326,12 +349,7 @@ export function TransferWorkspaceForm() {
           />
         </label>
       </div>
-      <p className="form-note">
-        نئی Gmail پہلے ایک بار لاگ ان کر کے منظور ہوئی ہونی چاہیے، اور
-        اس کا اپنا مدرسہ خالی ہونا چاہیے۔ منتقلی کے بعد پرانی Gmail بند
-        ہو جائے گی؛ نئی Gmail پر 2FA الگ سے لگانا ہوگا۔ اگر آپ اپنی ہی
-        Gmail منتقل کر رہے ہیں تو اس کے بعد نئی Gmail سے لاگ ان کریں۔
-      </p>
+      <p className="form-note">{t(lang, "user.form.transfer_note")}</p>
       <button
         type="button"
         className="btn-primary"
@@ -339,10 +357,10 @@ export function TransferWorkspaceForm() {
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.waiting")
           : confirming
-            ? "پکا منتقل کریں؟ پرانی Gmail بند ہو جائے گی"
-            : "منتقل کریں"}
+            ? t(lang, "user.form.transfer_confirm")
+            : t(lang, "user.form.transfer")}
       </button>
       {confirming ? (
         <button
@@ -351,15 +369,12 @@ export function TransferWorkspaceForm() {
           onClick={() => setConfirming(false)}
           disabled={loading}
         >
-          منسوخ کریں
+          {t(lang, "common.cancel")}
         </button>
       ) : null}
       {error ? <p className="form-error">{error}</p> : null}
       {done ? (
-        <p className="form-note">
-          منتقلی ہو گئی — اب نئی Gmail سے لاگ ان کریں، پرانا مدرسہ ویسا
-          ہی ملے گا۔
-        </p>
+        <p className="form-note">{t(lang, "user.form.transfer_done")}</p>
       ) : null}
     </div>
   );
