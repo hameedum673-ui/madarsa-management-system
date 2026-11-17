@@ -7,13 +7,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { voidDocumentFile } from "@/app/departments/documents/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export default function VoidDocumentFileButton({
   id,
   documentId,
+  lang = "ur",
 }: {
   id: string;
   documentId: string;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
@@ -27,7 +30,7 @@ export default function VoidDocumentFileButton({
     }
     setError("");
     setLoading(true);
-    const res = await voidDocumentFile(id, documentId);
+    const res = await voidDocumentFile(id, documentId, lang);
     setLoading(false);
     if ("error" in res) {
       setError(res.error);
@@ -46,10 +49,10 @@ export default function VoidDocumentFileButton({
         disabled={loading}
       >
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.waiting")
           : confirming
-            ? "پکا چھپائیں؟"
-            : "چھپائیں"}
+            ? t(lang, "doc.files.hide_confirm")
+            : t(lang, "doc.files.hide")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </span>

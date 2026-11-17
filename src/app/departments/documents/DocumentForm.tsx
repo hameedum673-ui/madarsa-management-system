@@ -9,11 +9,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DOCUMENT_TYPES,
-  DOCUMENT_TYPE_LABELS,
-  DOCUMENT_STATUS_LABELS,
   type MadrasaDocument,
 } from "@/lib/documents";
 import { todayInKarachi } from "@/lib/attendance";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction =
   | ((formData: FormData) => Promise<{ ok: true } | { error: string }>)
@@ -26,10 +25,12 @@ export default function DocumentForm({
   document,
   action,
   detailId,
+  lang = "ur",
 }: {
   document?: MadrasaDocument;
   action: FormAction;
   detailId?: string;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -58,38 +59,39 @@ export default function DocumentForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <h3 className="form-section-title">
-        {isEdit ? "دستاویز تبدیل کریں" : "نئی دستاویز درج کریں"}
+        {isEdit ? t(lang, "doc.form.edit_title") : t(lang, "docs.new")}
       </h3>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">عنوان *</span>
+          <span className="field-label">{t(lang, "notice.form.title")}</span>
           <input
             className="field-input"
             name="title"
             defaultValue={document?.title ?? ""}
-            placeholder="مثلاً مدرسے کی رجسٹریشن"
+            placeholder={t(lang, "doc.form.title_ph")}
             required
           />
         </label>
 
         <label className="field">
-          <span className="field-label">قسم *</span>
+          <span className="field-label">{t(lang, "notice.form.kind")}</span>
           <select
             className="field-input"
             name="doc_type"
             defaultValue={document?.doc_type ?? "registration"}
           >
-            {DOCUMENT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {DOCUMENT_TYPE_LABELS[t]}
+            {DOCUMENT_TYPES.map((ty) => (
+              <option key={ty} value={ty}>
+                {t(lang, `doc.type.${ty}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="field">
-          <span className="field-label">حوالہ نمبر</span>
+          <span className="field-label">{t(lang, "doc.form.ref_no")}</span>
           <input
             className="field-input"
             name="reference_no"
@@ -99,17 +101,17 @@ export default function DocumentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">جاری کرنے والا ادارہ</span>
+          <span className="field-label">{t(lang, "doc.form.issued_by")}</span>
           <input
             className="field-input"
             name="issued_by"
             defaultValue={document?.issued_by ?? ""}
-            placeholder="مثلاً محکمہ تعلیم"
+            placeholder={t(lang, "doc.form.issued_by_ph")}
           />
         </label>
 
         <label className="field">
-          <span className="field-label">جاری ہونے کی تاریخ</span>
+          <span className="field-label">{t(lang, "doc.form.issue_date")}</span>
           <input
             className="field-input"
             type="date"
@@ -119,7 +121,7 @@ export default function DocumentForm({
         </label>
 
         <label className="field">
-          <span className="field-label">میعاد ختم ہونے کی تاریخ</span>
+          <span className="field-label">{t(lang, "doc.form.expiry_date")}</span>
           <input
             className="field-input"
             type="date"
@@ -130,27 +132,27 @@ export default function DocumentForm({
 
         {isEdit ? (
           <label className="field">
-            <span className="field-label">حالت *</span>
+            <span className="field-label">{t(lang, "notice.form.status")}</span>
             <select
               className="field-input"
               name="status"
               defaultValue={document?.status ?? "active"}
             >
-              <option value="active">{DOCUMENT_STATUS_LABELS.active}</option>
-              <option value="expired">{DOCUMENT_STATUS_LABELS.expired}</option>
-              <option value="archived">{DOCUMENT_STATUS_LABELS.archived}</option>
+              <option value="active">{t(lang, "doc.status.active")}</option>
+              <option value="expired">{t(lang, "doc.status.expired")}</option>
+              <option value="archived">{t(lang, "doc.status.archived")}</option>
             </select>
           </label>
         ) : null}
 
         <label className="field field-wide">
-          <span className="field-label">نوٹ</span>
+          <span className="field-label">{t(lang, "doc.form.note")}</span>
           <textarea
             className="field-input"
             name="note"
             rows={3}
             defaultValue={document?.note ?? ""}
-            placeholder="دستاویز کے بارے میں کوئی نوٹ"
+            placeholder={t(lang, "doc.form.note_ph")}
           />
         </label>
       </div>
@@ -160,10 +162,10 @@ export default function DocumentForm({
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
           {loading
-            ? "براہِ کرم انتظار کریں…"
+            ? t(lang, "common.waiting")
             : isEdit
-              ? "تبدیلی محفوظ کریں"
-              : "دستاویز محفوظ کریں"}
+              ? t(lang, "general.form.save")
+              : t(lang, "doc.form.save_new")}
         </button>
       </div>
     </form>

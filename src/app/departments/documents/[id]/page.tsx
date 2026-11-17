@@ -12,18 +12,16 @@ import VoidDocumentFileButton from "@/app/departments/documents/[id]/VoidDocumen
 import { updateDocument } from "@/app/departments/documents/actions";
 import { createClient } from "@/lib/supabase/server";
 import {
-  DOCUMENT_TYPE_LABELS,
-  DOCUMENT_STATUS_LABELS,
   isExpired,
   type MadrasaDocument,
 } from "@/lib/documents";
 import {
-  DOCUMENT_FILE_STATUS_LABELS,
-  fileTypeLabel,
   formatFileSize,
   type DocumentFile,
 } from "@/lib/documentFiles";
 import { todayInKarachi } from "@/lib/attendance";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -37,11 +35,14 @@ export default async function DocumentDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { data, error } = await supabase
     .from("documents")
     .select("*")
     .eq("id", id)
     .single();
+
+  const lang = await langP;
 
   if ((error as { code?: string } | null)?.code === "42P01") {
     return (
@@ -49,11 +50,9 @@ export default async function DocumentDetailPage({
         <div className="page-card">
           <div className="page-head">
             <BackButton href="/departments/documents" />
-            <h2>دستاویز کی تفصیل</h2>
+            <h2>{t(lang, "doc.detail_title")}</h2>
           </div>
-          <p className="empty-state">
-            دستاویزات کی میز ابھی نہیں بنی — پہلے مرحلہ 28 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "docs.table_missing")}</p>
         </div>
       </div>
     );
@@ -91,48 +90,50 @@ export default async function DocumentDetailPage({
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/documents" />
-          <h2>دستاویز کی تفصیل</h2>
+          <h2>{t(lang, "doc.detail_title")}</h2>
         </div>
 
         <div className="detail-rows">
           <div className="row">
-            <span>عنوان</span>
+            <span>{t(lang, "notices.col_title")}</span>
             <strong>{doc.title}</strong>
           </div>
           <div className="row">
-            <span>قسم</span>
-            <strong>{DOCUMENT_TYPE_LABELS[doc.doc_type]}</strong>
+            <span>{t(lang, "col.type")}</span>
+            <strong>{t(lang, `doc.type.${doc.doc_type}`)}</strong>
           </div>
           {doc.reference_no ? (
             <div className="row">
-              <span>حوالہ نمبر</span>
+              <span>{t(lang, "doc.form.ref_no")}</span>
               <strong>{doc.reference_no}</strong>
             </div>
           ) : null}
           {doc.issued_by ? (
             <div className="row">
-              <span>جاری کرنے والا ادارہ</span>
+              <span>{t(lang, "doc.form.issued_by")}</span>
               <strong>{doc.issued_by}</strong>
             </div>
           ) : null}
           <div className="row">
-            <span>جاری ہونے کی تاریخ</span>
+            <span>{t(lang, "doc.form.issue_date")}</span>
             <strong>{formatDate(doc.issue_date)}</strong>
           </div>
           <div className="row">
-            <span>میعاد ختم ہونے کی تاریخ</span>
+            <span>{t(lang, "doc.form.expiry_date")}</span>
             <strong>
               {formatDate(doc.expiry_date)}
-              {isExpired(doc, todayInKarachi()) ? " — میعاد ختم" : ""}
+              {isExpired(doc, todayInKarachi())
+                ? ` — ${t(lang, "doc.status.expired")}`
+                : ""}
             </strong>
           </div>
           <div className="row">
-            <span>حالت</span>
-            <strong>{DOCUMENT_STATUS_LABELS[doc.status]}</strong>
+            <span>{t(lang, "col.status")}</span>
+            <strong>{t(lang, `doc.status.${doc.status}`)}</strong>
           </div>
           {doc.note ? (
             <div className="row">
-              <span>نوٹ</span>
+              <span>{t(lang, "doc.form.note")}</span>
               <strong>{doc.note}</strong>
             </div>
           ) : null}
@@ -140,47 +141,49 @@ export default async function DocumentDetailPage({
 
         {doc.status === "active" ? (
           <div className="form-actions">
-            <ArchiveButton id={doc.id} />
+            <ArchiveButton id={doc.id} lang={lang} />
           </div>
         ) : null}
 
-        <h3 className="form-section-title">منسلک فائلیں</h3>
+        <h3 className="form-section-title">{t(lang, "doc.files.title")}</h3>
         {filesTableMissing ? (
-          <p className="empty-state">
-            فائلوں کی میز ابھی نہیں بنی — پہلے مرحلہ 41 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "doc.files.table_missing")}</p>
         ) : (
           <>
-            <DocumentFileUploadForm documentId={doc.id} />
+            <DocumentFileUploadForm documentId={doc.id} lang={lang} />
             {files.length === 0 ? (
-              <p className="empty-state">
-                ابھی کوئی فائل نہیں لگی — اوپر والے فارم سے پہلی فائل لگائیں۔
-              </p>
+              <p className="empty-state">{t(lang, "doc.files.empty")}</p>
             ) : (
               <div className="tbl-wrap">
                 <table className="tbl">
                   <thead>
                     <tr>
-                      <th>نام</th>
-                      <th>قسم</th>
-                      <th>سائز</th>
-                      <th>تاریخ</th>
-                      <th>حالت</th>
-                      <th>کارروائی</th>
+                      <th>{t(lang, "col.name")}</th>
+                      <th>{t(lang, "col.type")}</th>
+                      <th>{t(lang, "doc.files.col_size")}</th>
+                      <th>{t(lang, "col.date")}</th>
+                      <th>{t(lang, "col.status")}</th>
+                      <th>{t(lang, "col.action")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {files.map((f) => (
                       <tr key={f.id}>
                         <td>{f.file_name}</td>
-                        <td>{fileTypeLabel(f.file_type)}</td>
+                        <td>
+                          {f.file_type === "application/pdf"
+                            ? "PDF"
+                            : f.file_type.startsWith("image/")
+                              ? t(lang, "doc.files.type_image")
+                              : t(lang, "doc.files.type_file")}
+                        </td>
                         <td>{formatFileSize(f.file_size)}</td>
                         <td>{formatDate(f.created_at)}</td>
                         <td>
                           <span
                             className={`badge${f.status === "voided" ? " badge-withdrawn" : ""}`}
                           >
-                            {DOCUMENT_FILE_STATUS_LABELS[f.status]}
+                            {t(lang, `doc.files.status.${f.status}`)}
                           </span>
                         </td>
                         <td>
@@ -188,7 +191,7 @@ export default async function DocumentDetailPage({
                             <>
                               {f.url ? (
                                 <Link href={f.url} target="_blank" rel="noreferrer">
-                                  ڈاؤن لوڈ کریں
+                                  {t(lang, "doc.files.download")}
                                 </Link>
                               ) : (
                                 "—"
@@ -196,6 +199,7 @@ export default async function DocumentDetailPage({
                               <VoidDocumentFileButton
                                 id={f.id}
                                 documentId={doc.id}
+                                lang={lang}
                               />
                             </>
                           ) : (
@@ -215,6 +219,7 @@ export default async function DocumentDetailPage({
           document={doc}
           action={updateDocument}
           detailId={`/departments/documents/${doc.id}`}
+          lang={lang}
         />
       </div>
     </div>

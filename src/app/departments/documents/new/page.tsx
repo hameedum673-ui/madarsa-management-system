@@ -6,28 +6,31 @@ import BackButton from "@/components/BackButton";
 import DocumentForm from "@/app/departments/documents/DocumentForm";
 import { addDocument } from "@/app/departments/documents/actions";
 import { createClient } from "@/lib/supabase/server";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function NewDocumentPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const { error } = await supabase
     .from("documents")
     .select("id")
     .limit(1);
   const tableMissing = (error as { code?: string } | null)?.code === "42P01";
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton href="/departments/documents" />
-          <h2>نئی دستاویز درج کریں</h2>
+          <h2>{t(lang, "docs.new")}</h2>
         </div>
         {tableMissing ? (
-          <p className="empty-state">
-            دستاویزات کی میز ابھی نہیں بنی — پہلے مرحلہ 28 کی SQL چلائیں۔
-          </p>
+          <p className="empty-state">{t(lang, "docs.table_missing")}</p>
         ) : (
-          <DocumentForm action={addDocument} />
+          <DocumentForm action={addDocument} lang={lang} />
         )}
       </div>
     </div>

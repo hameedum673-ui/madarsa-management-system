@@ -8,15 +8,23 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import {
   DOCUMENT_TYPES,
   type DocumentStatus,
   type DocumentType,
 } from "@/lib/documents";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 type ActionResult = { ok: true } | { error: string };
+
+/** مرحلہ 126 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -38,10 +46,11 @@ interface DocumentFields {
   note: string;
 }
 
-/** فارم کی جانچ — غلط ہو تو اردو غلطی، درست ہو تو صاف شدہ کھیت */
+/** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
 function validateFields(
   formData: FormData,
 ): { fields: DocumentFields } | { error: string } {
+  const lang = formLang(formData);
   const title = clean(formData.get("title"), 200);
   const docType = clean(formData.get("doc_type"), 20);
   const referenceNo = clean(formData.get("reference_no"), 100);
@@ -50,13 +59,13 @@ function validateFields(
   const expiryDate = clean(formData.get("expiry_date"), 10);
   const note = clean(formData.get("note"), 1000);
 
-  if (!title) return { error: "عنوان ضروری ہے۔" };
+  if (!title) return { error: t(lang, "notice.err.title_required") };
   if (!DOCUMENT_TYPES.includes(docType as DocumentType))
-    return { error: "قسم درست منتخب کریں۔" };
+    return { error: t(lang, "doc.err.type_invalid") };
   if (issueDate && !validDate(issueDate))
-    return { error: "جاری ہونے کی تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "doc.err.issue_date_invalid") };
   if (expiryDate && !validDate(expiryDate))
-    return { error: "میعاد ختم ہونے کی تاریخ درست نہیں ہے۔" };
+    return { error: t(lang, "doc.err.expiry_date_invalid") };
 
   return {
     fields: {
@@ -93,15 +102,16 @@ async function writeAudit(
 
 /** نئی دستاویز شامل کریں */
 export async function addDocument(formData: FormData): Promise<ActionResult> {
+  const lang = formLang(formData);
   const checked = validateFields(formData);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "documents"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -122,7 +132,7 @@ export async function addDocument(formData: FormData): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "notice.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "document_created", {
@@ -140,19 +150,20 @@ export async function updateDocument(
   id: string,
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const checked = validateFields(formData);
   if ("error" in checked) return { error: checked.error };
   const f = checked.fields;
 
   const status = clean(formData.get("status"), 20);
   if (status !== "active" && status !== "expired" && status !== "archived")
-    return { error: "حالت درست منتخب کریں (فعال، میعاد ختم یا محفوظ شدہ)۔" };
+    return { error: t(lang, "doc.err.status_invalid") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "documents"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // RLS خود یقین دلاتی ہے کہ یہ دستاویز اسی مدرسے کی ہے
@@ -175,7 +186,7 @@ export async function updateDocument(
     .single();
 
   if (error || !data) {
-    return { error: "تبدیلی محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "notice.err.update_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "document_updated", {
@@ -205,25 +216,26 @@ const ALLOWED_FILE_TYPES = [
 export async function uploadDocumentFile(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const documentId = clean(formData.get("document_id"), 100);
   const file = formData.get("file");
 
-  if (!documentId) return { error: "دستاویز معلوم نہیں ہوئی۔" };
+  if (!documentId) return { error: t(lang, "doc.err.doc_unknown") };
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "پہلے فائل چنیں۔" };
+    return { error: t(lang, "doc.err.choose_file") };
   }
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-    return { error: "صرف تصویر (JPG/PNG) یا PDF فائل لگائی جا سکتی ہے۔" };
+    return { error: t(lang, "doc.err.file_type") };
   }
   if (file.size > MAX_FILE_SIZE) {
-    return { error: "فائل 5 MB سے بڑی نہیں ہو سکتی۔" };
+    return { error: t(lang, "doc.err.file_size") };
   }
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "documents"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // دستاویز اپنے مدرسے کی ہونی چاہیے
@@ -234,7 +246,7 @@ export async function uploadDocumentFile(
     .eq("madrasa_id", mine.madrasaId)
     .single();
   if (!doc) {
-    return { error: "دستاویز نہیں ملی — پہلے دستاویزات کی فہرست میں دیکھیں۔" };
+    return { error: t(lang, "doc.err.doc_not_found") };
   }
 
   const safeName =
@@ -245,7 +257,7 @@ export async function uploadDocumentFile(
     .from("documents")
     .upload(filePath, file, { contentType: file.type, upsert: false });
   if (uploadError) {
-    return { error: "فائل اپلوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "doc.err.upload_failed") };
   }
 
   const { data, error } = await supabase
@@ -266,7 +278,7 @@ export async function uploadDocumentFile(
   if (error || !data) {
     // ریکارڈ نہ بنے تو اپلوڈ کی ہوئی فائل بھی ہٹا دیں تاکہ کچرا نہ رہے
     await supabase.storage.from("documents").remove([filePath]);
-    return { error: "فائل محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "doc.err.file_save_failed") };
   }
 
   await writeAudit(
@@ -292,12 +304,13 @@ export async function uploadDocumentFile(
 export async function voidDocumentFile(
   id: string,
   documentId: string,
+  lang: Lang = "ur",
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "documents"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -311,7 +324,7 @@ export async function voidDocumentFile(
     .single();
 
   if (error || !data) {
-    return { error: "چھپایا نہیں جا سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "doc.err.hide_failed") };
   }
 
   await writeAudit(
@@ -331,12 +344,15 @@ export async function voidDocumentFile(
 }
 
 /** دستاویز محفوظ کریں (archive) — حذف نہیں ہوتی، ریکارڈ رہتا ہے */
-export async function archiveDocument(id: string): Promise<ActionResult> {
+export async function archiveDocument(
+  id: string,
+  lang: Lang = "ur",
+): Promise<ActionResult> {
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   if (!(await isModuleAllowedForMe(supabase, "documents"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   const { data, error } = await supabase
@@ -352,7 +368,7 @@ export async function archiveDocument(id: string): Promise<ActionResult> {
     .single();
 
   if (error || !data) {
-    return { error: "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+    return { error: t(lang, "notice.err.save_failed") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "document_archived", {
