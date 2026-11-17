@@ -7,6 +7,8 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { getMyAllowedSections, getMySectionFilter } from "@/lib/permissions";
+import { SECTION_IDS } from "@/lib/students";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
@@ -21,17 +23,23 @@ function formatDate(value: string | null): string {
 export default async function WelfarePage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ section?: string; page?: string }>;
 }) {
   const supabase = await createClient();
   const lang = await getMyLanguage();
   // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const params = await searchParams;
+  // فلاحی فلٹر — شعبہ (بنین / بنات)، طلبہ کے ریکارڈ سے
+  const allowedSections = await getMyAllowedSections(supabase);
+  const section = getMySectionFilter(allowedSections, params.section);
+  const sectionEq = section !== "all" ? section : null;
   const page = parsePage(params.page);
   const { from, to } = pageRange(page);
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("welfare_records")
-    .select("*, students(name, father_name, registration_number)", { count: "exact" })
+    .select("*, students(name, father_name, registration_number, section)", { count: "exact" });
+  if (sectionEq) query = query.eq("students.section", sectionEq);
+  const { data, error, count } = await query
     .order("record_date", { ascending: false })
     .order("record_number", { ascending: false })
     .range(from, to);
@@ -41,10 +49,12 @@ export default async function WelfarePage({
     (error as { code?: string } | null)?.code === "42P01";
   const pages = pageCount(count);
   // مرحلہ 59 — کل معاونت — پوری فہرست سے (صرف اس صفحے سے نہیں)
-  const { data: totalData } = await supabase
+  let totalQuery = supabase
     .from("welfare_records")
-    .select("amount")
+    .select("amount, students(section)")
     .eq("status", "active");
+  if (sectionEq) totalQuery = totalQuery.eq("students.section", sectionEq);
+  const { data: totalData } = await totalQuery;
   const totalAid = (totalData ?? []).reduce(
     (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
     0,
@@ -66,6 +76,25 @@ export default async function WelfarePage({
             {t(lang, "welfare.add")}
           </Link>
         </div>
+
+        <form className="att-controls" method="get">
+          <label className="field">
+            <span className="field-label">
+              {t(lang, "students.section_filter")}
+            </span>
+            <select className="field-input" name="section" defaultValue={section}>
+              <option value="all">{t(lang, "common.all")}</option>
+              {SECTION_IDS.filter((s) => allowedSections.has(s)).map((s) => (
+                <option key={s} value={s}>
+                  {t(lang, `section.${s}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="btn-primary" type="submit">
+            {t(lang, "common.show")}
+          </button>
+        </form>
 
         {tableMissing ? (
           <p className="empty-state">{t(lang, "welfare.table_missing")}</p>
