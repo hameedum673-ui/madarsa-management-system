@@ -16,7 +16,7 @@ import {
   type SectionId,
   type Student,
 } from "@/lib/students";
-import { t, type Lang } from "@/i18n/dictionary";
+import { studentStatusLabel, t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -232,8 +232,8 @@ export default function StudentForm({
             required
             defaultValue={initial?.status ?? "active"}
           >
-            <option value="active">{t(lang, "student.status.active")}</option>
-            <option value="withdrawn">{t(lang, "student.status.withdrawn")}</option>
+            <option value="active">{studentStatusLabel(lang, "active", section)}</option>
+            <option value="withdrawn">{studentStatusLabel(lang, "withdrawn", section)}</option>
           </select>
         </label>
       ) : null}

@@ -24,7 +24,7 @@ import {
 } from "@/lib/exams";
 import type { HifzProgress } from "@/lib/hifz";
 import { getMyLanguage } from "@/lib/language";
-import { t } from "@/i18n/dictionary";
+import { studentStatusLabel, t } from "@/i18n/dictionary";
 import HifzProgressForm, {
   type HifzTeacher,
 } from "@/app/departments/academic/HifzProgressForm";
@@ -163,7 +163,7 @@ export default async function AcademicRecordPage({
           <span
             className={`badge${student.status === "withdrawn" ? " badge-withdrawn" : ""}`}
           >
-            {t(lang, `student.status.${student.status}`)}
+            {studentStatusLabel(lang, student.status, student.section)}
           </span>
         </div>
 

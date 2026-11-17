@@ -15,7 +15,7 @@ import {
   type Student,
 } from "@/lib/students";
 import { getMyLanguage } from "@/lib/language";
-import { t } from "@/i18n/dictionary";
+import { studentStatusLabel, t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -178,7 +178,7 @@ export default async function StudentsPage({
                       <span
                         className={`badge${s.status === "withdrawn" ? " badge-withdrawn" : ""}`}
                       >
-                        {t(lang, `student.status.${s.status}`)}
+                        {studentStatusLabel(lang, s.status, s.section)}
                       </span>
                     </td>
                   </tr>

@@ -13,7 +13,7 @@ import StudentForm from "@/app/departments/students/StudentForm";
 import { updateStudent } from "@/app/departments/students/actions";
 import { getActiveClasses } from "@/lib/classes";
 import { getMyLanguage } from "@/lib/language";
-import { t } from "@/i18n/dictionary";
+import { studentStatusLabel, t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -56,7 +56,7 @@ export default async function StudentDetailPage({
           <span
             className={`badge${student.status === "withdrawn" ? " badge-withdrawn" : ""}`}
           >
-            {t(lang, `student.status.${student.status}`)}
+            {studentStatusLabel(lang, student.status, student.section)}
           </span>
         </div>
 

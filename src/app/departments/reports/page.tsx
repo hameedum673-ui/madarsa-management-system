@@ -314,7 +314,7 @@ export default async function ReportsPage({
                   <div className="row" key={dept}>
                     <span>
                       {t(lang, `dept.${dept}`)} (
-                      {t(lang, "student.status.active")})
+                      {t(lang, "student.status.active_m")})
                     </span>
                     <strong>
                       {

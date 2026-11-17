@@ -176,6 +176,8 @@ const ur: Dict = {
   "section.banat": "بنات",
   "student.status.active": "فعال",
   "student.status.withdrawn": "خارج",
+  "student.status.active_m": "فعال",
+  "student.status.withdrawn_m": "خارج",
   "admission.status.pending": "زیرِ غور",
   "admission.status.approved": "منظور",
   "admission.status.rejected": "مسترد",
@@ -267,6 +269,7 @@ const ur: Dict = {
   "student.err.phone_invalid": "رابطہ نمبر درست نہیں ہے۔",
   "student.err.whatsapp_invalid": "واٹس ایپ نمبر درست نہیں ہے۔",
   "student.err.status_invalid": "حالت درست منتخب کریں (فعال یا خارج)۔",
+  "student.err.status_invalid_m": "حالت درست منتخب کریں (فعال یا خارج)۔",
   "student.err.section_denied": "اس شعبے میں ریکارڈ درج کرنے کی اجازت نہیں ہے۔",
   "student.err.reg_conflict": "رجسٹریشن نمبر ٹکرا گیا — دوبارہ کوشش کریں۔",
   "student.err.save_failed": "محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
@@ -1764,6 +1767,8 @@ const ar: Dict = {
   "section.banat": "بنات",
   "student.status.active": "نشطة",
   "student.status.withdrawn": "منسحبة",
+  "student.status.active_m": "نشط",
+  "student.status.withdrawn_m": "منسحب",
   "admission.status.pending": "قيد النظر",
   "admission.status.approved": "مقبول",
   "admission.status.rejected": "مرفوض",
@@ -1855,6 +1860,7 @@ const ar: Dict = {
   "student.err.phone_invalid": "رقم الاتصال غير صحيح.",
   "student.err.whatsapp_invalid": "رقم واتساب غير صحيح.",
   "student.err.status_invalid": "اختر الحالة الصحيحة (نشطة أو منسحبة).",
+  "student.err.status_invalid_m": "اختر الحالة الصحيحة (نشط أو منسحب).",
   "student.err.section_denied": "ليس لديك إذن لتسجيل سجل في هذا القسم.",
   "student.err.reg_conflict": "تعارض رقم التسجيل — حاول مرة أخرى.",
   "student.err.save_failed": "تعذّر الحفظ. حاول مرة أخرى.",
@@ -3276,6 +3282,26 @@ export function gradeKey(grade: string): string {
     default:
       return "exam.grade.fail";
   }
+}
+
+/**
+ * طالب علم کی حالت — شعبے کے مطابق مذکر/مؤنث
+ * (بنین: نشط / منسحب، بنات: نشطة / منسحبة) — مرحلہ 130
+ */
+export function studentStatusLabel(
+  lang: Lang,
+  status: string,
+  section: string | null | undefined,
+): string {
+  if (section === "banin") {
+    return t(
+      lang,
+      status === "withdrawn"
+        ? "student.status.withdrawn_m"
+        : "student.status.active_m",
+    );
+  }
+  return t(lang, `student.status.${status}`);
 }
 
 /** اعداد کی شکل — اردو اور عربی دونوں میں مشرقی ہندسے (جیسے پہلے تھے) */

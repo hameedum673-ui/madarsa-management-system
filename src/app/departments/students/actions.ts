@@ -219,7 +219,14 @@ export async function updateStudent(
 
   const status = clean(formData.get("status"), 20);
   if (status !== "active" && status !== "withdrawn")
-    return { error: t(lang, "student.err.status_invalid") };
+    return {
+      error: t(
+        lang,
+        f.section === "banin"
+          ? "student.err.status_invalid_m"
+          : "student.err.status_invalid",
+      ),
+    };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);

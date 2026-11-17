@@ -22,7 +22,7 @@ import {
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
-import { t, type Lang } from "@/i18n/dictionary";
+import { studentStatusLabel, t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -169,7 +169,7 @@ export default function AdmissionForm({
                   {s.name} — {s.father_name} ({t(lang, "admission.form.reg_word")}{" "}
                   {s.registration_number})
                   {s.class_name ? ` — ${s.class_name}` : ""}
-                  {s.status === "withdrawn" ? ` — ${t(lang, "student.status.withdrawn")}` : ""}
+                  {s.status === "withdrawn" ? ` — ${studentStatusLabel(lang, "withdrawn", s.section)}` : ""}
                 </option>
               ))}
             </select>
