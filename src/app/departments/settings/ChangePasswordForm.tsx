@@ -8,8 +8,9 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { t, type Lang } from "@/i18n/dictionary";
 
-export default function ChangePasswordForm({ email }: { email: string }) {
+export default function ChangePasswordForm({ email, lang = "ur" }: { email: string; lang?: Lang }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,15 +26,15 @@ export default function ChangePasswordForm({ email }: { email: string }) {
     const confirm = String(formData.get("confirm_password") ?? "");
 
     if (!current || !next || !confirm) {
-      setError("تینوں خانے بھرنا ضروری ہیں۔");
+      setError(t(lang, "settings.pw.err.all_required"));
       return;
     }
     if (next.length < 6) {
-      setError("نیا پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے۔");
+      setError(t(lang, "settings.pw.err.min_length"));
       return;
     }
     if (next !== confirm) {
-      setError("نیا پاس ورڈ اور تصدیق ایک جیسے نہیں ہیں۔");
+      setError(t(lang, "settings.pw.err.mismatch"));
       return;
     }
 
@@ -47,9 +48,7 @@ export default function ChangePasswordForm({ email }: { email: string }) {
     });
     if (signInError) {
       setLoading(false);
-      setError(
-        "موجودہ پاس ورڈ درست نہیں ہے۔ (اگر آپ گوگل سے لاگ اِن ہوتے ہیں تو آپ کا کوئی پاس ورڈ نہیں ہے۔)",
-      );
+      setError(t(lang, "settings.pw.err.current_wrong"));
       return;
     }
 
@@ -58,7 +57,7 @@ export default function ChangePasswordForm({ email }: { email: string }) {
     });
     setLoading(false);
     if (updateError) {
-      setError("پاس ورڈ تبدیل نہیں ہو سکا۔ دوبارہ کوشش کریں۔");
+      setError(t(lang, "settings.pw.err.failed"));
       return;
     }
     setSuccess(true);
@@ -67,14 +66,11 @@ export default function ChangePasswordForm({ email }: { email: string }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3 className="form-section-title">پاس ورڈ تبدیل کریں</h3>
-      <p className="sub">
-        اگر آپ گوگل کے بٹن سے لاگ اِن ہوتے ہیں تو آپ کا کوئی پاس ورڈ نہیں
-        ہے — یہ فارم صرف ان کے لیے ہے جن کا پاس ورڈ بنا ہوا ہے۔
-      </p>
+      <h3 className="form-section-title">{t(lang, "settings.pw.title")}</h3>
+      <p className="sub">{t(lang, "settings.pw.note")}</p>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">موجودہ پاس ورڈ *</span>
+          <span className="field-label">{t(lang, "settings.pw.current")}</span>
           <input
             className="field-input"
             type="password"
@@ -84,7 +80,7 @@ export default function ChangePasswordForm({ email }: { email: string }) {
           />
         </label>
         <label className="field">
-          <span className="field-label">نیا پاس ورڈ *</span>
+          <span className="field-label">{t(lang, "settings.pw.new")}</span>
           <input
             className="field-input"
             type="password"
@@ -94,7 +90,7 @@ export default function ChangePasswordForm({ email }: { email: string }) {
           />
         </label>
         <label className="field">
-          <span className="field-label">نئے پاس ورڈ کی تصدیق *</span>
+          <span className="field-label">{t(lang, "settings.pw.confirm")}</span>
           <input
             className="field-input"
             type="password"
@@ -106,11 +102,11 @@ export default function ChangePasswordForm({ email }: { email: string }) {
       </div>
 
       {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="att-success">پاس ورڈ تبدیل ہو گیا ہے۔</p> : null}
+      {success ? <p className="att-success">{t(lang, "settings.pw.changed")}</p> : null}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "پاس ورڈ تبدیل کریں"}
+          {loading ? t(lang, "common.waiting") : t(lang, "settings.pw.title")}
         </button>
       </div>
     </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { t, type Lang } from "@/i18n/dictionary";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,7 +15,13 @@ interface BeforeInstallPromptEvent extends Event {
  * آئی فون: براؤزر یہ بٹن دکھانے کی اجازت نہیں دیتا — ہدایت دکھتی ہے۔
  * dark: لاگ ان والے صفحے پر (گہرا نیوی پس منظر) — نوٹ کا رنگ سفید رکھیں۔
  */
-export default function InstallAppButton({ dark }: { dark?: boolean }) {
+export default function InstallAppButton({
+  dark,
+  lang = "ur",
+}: {
+  dark?: boolean;
+  lang?: Lang;
+}) {
   const [deferred, setDeferred] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
@@ -50,7 +57,7 @@ export default function InstallAppButton({ dark }: { dark?: boolean }) {
 
   if (installed) {
     return (
-      <p className={noteClass}>ایپ انسٹال ہو چکی ہے — ہوم اسکرین پر آئیکن دیکھیں۔</p>
+      <p className={noteClass}>{t(lang, "settings.app.installed")}</p>
     );
   }
 
@@ -65,16 +72,14 @@ export default function InstallAppButton({ dark }: { dark?: boolean }) {
           if (choice.outcome === "accepted") setDeferred(null);
         }}
       >
-        ایپ ڈاؤن لوڈ کریں
+        {t(lang, "settings.app.download")}
       </button>
     );
   }
 
   if (isIOS) {
     return (
-      <p className={noteClass}>
-        آئی فون پر: نیچے شیئر والا بٹن دبائیں → "ہوم اسکرین پر شامل کریں" چنیں۔
-      </p>
+      <p className={noteClass}>{t(lang, "settings.app.ios_note")}</p>
     );
   }
 

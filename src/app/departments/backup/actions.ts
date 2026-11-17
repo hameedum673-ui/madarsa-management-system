@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
-import { isModuleAllowedForMe, MODULE_DENIED_ERROR } from "@/lib/permissions";
+import { isModuleAllowedForMe } from "@/lib/permissions";
 import { getMyMadrasa } from "@/lib/students";
 import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
 import {
@@ -18,6 +18,7 @@ import {
   RESTORE_TABLES,
   type RestoreTableReport,
 } from "@/lib/restore";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 export type RestoreResult =
   | { ok: true; report: RestoreTableReport[] }
@@ -27,41 +28,49 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** مرحلہ 128 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
+
 export async function restoreBackup(
   formData: FormData,
 ): Promise<RestoreResult> {
+  const lang = formLang(formData);
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "پہلے بیک اپ فائل چنیں۔" };
+    return { error: t(lang, "backup.err.choose_first") };
   }
   if (file.size > MAX_BACKUP_FILE_SIZE) {
-    return { error: "بیک اپ فائل 10 MB سے بڑی نہیں ہو سکتی۔" };
+    return { error: t(lang, "backup.err.too_big") };
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(await file.text());
   } catch {
-    return { error: "یہ درست JSON فائل نہیں ہے — بیک اپ فائل چنیں۔" };
+    return { error: t(lang, "backup.err.not_json") };
   }
 
   if (!isRecord(parsed) || parsed.app !== "madrasa-management-system") {
-    return { error: "یہ اس سسٹم کی بیک اپ فائل نہیں ہے۔" };
+    return { error: t(lang, "backup.err.not_system") };
   }
   if (!isRecord(parsed.tables)) {
-    return { error: "بیک اپ فائل میں ڈیٹا نہیں ملا۔" };
+    return { error: t(lang, "backup.err.no_data") };
   }
   const tables = parsed.tables as Record<string, unknown>;
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
   // حصہ 4 کی درستگی — بیک اپ واپس لانا صرف مالک کا کام ہے (سپر ایڈمن ہونا ضروری نہیں)
   if (!(await isMadrasaOwner(supabase))) {
-    return { error: "صرف مدرسے کا مالک بیک اپ واپس لا سکتا ہے۔" };
+    return { error: t(lang, "backup.err.owner_only") };
   }
   if (!(await isModuleAllowedForMe(supabase, "backup"))) {
-    return { error: MODULE_DENIED_ERROR };
+    return { error: t(lang, "common.not_allowed") };
   }
 
   // فائل کسی اور مدرسے کی ہو تو پورا کام رک جاتا ہے
@@ -69,7 +78,7 @@ export async function restoreBackup(
     typeof parsed.madrasa_id === "string" &&
     parsed.madrasa_id !== mine.madrasaId
   ) {
-    return { error: "یہ بیک اپ فائل کسی اور مدرسے کی ہے — اس مدرسے میں نہیں لائی جا سکتی۔" };
+    return { error: t(lang, "backup.err.other_madrasa") };
   }
 
   const closedCache = new Map<string, boolean>();

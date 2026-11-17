@@ -9,13 +9,14 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { restoreBackup } from "@/app/departments/backup/actions";
 import { RESTORE_TABLES, type RestoreTableReport } from "@/lib/restore";
+import { t, type Lang } from "@/i18n/dictionary";
 
 interface PreviewRow {
-  label: string;
+  table: string;
   count: number;
 }
 
-export default function RestoreBackupForm() {
+export default function RestoreBackupForm({ lang = "ur" }: { lang?: Lang }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -47,14 +48,14 @@ export default function RestoreBackupForm() {
     setConfirming(false);
     const f = inputRef.current?.files?.[0] ?? null;
     if (!f) {
-      setError("پہلے بیک اپ فائل چنیں۔");
+      setError(t(lang, "backup.err.choose_first"));
       return;
     }
     let parsed: unknown;
     try {
       parsed = await readFile(f);
     } catch {
-      setError("یہ درست JSON فائل نہیں ہے — بیک اپ فائل چنیں۔");
+      setError(t(lang, "backup.err.not_json"));
       return;
     }
     if (
@@ -64,7 +65,7 @@ export default function RestoreBackupForm() {
       typeof (parsed as { tables?: unknown }).tables !== "object" ||
       (parsed as { tables?: unknown }).tables === null
     ) {
-      setError("یہ اس سسٹم کی بیک اپ فائل نہیں ہے۔");
+      setError(t(lang, "backup.err.not_system"));
       return;
     }
     const tables = (parsed as { tables: Record<string, unknown> }).tables;
@@ -72,11 +73,11 @@ export default function RestoreBackupForm() {
     for (const entry of RESTORE_TABLES) {
       const value = tables[entry.table];
       if (Array.isArray(value) && value.length > 0) {
-        rows.push({ label: entry.label, count: value.length });
+        rows.push({ table: entry.table, count: value.length });
       }
     }
     if (rows.length === 0) {
-      setError("اس فائل میں کوئی ڈیٹا نہیں ملا۔");
+      setError(t(lang, "backup.err.empty_file"));
       return;
     }
     setFile(f);
@@ -92,6 +93,7 @@ export default function RestoreBackupForm() {
     setError("");
     setLoading(true);
     const formData = new FormData();
+    formData.set("lang", lang);
     formData.set("file", file);
     const res = await restoreBackup(formData);
     setLoading(false);
@@ -111,7 +113,7 @@ export default function RestoreBackupForm() {
     <div>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">بیک اپ فائل (JSON) چنیں *</span>
+          <span className="field-label">{t(lang, "backup.form.file")}</span>
           <input
             ref={inputRef}
             className="field-input"
@@ -126,12 +128,7 @@ export default function RestoreBackupForm() {
           />
         </label>
       </div>
-      <p className="sub">
-        صرف اسی سسٹم کی بیک اپ فائل قبول ہوگی۔ جو ریکارڈ پہلے سے موجود ہے
-        وہ اوور رائٹ نہیں ہوگا؛ بند مہینے کے مالی ریکارڈ نہیں لگیں گے؛
-        صارفین، اجازتیں، آڈٹ لاگ، مدرسے کا پروفائل اور دستاویز کے ساتھ
-        لگی فائلیں واپس نہیں لائی جائیں گی۔
-      </p>
+      <p className="sub">{t(lang, "backup.form.note")}</p>
 
       {error ? <p className="form-error">{error}</p> : null}
 
@@ -142,17 +139,17 @@ export default function RestoreBackupForm() {
           onClick={handlePreview}
           disabled={loading}
         >
-          جائزہ دیکھیں
+          {t(lang, "backup.form.preview")}
         </button>
       </div>
 
       {preview ? (
         <>
-          <h3 className="form-section-title">فائل کا جائزہ</h3>
+          <h3 className="form-section-title">{t(lang, "backup.form.preview_title")}</h3>
           <div className="detail-rows">
             {preview.map((p) => (
-              <div className="row" key={p.label}>
-                <span>{p.label}</span>
+              <div className="row" key={p.table}>
+                <span>{t(lang, `backup.tbl.${p.table}`)}</span>
                 <strong>{p.count}</strong>
               </div>
             ))}
@@ -165,10 +162,10 @@ export default function RestoreBackupForm() {
               disabled={loading}
             >
               {loading
-                ? "براہِ کرم انتظار کریں…"
+                ? t(lang, "common.waiting")
                 : confirming
-                  ? "پکا بحال کریں؟"
-                  : "بحال کریں"}
+                  ? t(lang, "backup.form.confirm")
+                  : t(lang, "backup.form.restore")}
             </button>
           </div>
         </>
@@ -176,23 +173,23 @@ export default function RestoreBackupForm() {
 
       {report ? (
         <>
-          <h3 className="form-section-title">بحال ہونے کی رپورٹ</h3>
+          <h3 className="form-section-title">{t(lang, "backup.report.title")}</h3>
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>میز</th>
-                  <th>کل</th>
-                  <th>نئے لگے</th>
-                  <th>پہلے سے موجود</th>
-                  <th>بند مہینے</th>
-                  <th>ناکام</th>
+                  <th>{t(lang, "backup.report.col_table")}</th>
+                  <th>{t(lang, "backup.report.col_total")}</th>
+                  <th>{t(lang, "backup.report.col_added")}</th>
+                  <th>{t(lang, "backup.report.col_skipped")}</th>
+                  <th>{t(lang, "backup.report.col_closed")}</th>
+                  <th>{t(lang, "backup.report.col_failed")}</th>
                 </tr>
               </thead>
               <tbody>
                 {report.map((r) => (
                   <tr key={r.table}>
-                    <td>{r.label}</td>
+                    <td>{t(lang, `backup.tbl.${r.table}`)}</td>
                     <td>{r.total}</td>
                     <td>{r.added}</td>
                     <td>{r.skipped}</td>
@@ -203,11 +200,7 @@ export default function RestoreBackupForm() {
               </tbody>
             </table>
           </div>
-          <p className="sub">
-            "پہلے سے موجود" والے ریکارڈ چھوڑ دیے گئے ہیں — وہ اوور رائٹ
-            نہیں ہوئے۔ "بند مہینے" والے ریکارڈ بندش کی وجہ سے نہیں لگے؛
-            چاہیں تو مہینہ کھول کر دوبارہ بحال کر سکتے ہیں۔
-          </p>
+          <p className="sub">{t(lang, "backup.report.note")}</p>
         </>
       ) : null}
     </div>

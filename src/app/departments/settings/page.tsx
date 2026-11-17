@@ -11,11 +11,14 @@ import ChangePasswordForm from "@/app/departments/settings/ChangePasswordForm";
 import MfaSettings from "@/app/departments/settings/MfaSettings";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin, ROLE_LABELS } from "@/lib/approval";
+import { isAppAdmin } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   const admin = await isAppAdmin(supabase);
 
   const {
@@ -26,6 +29,7 @@ export default async function SettingsPage() {
   let madrasaName: string | null = null;
   let userName: string | null = null;
   let userRole: string | null = null;
+  const lang = await langP;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -43,7 +47,7 @@ export default async function SettingsPage() {
         .single();
       userName = (myProfile as { name?: string } | null)?.name ?? null;
       const role = (myProfile as { role?: string } | null)?.role;
-      userRole = role ? (ROLE_LABELS[role as MadrasaRole] ?? role) : null;
+      userRole = role ? t(lang, `role.${role as MadrasaRole}`) : null;
     }
   } catch {
     madrasaName = null;
@@ -56,17 +60,17 @@ export default async function SettingsPage() {
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>نظام کی ترتیبات</h2>
+          <h2>{t(lang, "settings.title")}</h2>
         </div>
 
-        <h3 className="form-section-title">میرا اکاؤنٹ</h3>
+        <h3 className="form-section-title">{t(lang, "settings.account_title")}</h3>
         <div className="detail-rows">
           <div className="row">
-            <span>نام</span>
+            <span>{t(lang, "col.name")}</span>
             <strong>{userName ?? "—"}</strong>
           </div>
           <div className="row">
-            <span>کردار</span>
+            <span>{t(lang, "users.col_role")}</span>
             <strong>{userRole ?? "—"}</strong>
           </div>
           <div className="row">
@@ -74,42 +78,34 @@ export default async function SettingsPage() {
             <strong>{email || "—"}</strong>
           </div>
           <div className="row">
-            <span>مدرسہ</span>
+            <span>{t(lang, "settings.account.madrasa")}</span>
             <strong>{madrasaName ?? "—"}</strong>
           </div>
         </div>
 
-        <ChangePasswordForm email={email} />
+        <ChangePasswordForm email={email} lang={lang} />
 
-        <h3 className="form-section-title">دو مرحلوں والی تصدیق (2FA)</h3>
-        <MfaSettings />
+        <h3 className="form-section-title">{t(lang, "settings.mfa.name")} (2FA)</h3>
+        <MfaSettings lang={lang} />
 
-        <h3 className="form-section-title">خودکار لاگ آؤٹ</h3>
-        <p className="sub">
-          30 منٹ تک کوئی حرکت نہ ہو (نہ کلک، نہ لکھنا، نہ چھونا) تو سسٹم
-          خود لاگ آؤٹ کر دیتا ہے اور لاگ اِن والے صفحے پر لے جاتا ہے — تاکہ
-          کھلا ہوا فون یا کمپیوٹر کسی اور کے ہاتھ نہ لگے۔
-        </p>
+        <h3 className="form-section-title">{t(lang, "settings.logout_title")}</h3>
+        <p className="sub">{t(lang, "settings.logout_note")}</p>
 
-        <h3 className="form-section-title">ایپ (ہوم اسکرین پر آئیکن)</h3>
-        <p className="sub">
-          اس سسٹم کو اپنے فون کی ہوم اسکرین پر ایپ کی طرح لگایا جا سکتا ہے —
-          نیچے والا بٹن دبائیں۔ انسٹال ہونے کے بعد ہر نئی تبدیلی خودبخود آتی
-          رہے گی، دوبارہ کچھ لگانے کی ضرورت نہیں۔
-        </p>
-        <InstallAppButton />
+        <h3 className="form-section-title">{t(lang, "settings.app_title")}</h3>
+        <p className="sub">{t(lang, "settings.app_note")}</p>
+        <InstallAppButton lang={lang} />
 
-        <h3 className="form-section-title">نظام کی معلومات</h3>
+        <h3 className="form-section-title">{t(lang, "settings.info_title")}</h3>
         <div className="form-actions">
           <Link className="btn-ghost" href="/departments/backup">
-            بیک اپ
+            {t(lang, "backup.title")}
           </Link>
           <Link className="btn-ghost" href="/departments/general">
-            مدرسے کا عمومی ریکارڈ
+            {t(lang, "settings.info.general")}
           </Link>
           {admin ? (
             <Link className="btn-ghost" href="/departments/users">
-              صارفین اور اکاؤنٹس
+              {t(lang, "hub.users_perms.title")}
             </Link>
           ) : null}
         </div>

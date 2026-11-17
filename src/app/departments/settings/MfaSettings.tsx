@@ -8,10 +8,11 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type Factor = { id: string; status: string };
 
-export default function MfaSettings() {
+export default function MfaSettings({ lang = "ur" }: { lang?: Lang }) {
   const [loading, setLoading] = useState(true);
   const [verifiedFactor, setVerifiedFactor] = useState<Factor | null>(null);
   const [factorId, setFactorId] = useState("");
@@ -27,7 +28,7 @@ export default function MfaSettings() {
     const supabase = createClient();
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (error) {
-      setError("2FA کی حالت معلوم نہیں ہو سکی۔ صفحہ تازہ کر کے دیکھیں۔");
+      setError(t(lang, "settings.mfa.err.state"));
       return;
     }
     const verified = (data.totp ?? []).find(
@@ -54,11 +55,11 @@ export default function MfaSettings() {
     }
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: "totp",
-      friendlyName: "میرا فون",
+      friendlyName: lang === "ar" ? "هاتفي" : "میرا فون",
     });
     setBusy(false);
     if (error || !data) {
-      setError("QR کوڈ نہیں بن سکا۔ دوبارہ کوشش کریں۔");
+      setError(t(lang, "settings.mfa.err.qr"));
       return;
     }
     setFactorId(data.id);
@@ -70,7 +71,7 @@ export default function MfaSettings() {
 
   async function handleVerifyEnable() {
     if (!/^\d{6}$/.test(code)) {
-      setError("6 ہندسوں والا کوڈ لکھیں۔");
+      setError(t(lang, "settings.mfa.err.code"));
       return;
     }
     setError("");
@@ -82,10 +83,10 @@ export default function MfaSettings() {
     });
     setBusy(false);
     if (error) {
-      setError("کوڈ درست نہیں ہے — ایپ میں نیا کوڈ دیکھ کر دوبارہ لکھیں۔");
+      setError(t(lang, "settings.mfa.err.wrong"));
       return;
     }
-    setSuccess("دو مرحلوں والی تصدیق فعال ہو گئی ہے۔");
+    setSuccess(t(lang, "settings.mfa.enabled"));
     setQrCode("");
     setSecret("");
     setUri("");
@@ -97,7 +98,7 @@ export default function MfaSettings() {
   async function handleDisable() {
     if (!verifiedFactor) return;
     if (!/^\d{6}$/.test(code)) {
-      setError("پہلے ایپ کا 6 ہندسوں والا کوڈ لکھیں۔");
+      setError(t(lang, "settings.mfa.err.code_first"));
       return;
     }
     setError("");
@@ -110,7 +111,7 @@ export default function MfaSettings() {
       });
     if (verifyError) {
       setBusy(false);
-      setError("کوڈ درست نہیں ہے — ایپ میں نیا کوڈ دیکھ کر دوبارہ لکھیں۔");
+      setError(t(lang, "settings.mfa.err.wrong"));
       return;
     }
     const { error } = await supabase.auth.mfa.unenroll({
@@ -118,16 +119,16 @@ export default function MfaSettings() {
     });
     setBusy(false);
     if (error) {
-      setError("2FA بند نہیں ہو سکی۔ دوبارہ کوشش کریں۔");
+      setError(t(lang, "settings.mfa.err.disable_failed"));
       return;
     }
-    setSuccess("دو مرحلوں والی تصدیق بند کر دی گئی ہے۔");
+    setSuccess(t(lang, "settings.mfa.disabled"));
     setCode("");
     await refreshFactors();
   }
 
   if (loading) {
-    return <p className="sub">2FA کی حالت دیکھی جا رہی ہے…</p>;
+    return <p className="sub">{t(lang, "settings.mfa.loading")}</p>;
   }
 
   return (
@@ -135,12 +136,13 @@ export default function MfaSettings() {
       {verifiedFactor ? (
         <>
           <p className="sub">
-            دو مرحلوں والی تصدیق <strong>فعال ہے</strong> — لاگ اِن کے وقت
-            پاس ورڈ کے بعد ایپ کا کوڈ بھی دینا ہوگا۔
+            {t(lang, "settings.mfa.name")}{" "}
+            <strong>{t(lang, "settings.mfa.state_on")}</strong>{" "}
+            {t(lang, "settings.mfa.active_rest")}
           </p>
           <div className="form-grid">
             <label className="field">
-              <span className="field-label">ایپ کا 6 ہندسوں والا کوڈ *</span>
+              <span className="field-label">{t(lang, "settings.mfa.code_label")}</span>
               <input
                 className="field-input"
                 type="text"
@@ -162,16 +164,16 @@ export default function MfaSettings() {
               onClick={handleDisable}
               disabled={busy}
             >
-              {busy ? "براہِ کرم انتظار کریں…" : "2FA بند کریں"}
+              {busy ? t(lang, "common.waiting") : t(lang, "settings.mfa.disable")}
             </button>
           </div>
         </>
       ) : (
         <>
           <p className="sub">
-            دو مرحلوں والی تصدیق <strong>بند ہے</strong> — فعال کرنے پر لاگ
-            اِن کے وقت پاس ورڈ کے بعد ایپ کا کوڈ بھی دینا ہوگا۔ اس کے لیے
-            فون پر Google Authenticator (مفت ایپ) چاہیے ہوگی۔
+            {t(lang, "settings.mfa.name")}{" "}
+            <strong>{t(lang, "settings.mfa.state_off")}</strong>{" "}
+            {t(lang, "settings.mfa.inactive_rest")}
           </p>
           {!qrCode ? (
             <div className="form-actions">
@@ -181,15 +183,12 @@ export default function MfaSettings() {
                 onClick={handleEnroll}
                 disabled={busy}
               >
-                {busy ? "براہِ کرم انتظار کریں…" : "2FA فعال کریں"}
+                {busy ? t(lang, "common.waiting") : t(lang, "settings.mfa.enable")}
               </button>
             </div>
           ) : (
             <>
-              <p className="sub">
-                نیچے والا QR کوڈ Google Authenticator سے اسکین کریں۔ اگر
-                اسکین نہ ہو تو نیچے والا خفیہ کوڈ ہاتھ سے ایپ میں لکھیں۔
-              </p>
+              <p className="sub">{t(lang, "settings.mfa.scan_note")}</p>
               <div
                 style={{
                   background: "#ffffff",
@@ -201,20 +200,20 @@ export default function MfaSettings() {
               />
               <div className="detail-rows">
                 <div className="row">
-                  <span>خفیہ کوڈ</span>
+                  <span>{t(lang, "settings.mfa.secret")}</span>
                   <strong dir="ltr">{secret}</strong>
                 </div>
               </div>
               {uri ? (
                 <p className="sub">
-                  <a href={uri}>ایپ میں کھولیں</a> — فون پر یہ لنک دبانے سے
-                  Authenticator ایپ خود کھل جائے گی۔
+                  <a href={uri}>{t(lang, "settings.mfa.open_app")}</a>{" "}
+                  {t(lang, "settings.mfa.open_app_note")}
                 </p>
               ) : null}
               <div className="form-grid">
                 <label className="field">
                   <span className="field-label">
-                    ایپ کا 6 ہندسوں والا کوڈ *
+                    {t(lang, "settings.mfa.code_label")}
                   </span>
                   <input
                     className="field-input"
@@ -237,7 +236,7 @@ export default function MfaSettings() {
                   onClick={handleVerifyEnable}
                   disabled={busy}
                 >
-                  {busy ? "براہِ کرم انتظار کریں…" : "تصدیق کریں اور فعال کریں"}
+                  {busy ? t(lang, "common.waiting") : t(lang, "settings.mfa.verify_enable")}
                 </button>
               </div>
             </>
@@ -252,10 +251,7 @@ export default function MfaSettings() {
         </p>
       ) : null}
 
-      <p className="sub">
-        اگر فون گم ہو جائے یا ایپ حذف ہو جائے تو لاگ اِن نہیں ہو سکے گا — اس
-        صورت میں Supabase کے ڈیش بورڈ سے 2FA ہٹانا ہوگا۔
-      </p>
+      <p className="sub">{t(lang, "settings.mfa.lost_note")}</p>
     </div>
   );
 }
