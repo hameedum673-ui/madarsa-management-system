@@ -11,12 +11,13 @@ import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
 import {
-  AUDIT_ACTION_LABELS,
   AUDIT_CATEGORIES,
   summarizeDetails,
   type AuditCategoryId,
   type AuditLogRow,
 } from "@/lib/audit";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString("ur-PK", {
@@ -34,6 +35,7 @@ export default async function AuditPage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   // حصہ 4 کی درستگی — آڈٹ لاگ مدرسے کے مالک کے لیے ہے (سپر ایڈمن ہونا ضروری نہیں)
   const owner = await isMadrasaOwner(supabase);
   if (!owner) {
@@ -75,18 +77,20 @@ export default async function AuditPage({
     );
   }
 
+  const lang = await langP;
+
   return (
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
           <BackButton />
-          <h2>سرگرمیوں کا ریکارڈ</h2>
+          <h2>{t(lang, "audit.title")}</h2>
           <span className="page-count">
-            تازہ {rows.length.toLocaleString("ur-PK")} ریکارڈ
+            {t(lang, "audit.count", { n: rows.length.toLocaleString("ur-PK") })}
           </span>
           <span className="spacer" />
           <Link className="btn-ghost" href="/departments/users">
-            صارفین پر واپس جائیں
+            {t(lang, "audit.back")}
           </Link>
         </div>
 
@@ -96,7 +100,7 @@ export default async function AuditPage({
           className="att-controls"
         >
           <label className="field">
-            <span className="field-label">کام کی قسم</span>
+            <span className="field-label">{t(lang, "audit.filter_label")}</span>
             <select
               className="field-input"
               name="category"
@@ -104,35 +108,30 @@ export default async function AuditPage({
             >
               {AUDIT_CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.label}
+                  {t(lang, `audit.cat.${c.id}`)}
                 </option>
               ))}
             </select>
           </label>
           <button className="btn-primary" type="submit">
-            دکھائیں
+            {t(lang, "common.show")}
           </button>
         </form>
-        <p className="sub">
-          پہلے اوپر والے خانے میں کام کی قسم چنیں، پھر &quot;دکھائیں&quot;
-          دبائیں۔
-        </p>
+        <p className="sub">{t(lang, "audit.filter_note")}</p>
 
         {error ? (
-          <p className="empty-state">ریکارڈ نہیں کھل سکا — دوبارہ کوشش کریں۔</p>
+          <p className="empty-state">{t(lang, "audit.load_error")}</p>
         ) : rows.length === 0 ? (
-          <p className="empty-state">
-            اس قسم کا کوئی ریکارڈ نہیں ہے — ابھی کوئی تبدیلی درج نہیں ہوئی۔
-          </p>
+          <p className="empty-state">{t(lang, "audit.empty")}</p>
         ) : (
           <div className="tbl-wrap">
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>تاریخ اور وقت</th>
-                  <th>کس نے</th>
-                  <th>کام</th>
-                  <th>تفصیل</th>
+                  <th>{t(lang, "audit.col_datetime")}</th>
+                  <th>{t(lang, "audit.col_who")}</th>
+                  <th>{t(lang, "audit.col_action")}</th>
+                  <th>{t(lang, "audit.col_details")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,8 +141,8 @@ export default async function AuditPage({
                     <td>
                       {r.user_id ? (namesById.get(r.user_id) ?? "—") : "—"}
                     </td>
-                    <td>{AUDIT_ACTION_LABELS[r.action] ?? r.action}</td>
-                    <td>{summarizeDetails(r.details)}</td>
+                    <td>{t(lang, `audit.action.${r.action}`)}</td>
+                    <td>{summarizeDetails(r.details, lang)}</td>
                   </tr>
                 ))}
               </tbody>

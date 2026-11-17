@@ -4,6 +4,8 @@
  * یہاں اس کا اردو مطلب اور زمرہ بتایا جاتا ہے۔
  */
 
+import { t, type Lang } from "@/i18n/dictionary";
+
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   student_created: "طالب علم شامل کیا گیا",
   student_updated: "طالب علم کا ریکارڈ بدلا گیا",
@@ -178,36 +180,16 @@ export const AUDIT_CATEGORIES = [
 
 export type AuditCategoryId = (typeof AUDIT_CATEGORIES)[number]["id"];
 
-/** تفصیل کے خانوں کا اردو مطلب — صرف سمجھ آنے والے خانے دکھائے جاتے ہیں */
-const DETAIL_LABELS: Record<string, string> = {
-  name: "نام",
-  amount: "رقم",
-  fee_month: "مہینہ",
-  receipt_number: "رسید نمبر",
-  voucher_number: "واؤچر نمبر",
-  record_number: "ریکارڈ نمبر",
-  registration_number: "رجسٹریشن نمبر",
-  title: "عنوان",
-  kind: "قسم",
-  category: "زمرہ",
-  status: "حالت",
-  email: "ای میل",
-  user_email: "ای میل",
-  module: "شعبہ",
-  present: "حاضر",
-  absent: "غیر حاضر",
-  leave: "رخصت",
-  sick: "مریض",
-  late: "تاخیر", // پرانی اندراج — مرحلہ 110 سے پہلے کی تاریخ کے لیے
-};
-
 /**
  * details (jsonb) کو مختصر پڑھنے لائق لکیر میں بدلتا ہے۔
  * شناختی نمبر (uuid والے *_id خانے) چھپائے جاتے ہیں — صارف کو ان سے
  * کوئی مطلب نہیں ہوتا۔
+ * مرحلہ 128 کی درستی — زبان والا پیرامیٹر: خانوں کے لیبل ڈکشنری سے
+ * (audit.detail.*)؛ نہ ملی چابی ہو تو خانے کا انگریزی نام ویسا ہی دکھتا ہے۔
  */
 export function summarizeDetails(
   details: Record<string, unknown> | null,
+  lang: Lang = "ur",
 ): string {
   if (!details || typeof details !== "object") return "—";
   const parts: string[] = [];
@@ -215,9 +197,10 @@ export function summarizeDetails(
     if (value === null || value === undefined || value === "") continue;
     if (key.endsWith("_id") && key !== "registration_number") continue;
     if (key === "old_madrasa_id") continue;
-    const label = DETAIL_LABELS[key] ?? key;
+    const label = t(lang, `audit.detail.${key}`);
     let text = String(value);
-    if (key === "amount") text = `${Number(value).toLocaleString("ur-PK")} روپے`;
+    if (key === "amount")
+      text = `${Number(value).toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`;
     parts.push(`${label}: ${text}`);
   }
   return parts.length > 0 ? parts.join(" — ") : "—";
