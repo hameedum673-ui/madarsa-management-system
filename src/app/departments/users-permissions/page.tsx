@@ -7,6 +7,9 @@
  * حصہ 2 — نظام کے ایڈمن کو دونوں حصے ویسے ہی نظر آتے ہیں؛ مدرسے
  * کے مالک کو صرف "عملے کے ارکان" والا حصہ نظر آتا ہے (عملے والا
  * صفحہ حصہ 3 میں بنے گا)۔
+ * درستگی (2026-11-17) — جو مالک اور نظام کا ایڈمن دونوں ہو (حمید
+ * کے اپنے اکاؤنٹ) اسے تینوں حصے نظر آتے ہیں؛ جو صرف مالک ہو اسے
+ * صرف عملے والا حصہ، اور جو صرف نظام کا ایڈمن ہو اسے صرف پہلے دو۔
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -44,9 +47,11 @@ export default async function UsersPermissionsHubPage() {
     notFound();
   }
   // حصہ 2 — نظام کا ایڈمن یا مدرسے کا مالک؟
+  // درستگی (2026-11-17) — عملے والا حصہ مالک ہونے پر دکھتا ہے،
+  // چاہے وہ نظام کا ایڈمن بھی ہو؛ پہلے دونوں میں سے ایک ہی دکھتا تھا۔
   const systemAdmin = await isSystemAdmin(supabase);
   const modules: HubModule[] = systemAdmin
-    ? [...USERS_PERMISSIONS_MODULES]
+    ? [...USERS_PERMISSIONS_MODULES, ...(owner ? [STAFF_MODULE] : [])]
     : [STAFF_MODULE];
 
   const { count } = await supabase
@@ -56,8 +61,9 @@ export default async function UsersPermissionsHubPage() {
   const approvedUsers = count ?? 0;
 
   // مالک کے اپنے مدرسے کا فعال عملہ (RLS خود صرف اپنا مدرسہ دکھاتی ہے)
+  // درستگی (2026-11-17) — گنتی تب چاہیے جب عملے والا حصہ دکھے، یعنی مالک ہونے پر
   let staffCount = 0;
-  if (!systemAdmin) {
+  if (owner) {
     const { count: sc } = await supabase
       .from("approved_users")
       .select("*", { count: "exact", head: true })
