@@ -11,7 +11,6 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
-  DEPARTMENT_LABELS,
   getMyMadrasa,
   type Student,
 } from "@/lib/students";
@@ -103,43 +102,43 @@ export default async function IdCardPage({
           <div className="idcard-head">
             <strong>{madrasaName}</strong>
             <div className="idcard-sub">شادی لارج، ضلع بدین، سندھ</div>
-            <div className="idcard-title">طالب علم کا شناختی کارڈ</div>
+            <div className="idcard-title">{t(lang, "idcard.title")}</div>
           </div>
 
           <div className="idcard-body">
-            <div className="idcard-photo">تصویر یہاں چپکائیں</div>
+            <div className="idcard-photo">{t(lang, "idcard.photo_ph")}</div>
             <div className="idcard-fields">
               <div className="idcard-reg">
-                <span>رجسٹریشن نمبر</span>
+                <span>{t(lang, "col.reg")}</span>
                 <strong>{student.registration_number}</strong>
               </div>
               <div className="idcard-rows">
                 <div className="row">
-                  <span>نام</span>
+                  <span>{t(lang, "col.name")}</span>
                   <span>{student.name}</span>
                 </div>
                 <div className="row">
-                  <span>والد کا نام</span>
+                  <span>{t(lang, "col.father")}</span>
                   <span>{student.father_name}</span>
                 </div>
                 <div className="row">
-                  <span>شعبہ</span>
-                  <span>{DEPARTMENT_LABELS[student.department]}</span>
+                  <span>{t(lang, "col.dept")}</span>
+                  <span>{t(lang, "dept." + student.department)}</span>
                 </div>
                 <div className="row">
-                  <span>جماعت</span>
+                  <span>{t(lang, "col.class")}</span>
                   <span>{student.class_name ?? "—"}</span>
                 </div>
                 <div className="row">
-                  <span>تاریخِ پیدائش</span>
+                  <span>{t(lang, "exam.result.dob")}</span>
                   <span>{formatDate(student.date_of_birth)}</span>
                 </div>
                 <div className="row">
-                  <span>داخلہ تاریخ</span>
+                  <span>{t(lang, "idcard.admission_date")}</span>
                   <span>{formatDate(student.admission_date)}</span>
                 </div>
                 <div className="row">
-                  <span>سرپرست کا فون</span>
+                  <span>{t(lang, "idcard.guardian_phone")}</span>
                   <span>{student.guardian_phone ?? "—"}</span>
                 </div>
               </div>
@@ -147,8 +146,8 @@ export default async function IdCardPage({
           </div>
 
           <div className="idcard-foot">
-            <span>جاری کرنے کی تاریخ: {issueDate}</span>
-            <span>یہ کارڈ مدرسے کی ملکیت ہے</span>
+            <span>{t(lang, "idcard.issued_date", { date: issueDate })}</span>
+            <span>{t(lang, "idcard.property")}</span>
           </div>
         </div>
 
@@ -160,7 +159,7 @@ export default async function IdCardPage({
               name: student.name,
               fatherName: student.father_name,
               registrationNumber: student.registration_number,
-              departmentLabel: DEPARTMENT_LABELS[student.department],
+              departmentLabel: t(lang, "dept." + student.department),
               className: student.class_name ?? "—",
               dateOfBirth: formatDate(student.date_of_birth),
               admissionDate: formatDate(student.admission_date),

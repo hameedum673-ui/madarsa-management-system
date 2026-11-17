@@ -10,14 +10,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections } from "@/lib/permissions";
-import { SECTION_LABELS, type SectionId } from "@/lib/students";
-import { getMyMadrasa } from "@/lib/students";
-import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
-import {
-  EXPENSE_CATEGORY_LABELS,
-  EXPENSE_STATUS_LABELS,
-  type Expense,
-} from "@/lib/expenses";
+import { getMyMadrasa, type SectionId } from "@/lib/students";
+import { type Expense } from "@/lib/expenses";
 import VoidButton from "@/app/departments/expenses/[id]/VoidButton";
 import SaveSlipImageButton, {
   type SlipImageData,
@@ -81,19 +75,31 @@ export default async function ExpenseDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["تفصیل", expense.title],
-    ["زمرہ", EXPENSE_CATEGORY_LABELS[expense.category]],
-    ["شعبہ (بنین / بنات)", SECTION_LABELS[(expense.section ?? "banat") as SectionId]],
-    ["رقم", `${expense.amount.toLocaleString("ur-PK")} روپے`],
-    ["تاریخ", formatDate(expense.expense_date)],
-    ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[expense.payment_method]],
+    [t(lang, "exp.col_title"), expense.title],
+    [t(lang, "exp.col_category"), t(lang, `exp.cat.${expense.category}`)],
+    [
+      t(lang, "students.section_filter"),
+      t(lang, `section.${expense.section ?? "banat"}`),
+    ],
+    [
+      t(lang, "exp.col_amount"),
+      `${expense.amount.toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`,
+    ],
+    [t(lang, "col.date"), formatDate(expense.expense_date)],
+    [
+      t(lang, "fee.method_label"),
+      t(lang, `fee.method.${expense.payment_method}`),
+    ],
   ];
-  if (expense.note) imageRows.push(["نوٹ", expense.note]);
-  imageRows.push(["حالت", EXPENSE_STATUS_LABELS[expense.status]]);
+  if (expense.note) imageRows.push([t(lang, "fee.form.note"), expense.note]);
+  imageRows.push([
+    t(lang, "col.status"),
+    t(lang, `fee.status.${expense.status}`),
+  ]);
   const imageData: SlipImageData = {
     madrasaName,
-    title: "خرچ کا واؤچر",
-    numberLabel: "واؤچر نمبر",
+    title: t(lang, "expense.voucher_title"),
+    numberLabel: t(lang, "exp.col_voucher"),
     numberValue: expense.voucher_number,
     rows: imageRows,
     filename: `voucher-${expense.voucher_number}.png`,
@@ -155,7 +161,7 @@ export default async function ExpenseDetailPage({
         </div>
 
         <div className="form-actions no-print">
-          <SaveSlipImageButton data={imageData} />
+          <SaveSlipImageButton data={imageData} lang={lang} />
           {expense.status === "active" ? <VoidButton id={expense.id} lang={lang} /> : null}
         </div>
       </div>

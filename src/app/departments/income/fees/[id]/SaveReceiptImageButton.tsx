@@ -8,6 +8,7 @@
 "use client";
 
 import { useState } from "react";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export interface ReceiptImageData {
   madrasaName: string;
@@ -50,8 +51,10 @@ function fitFont(
 
 export default function SaveReceiptImageButton({
   data,
+  lang = "ur",
 }: {
   data: ReceiptImageData;
+  lang?: Lang;
 }) {
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
@@ -71,16 +74,16 @@ export default function SaveReceiptImageButton({
       }
 
       const rows: [string, string][] = [
-        ["طالب علم", data.studentName],
-        ["والد کا نام", data.fatherName],
-        ["رجسٹریشن نمبر", data.registrationNumber],
-        ["مہینہ", data.monthLabel],
-        ["رقم", data.amountLabel],
-        ["ادائیگی کی تاریخ", data.paymentDate],
-        ["ادائیگی کا طریقہ", data.paymentMethodLabel],
+        [t(lang, "col.student"), data.studentName],
+        [t(lang, "col.father"), data.fatherName],
+        [t(lang, "col.reg"), data.registrationNumber],
+        [t(lang, "fees.month"), data.monthLabel],
+        [t(lang, "fee.amount_label"), data.amountLabel],
+        [t(lang, "fee.date_label"), data.paymentDate],
+        [t(lang, "fee.method_label"), data.paymentMethodLabel],
       ];
-      if (data.note) rows.push(["نوٹ", data.note]);
-      rows.push(["حالت", data.statusLabel]);
+      if (data.note) rows.push([t(lang, "fee.form.note"), data.note]);
+      rows.push([t(lang, "col.status"), data.statusLabel]);
 
       const scale = 2;
       const W = 320;
@@ -112,7 +115,7 @@ export default function SaveReceiptImageButton({
       ctx.fillText("شادی لارج، ضلع بدین، سندھ", W / 2, 66);
       ctx.font = `700 17px ${FONT}`;
       ctx.fillStyle = WHITE;
-      ctx.fillText("فیس کی رسید", W / 2, 94);
+      ctx.fillText(t(lang, "fee.receipt_title"), W / 2, 94);
 
       // رسید نمبر کی پٹی
       const stripY = 124;
@@ -121,7 +124,7 @@ export default function SaveReceiptImageButton({
       ctx.textAlign = "right";
       ctx.font = `13px ${FONT}`;
       ctx.fillStyle = MUTED;
-      ctx.fillText("رسید نمبر", W - 26, stripY + 28);
+      ctx.fillText(t(lang, "col.receipt"), W - 26, stripY + 28);
       fitFont(ctx, data.receiptNumber, 22, 150, 700);
       ctx.textAlign = "left";
       ctx.fillStyle = NAVY;
@@ -159,9 +162,9 @@ export default function SaveReceiptImageButton({
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-      setStatus("تصویر محفوظ ہو گئی ہے — فون کی گیلری میں Downloads میں دیکھیں۔");
+      setStatus(t(lang, "idcard.saved"));
     } catch {
-      setStatus("تصویر محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔");
+      setStatus(t(lang, "idcard.save_failed"));
     } finally {
       setSaving(false);
     }
@@ -175,7 +178,7 @@ export default function SaveReceiptImageButton({
         onClick={handleSave}
         disabled={saving}
       >
-        {saving ? "براہِ کرم انتظار کریں…" : "تصویر محفوظ کریں"}
+        {saving ? t(lang, "common.wait") : t(lang, "idcard.save_image")}
       </button>
       {status ? <p className="form-note">{status}</p> : null}
     </div>

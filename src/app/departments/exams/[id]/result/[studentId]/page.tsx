@@ -17,13 +17,10 @@ import {
   t,
 } from "@/i18n/dictionary";
 import {
-  DEPARTMENT_LABELS,
-  SECTION_LABELS,
   type SectionId,
   type Student,
 } from "@/lib/students";
 import {
-  examTypeSectionLabel,
   summarizeExamResults,
   type Exam,
   type ExamResult,
@@ -172,20 +169,12 @@ export default async function ExamResultPage({
     marksBySubject[idx] = r.marks_obtained;
   }
 
-  // تصویر (PNG) اردو ہی رہتی ہے — اس لیے اردو والے لیبل الگ رکھے ہیں
-  const sectionLabelUr =
-    SECTION_LABELS[(exam.section ?? "banat") as SectionId];
+  // تصویر (PNG) بھی صارف کی زبان میں — اردو والے لیبل اب الگ نہیں رکھے جاتے
   const sectionLabel = t(lang, "section." + (exam.section ?? "banat"));
   const hijriYear = hijriYearOf(exam.exam_date);
   const gregorianYear = exam.exam_date
     ? Number(exam.exam_date.split("-")[0])
     : null;
-  const yearLine =
-    hijriYear && gregorianYear
-      ? `سال ${hijriYear.toLocaleString("ur-PK")}ھ بمطابق ${gregorianYear.toLocaleString("ur-PK")}ء`
-      : gregorianYear
-        ? `سال ${gregorianYear.toLocaleString("ur-PK")}ء`
-        : "—";
   const yearLineLang =
     hijriYear && gregorianYear
       ? t(lang, "exam.result.year_both", {
@@ -200,7 +189,6 @@ export default async function ExamResultPage({
   const dobText = student.date_of_birth
     ? formatDate(student.date_of_birth)
     : "—";
-  const classLabel = exam.class_name ?? "پورا شعبہ";
   const classLabelLang =
     exam.class_name ?? t(lang, "exam.form.whole_dept");
 
@@ -216,24 +204,28 @@ export default async function ExamResultPage({
   const imageData: ResultCardImageData = {
     madrasaName,
     examName: exam.name,
-    sectionLabel: sectionLabelUr,
-    typeSectionLabel: examTypeSectionLabel(exam.exam_type, sectionLabelUr),
-    yearLine,
+    sectionLabel,
+    typeSectionLabel: examTypeSectionLabelLang(
+      lang,
+      exam.exam_type,
+      sectionLabel,
+    ),
+    yearLine: yearLineLang,
     registrationNumber: student.registration_number,
     studentName: student.name,
     fatherName: student.father_name,
     dateOfBirth: dobText,
-    classLabel,
-    departmentLabel: DEPARTMENT_LABELS[exam.department],
+    classLabel: classLabelLang,
+    departmentLabel: t(lang, "dept." + exam.department),
     district: student.district ?? "—",
     examDate: formatDate(exam.exam_date),
     subjects: subjectRows.map(
       (r) => [r.name, r.marks] as [string, string],
     ),
     totalPossible: totalPossible.toLocaleString("ur-PK"),
-    percentage: `${mine.percentage.toFixed(1)}%`,
+    percentage: mine.percentage.toFixed(1),
     obtained: mine.totalObtained.toLocaleString("ur-PK"),
-    grade: mine.grade,
+    grade: t(lang, gradeKey(mine.grade)),
     filename: `result-${student.registration_number}.png`,
   };
 
@@ -359,7 +351,7 @@ export default async function ExamResultPage({
         </div>
 
         <div className="form-actions no-print">
-          <ResultCardImageButton data={imageData} />
+          <ResultCardImageButton data={imageData} lang={lang} />
           <PrintButton lang={lang} />
         </div>
       </div>

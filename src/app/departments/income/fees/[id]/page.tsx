@@ -160,12 +160,13 @@ export default async function ReceiptPage({
               fatherName: payment.students?.father_name ?? "—",
               registrationNumber: payment.students?.registration_number ?? "—",
               monthLabel: formatMonthUrdu(payment.fee_month),
-              amountLabel: `${payment.amount.toLocaleString("ur-PK")} روپے`,
+              amountLabel: `${payment.amount.toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`,
               paymentDate: formatDate(payment.payment_date),
               paymentMethodLabel: t(lang, `fee.method.${payment.payment_method}`),
               note: payment.note,
               statusLabel: t(lang, `fee.status.${payment.status}`),
             }}
+            lang={lang}
           />
           {payment.status === "active" ? (
             <VoidButton id={payment.id} lang={lang} />

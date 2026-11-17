@@ -1612,6 +1612,21 @@ const ur: Dict = {
   "audit.detail.sick": "مریض",
   "audit.detail.late": "تاخیر",
   "audit.detail.currency": "روپے",
+  "result.png.exam_line": "امتحان — {name}",
+  "slip.zakat_title": "زکوٰۃ کا اندراج",
+  "slip.ushr_title": "عشر کا اندراج",
+  "slip.donation_title": "عطیہ کی رسید",
+  "slip.donor": "عطیہ دینے والا",
+  "donations.kind.sadaqah": "صدقہ",
+  "donations.kind.donation": "عطیہ",
+  "donations.kind.other": "دیگر",
+  "idcard.admission_date": "داخلہ تاریخ",
+  "idcard.guardian_phone": "سرپرست کا فون",
+  "idcard.photo_ph": "تصویر یہاں چپکائیں",
+  "idcard.png.photo": "تصویر",
+  "idcard.png.paste_here": "یہاں چپکائیں",
+  "idcard.issued_date": "جاری کرنے کی تاریخ: {date}",
+  "idcard.property": "یہ کارڈ مدرسے کی ملکیت ہے",
 };
 
 const ar: Dict = {
@@ -3181,6 +3196,21 @@ const ar: Dict = {
   "audit.detail.sick": "مريض",
   "audit.detail.late": "متأخر",
   "audit.detail.currency": "روبية",
+  "result.png.exam_line": "الامتحان — {name}",
+  "slip.zakat_title": "قيد الزكاة",
+  "slip.ushr_title": "قيد العشر",
+  "slip.donation_title": "إيصال التبرع",
+  "slip.donor": "المتبرع",
+  "donations.kind.sadaqah": "صدقة",
+  "donations.kind.donation": "تبرع",
+  "donations.kind.other": "أخرى",
+  "idcard.admission_date": "تاريخ القبول",
+  "idcard.guardian_phone": "هاتف ولي الأمر",
+  "idcard.photo_ph": "ألصق الصورة هنا",
+  "idcard.png.photo": "الصورة",
+  "idcard.png.paste_here": "ألصق هنا",
+  "idcard.issued_date": "تاريخ الإصدار: {date}",
+  "idcard.property": "هذه البطاقة ملك للجامعة",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

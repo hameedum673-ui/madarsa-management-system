@@ -9,11 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import { getMyMadrasa } from "@/lib/students";
-import {
-  WELFARE_KIND_LABELS,
-  WELFARE_STATUS_LABELS,
-  type WelfareRecord,
-} from "@/lib/welfare";
+import { type WelfareRecord } from "@/lib/welfare";
 import VoidButton from "@/app/departments/welfare/[id]/VoidButton";
 import SaveSlipImageButton, {
   type SlipImageData,
@@ -70,19 +66,25 @@ export default async function WelfareDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["طالب علم", record.students?.name ?? "—"],
-    ["والد کا نام", record.students?.father_name ?? "—"],
-    ["رجسٹریشن نمبر", record.students?.registration_number ?? "—"],
-    ["قسم", WELFARE_KIND_LABELS[record.kind]],
-    ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
-    ["تاریخ", formatDate(record.record_date)],
+    [t(lang, "col.student"), record.students?.name ?? "—"],
+    [t(lang, "col.father"), record.students?.father_name ?? "—"],
+    [t(lang, "col.reg"), record.students?.registration_number ?? "—"],
+    [t(lang, "col.type"), t(lang, `welfare.kind.${record.kind}`)],
+    [
+      t(lang, "fee.amount_label"),
+      `${record.amount.toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`,
+    ],
+    [t(lang, "col.date"), formatDate(record.record_date)],
   ];
-  if (record.note) imageRows.push(["نوٹ", record.note]);
-  imageRows.push(["حالت", WELFARE_STATUS_LABELS[record.status]]);
+  if (record.note) imageRows.push([t(lang, "fee.form.note"), record.note]);
+  imageRows.push([
+    t(lang, "col.status"),
+    t(lang, `fee.status.${record.status}`),
+  ]);
   const imageData: SlipImageData = {
     madrasaName,
-    title: "فلاحی اندراج",
-    numberLabel: "ریکارڈ نمبر",
+    title: t(lang, "welfare.detail_title"),
+    numberLabel: t(lang, "welfare.col_record"),
     numberValue: record.record_number,
     rows: imageRows,
     filename: `record-${record.record_number}.png`,
@@ -148,7 +150,7 @@ export default async function WelfareDetailPage({
         </div>
 
         <div className="form-actions no-print">
-          <SaveSlipImageButton data={imageData} />
+          <SaveSlipImageButton data={imageData} lang={lang} />
           {record.status === "active" ? <VoidButton id={record.id} lang={lang} /> : null}
         </div>
       </div>

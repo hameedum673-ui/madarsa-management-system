@@ -9,6 +9,7 @@
 "use client";
 
 import { useState } from "react";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export interface ResultCardImageData {
   madrasaName: string;
@@ -63,8 +64,10 @@ function fitFont(
 
 export default function ResultCardImageButton({
   data,
+  lang = "ur",
 }: {
   data: ResultCardImageData;
+  lang?: Lang;
 }) {
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
@@ -143,10 +146,13 @@ export default function ResultCardImageButton({
       y += headH + 18;
 
       // امتحان کی سطر
-      fitFont(ctx, `امتحان — ${data.examName}`, 24, W - 120, 700);
+      const examLine = t(lang, "result.png.exam_line", {
+        name: data.examName,
+      });
+      fitFont(ctx, examLine, 24, W - 120, 700);
       ctx.fillStyle = NAVY;
       ctx.textAlign = "center";
-      ctx.fillText(`امتحان — ${data.examName}`, W / 2, y + 22);
+      ctx.fillText(examLine, W / 2, y + 22);
       y += 30;
 
       // شعبہ + سال کی سطر
@@ -192,32 +198,33 @@ export default function ResultCardImageButton({
         c.setLineDash([]);
       }
 
-      field(ctx, "نام", data.studentName, rightEdge, W - 200);
+      field(ctx, t(lang, "col.name"), data.studentName, rightEdge, W - 200);
       y += 38;
-      field(ctx, "ولدیت", data.fatherName, rightEdge, W - 200);
+      field(ctx, t(lang, "exam.result.father"), data.fatherName, rightEdge, W - 200);
       y += 38;
-      field(ctx, "رجسٹریشن نمبر", data.registrationNumber, rightEdge, 220);
-      field(ctx, "جماعت", data.classLabel, midEdge, 220);
+      field(ctx, t(lang, "col.reg"), data.registrationNumber, rightEdge, 220);
+      field(ctx, t(lang, "col.class"), data.classLabel, midEdge, 220);
       y += 38;
-      field(ctx, "تاریخ پیدائش", data.dateOfBirth, rightEdge, 220);
-      field(ctx, "تاریخ امتحان", data.examDate, midEdge, 220);
+      field(ctx, t(lang, "exam.result.dob"), data.dateOfBirth, rightEdge, 220);
+      field(ctx, t(lang, "exam.result.exam_date"), data.examDate, midEdge, 220);
       y += 38;
       field(
         ctx,
-        "شعبہ",
+        t(lang, "col.dept"),
         `${data.departmentLabel} — ${data.sectionLabel}`,
         rightEdge,
         W - 200,
       );
       y += 38;
-      field(ctx, "ضلع", data.district, rightEdge, W - 200);
+      field(ctx, t(lang, "exam.result.district"), data.district, rightEdge, W - 200);
       y += 38 + 8;
 
       // عنوان
-      fitFont(ctx, "حاصل کردہ نمبرات کی تفصیل", 24, W - 120, 700);
+      const marksTitle = t(lang, "exam.result.marks_title");
+      fitFont(ctx, marksTitle, 24, W - 120, 700);
       ctx.fillStyle = NAVY;
       ctx.textAlign = "center";
-      ctx.fillText("حاصل کردہ نمبرات کی تفصیل", W / 2, y + 24);
+      ctx.fillText(marksTitle, W / 2, y + 24);
       y += 34 + 10;
 
       // نمبروں کی جدول — دائیں سے: رقم مسلسل | کتاب | نمبر
@@ -241,9 +248,13 @@ export default function ResultCardImageButton({
       ctx.fillStyle = NAVY;
       ctx.font = `700 21px ${FONT}`;
       ctx.textAlign = "center";
-      ctx.fillText("رقم مسلسل", x1 - serialW / 2, y + 29);
-      ctx.fillText("کتاب", (x1 - serialW + x0 + marksW) / 2, y + 29);
-      ctx.fillText("نمبر", x0 + marksW / 2, y + 29);
+      ctx.fillText(t(lang, "exam.result.serial"), x1 - serialW / 2, y + 29);
+      ctx.fillText(
+        t(lang, "exam.result.book"),
+        (x1 - serialW + x0 + marksW) / 2,
+        y + 29,
+      );
+      ctx.fillText(t(lang, "exam.result.marks"), x0 + marksW / 2, y + 29);
       y += headRowH;
       data.subjects.forEach(([book, marks], idx) => {
         ctx.strokeStyle = NAVY;
@@ -280,16 +291,32 @@ export default function ResultCardImageButton({
       ctx.fillStyle = NAVY;
       ctx.font = `700 21px ${FONT}`;
       ctx.textAlign = "center";
-      ctx.fillText(`کل نمبر ${data.totalPossible}`, x1 - segW / 2, y + 34);
-      ctx.fillText(`فیصد نمبر ${data.percentage}`, x1 - segW * 1.5, y + 34);
-      ctx.fillText(`مجموعہ نمبرات ${data.obtained}`, x0 + segW / 2, y + 34);
+      ctx.fillText(
+        t(lang, "exam.result.total", { n: data.totalPossible }),
+        x1 - segW / 2,
+        y + 34,
+      );
+      ctx.fillText(
+        t(lang, "exam.result.percentage", { n: data.percentage }),
+        x1 - segW * 1.5,
+        y + 34,
+      );
+      ctx.fillText(
+        t(lang, "exam.result.obtained", { n: data.obtained }),
+        x0 + segW / 2,
+        y + 34,
+      );
       y += totalsH + 14;
 
       // تقدیر
       ctx.font = `700 22px ${FONT}`;
       ctx.textAlign = "right";
       ctx.fillStyle = NAVY;
-      ctx.fillText(`تقدیر — ${data.grade}`, rightEdge, y + 22);
+      ctx.fillText(
+        t(lang, "exam.result.grade_line", { grade: data.grade }),
+        rightEdge,
+        y + 22,
+      );
       y += 30 + 46;
 
       // دستخط — دائیں: مہتمم، بائیں: جاری کردہ
@@ -307,8 +334,16 @@ export default function ResultCardImageButton({
       ctx.font = `20px ${FONT}`;
       ctx.fillStyle = TEXT;
       ctx.textAlign = "center";
-      ctx.fillText("دستخط مہتمم", rightEdge - signW / 2, y + 28);
-      ctx.fillText("جاری کردہ", 40 + signW / 2, y + 28);
+      ctx.fillText(
+        t(lang, "exam.result.sign_mohtamim"),
+        rightEdge - signW / 2,
+        y + 28,
+      );
+      ctx.fillText(
+        t(lang, "exam.result.sign_issued"),
+        40 + signW / 2,
+        y + 28,
+      );
 
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/png"),
@@ -322,9 +357,9 @@ export default function ResultCardImageButton({
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-      setStatus("تصویر محفوظ ہو گئی ہے — فون کی گیلری میں Downloads میں دیکھیں۔");
+      setStatus(t(lang, "idcard.saved"));
     } catch {
-      setStatus("تصویر محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔");
+      setStatus(t(lang, "idcard.save_failed"));
     } finally {
       setSaving(false);
     }
@@ -338,7 +373,7 @@ export default function ResultCardImageButton({
         onClick={handleSave}
         disabled={saving}
       >
-        {saving ? "براہِ کرم انتظار کریں…" : "تصویر محفوظ کریں"}
+        {saving ? t(lang, "common.wait") : t(lang, "idcard.save_image")}
       </button>
       {status ? <p className="form-note">{status}</p> : null}
     </div>

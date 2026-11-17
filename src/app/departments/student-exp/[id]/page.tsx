@@ -12,11 +12,7 @@ import { getMyAllowedSections } from "@/lib/permissions";
 import { getMyMadrasa,
   type SectionId,
 } from "@/lib/students";
-import {
-  STUDENT_EXPENSE_CATEGORY_LABELS,
-  STUDENT_EXPENSE_STATUS_LABELS,
-  type StudentExpense,
-} from "@/lib/studentExpenses";
+import { type StudentExpense } from "@/lib/studentExpenses";
 import VoidButton from "@/app/departments/student-exp/[id]/VoidButton";
 import SaveSlipImageButton, {
   type SlipImageData,
@@ -81,19 +77,25 @@ export default async function StudentExpDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["طالب علم", record.students?.name ?? "—"],
-    ["والد کا نام", record.students?.father_name ?? "—"],
-    ["رجسٹریشن نمبر", record.students?.registration_number ?? "—"],
-    ["قسم", STUDENT_EXPENSE_CATEGORY_LABELS[record.category]],
-    ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
-    ["تاریخ", formatDate(record.expense_date)],
+    [t(lang, "col.student"), record.students?.name ?? "—"],
+    [t(lang, "col.father"), record.students?.father_name ?? "—"],
+    [t(lang, "col.reg"), record.students?.registration_number ?? "—"],
+    [t(lang, "col.type"), t(lang, `studentexp.cat.${record.category}`)],
+    [
+      t(lang, "fee.amount_label"),
+      `${record.amount.toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`,
+    ],
+    [t(lang, "col.date"), formatDate(record.expense_date)],
   ];
-  if (record.note) imageRows.push(["نوٹ", record.note]);
-  imageRows.push(["حالت", STUDENT_EXPENSE_STATUS_LABELS[record.status]]);
+  if (record.note) imageRows.push([t(lang, "fee.form.note"), record.note]);
+  imageRows.push([
+    t(lang, "col.status"),
+    t(lang, `fee.status.${record.status}`),
+  ]);
   const imageData: SlipImageData = {
     madrasaName,
-    title: "خرچ کا اندراج",
-    numberLabel: "ریکارڈ نمبر",
+    title: t(lang, "studentexp.detail_title"),
+    numberLabel: t(lang, "welfare.col_record"),
     numberValue: record.record_number,
     rows: imageRows,
     filename: `record-${record.record_number}.png`,
@@ -159,7 +161,7 @@ export default async function StudentExpDetailPage({
         </div>
 
         <div className="form-actions no-print">
-          <SaveSlipImageButton data={imageData} />
+          <SaveSlipImageButton data={imageData} lang={lang} />
           {record.status === "active" ? (
             <VoidButton id={record.id} lang={lang} />
           ) : null}

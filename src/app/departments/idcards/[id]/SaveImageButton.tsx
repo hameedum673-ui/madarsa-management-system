@@ -102,7 +102,7 @@ export default function SaveImageButton({
       ctx.fillText("شادی لارج، ضلع بدین، سندھ", W / 2, 66);
       ctx.font = `700 17px ${FONT}`;
       ctx.fillStyle = WHITE;
-      ctx.fillText("طالب علم کا شناختی کارڈ", W / 2, 94);
+      ctx.fillText(t(lang, "idcard.title"), W / 2, 94);
 
       // تصویر کا خالی خانہ
       const photoX = (W - 150) / 2;
@@ -115,8 +115,8 @@ export default function SaveImageButton({
       ctx.textAlign = "center";
       ctx.font = `15px ${FONT}`;
       ctx.fillStyle = "#7a8794";
-      ctx.fillText("تصویر", W / 2, 200);
-      ctx.fillText("یہاں چپکائیں", W / 2, 224);
+      ctx.fillText(t(lang, "idcard.png.photo"), W / 2, 200);
+      ctx.fillText(t(lang, "idcard.png.paste_here"), W / 2, 224);
 
       // رجسٹریشن نمبر کی پٹی
       const stripY = 310;
@@ -125,7 +125,7 @@ export default function SaveImageButton({
       ctx.textAlign = "right";
       ctx.font = `13px ${FONT}`;
       ctx.fillStyle = MUTED;
-      ctx.fillText("رجسٹریشن نمبر", W - 26, stripY + 28);
+      ctx.fillText(t(lang, "col.reg"), W - 26, stripY + 28);
       fitFont(ctx, data.registrationNumber, 22, 150, 700);
       ctx.textAlign = "left";
       ctx.fillStyle = NAVY;
@@ -133,13 +133,13 @@ export default function SaveImageButton({
 
       // تفصیل کی سطریں — لیبل دائیں، قیمت بائیں
       const rows: [string, string][] = [
-        ["نام", data.name],
-        ["والد کا نام", data.fatherName],
-        ["شعبہ", data.departmentLabel],
-        ["جماعت", data.className],
-        ["تاریخِ پیدائش", data.dateOfBirth],
-        ["داخلہ تاریخ", data.admissionDate],
-        ["سرپرست کا فون", data.guardianPhone],
+        [t(lang, "col.name"), data.name],
+        [t(lang, "col.father"), data.fatherName],
+        [t(lang, "col.dept"), data.departmentLabel],
+        [t(lang, "col.class"), data.className],
+        [t(lang, "exam.result.dob"), data.dateOfBirth],
+        [t(lang, "idcard.admission_date"), data.admissionDate],
+        [t(lang, "idcard.guardian_phone"), data.guardianPhone],
       ];
       let y = 384;
       for (const [label, value] of rows) {
@@ -164,8 +164,12 @@ export default function SaveImageButton({
       ctx.textAlign = "center";
       ctx.font = `13px ${FONT}`;
       ctx.fillStyle = MUTED;
-      ctx.fillText(`جاری کرنے کی تاریخ: ${data.issueDate}`, W / 2, 600);
-      ctx.fillText("یہ کارڈ مدرسے کی ملکیت ہے", W / 2, 622);
+      ctx.fillText(
+        t(lang, "idcard.issued_date", { date: data.issueDate }),
+        W / 2,
+        600,
+      );
+      ctx.fillText(t(lang, "idcard.property"), W / 2, 622);
 
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/png"),

@@ -9,14 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections } from "@/lib/permissions";
-import { SECTION_LABELS, type SectionId } from "@/lib/students";
-import { getMyMadrasa } from "@/lib/students";
-import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
-import {
-  DONATION_KIND_LABELS,
-  DONATION_STATUS_LABELS,
-  type Donation,
-} from "@/lib/donations";
+import { getMyMadrasa, type SectionId } from "@/lib/students";
+import { type Donation } from "@/lib/donations";
 import VoidButton from "@/app/departments/donations/[id]/VoidButton";
 import SaveSlipImageButton, {
   type SlipImageData,
@@ -78,19 +72,31 @@ export default async function DonationDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["قسم", DONATION_KIND_LABELS[donation.kind]],
-    ["عطیہ دینے والا", donation.donor_name],
-    ["شعبہ (بنین / بنات)", SECTION_LABELS[(donation.section ?? "banat") as SectionId]],
-    ["رقم", `${donation.amount.toLocaleString("ur-PK")} روپے`],
-    ["تاریخ", formatDate(donation.donation_date)],
-    ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[donation.payment_method]],
+    [t(lang, "col.type"), t(lang, `donations.kind.${donation.kind}`)],
+    [t(lang, "slip.donor"), donation.donor_name],
+    [
+      t(lang, "students.section_filter"),
+      t(lang, `section.${donation.section ?? "banat"}`),
+    ],
+    [
+      t(lang, "fee.amount_label"),
+      `${donation.amount.toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`,
+    ],
+    [t(lang, "col.date"), formatDate(donation.donation_date)],
+    [
+      t(lang, "fee.method_label"),
+      t(lang, `fee.method.${donation.payment_method}`),
+    ],
   ];
-  if (donation.note) imageRows.push(["نوٹ", donation.note]);
-  imageRows.push(["حالت", DONATION_STATUS_LABELS[donation.status]]);
+  if (donation.note) imageRows.push([t(lang, "fee.form.note"), donation.note]);
+  imageRows.push([
+    t(lang, "col.status"),
+    t(lang, `fee.status.${donation.status}`),
+  ]);
   const imageData: SlipImageData = {
     madrasaName,
-    title: "عطیہ کی رسید",
-    numberLabel: "رسید نمبر",
+    title: t(lang, "slip.donation_title"),
+    numberLabel: t(lang, "col.receipt"),
     numberValue: donation.receipt_number,
     rows: imageRows,
     filename: `receipt-${donation.receipt_number}.png`,
@@ -158,7 +164,7 @@ export default async function DonationDetailPage({
         </div>
 
         <div className="form-actions no-print">
-          <SaveSlipImageButton data={imageData} />
+          <SaveSlipImageButton data={imageData} lang={lang} />
           {donation.status === "active" ? <VoidButton id={donation.id} lang={lang} /> : null}
         </div>
       </div>

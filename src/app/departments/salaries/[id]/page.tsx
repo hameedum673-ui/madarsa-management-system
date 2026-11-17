@@ -12,12 +12,8 @@ import { getMyMadrasa } from "@/lib/students";
 import { isMadrasaOwner } from "@/lib/approval";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
-import { PAYMENT_METHOD_LABELS, formatMonthUrdu } from "@/lib/fees";
-import {
-  SALARY_PERSON_TYPE_LABELS,
-  SALARY_STATUS_LABELS,
-  type SalaryPayment,
-} from "@/lib/salaries";
+import { formatMonthUrdu } from "@/lib/fees";
+import { type SalaryPayment } from "@/lib/salaries";
 import VoidButton from "@/app/departments/salaries/[id]/VoidButton";
 import SaveSlipImageButton, {
   type SlipImageData,
@@ -105,19 +101,28 @@ export default async function SalaryDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["شخص", personName],
-    ["قسم", SALARY_PERSON_TYPE_LABELS[record.person_type]],
-    ["مہینہ", formatMonthUrdu(record.salary_month)],
-    ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
-    ["ادائیگی کی تاریخ", formatDate(record.payment_date)],
-    ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[record.payment_method]],
+    [t(lang, "salary.col_person"), personName],
+    [t(lang, "col.type"), t(lang, `salary.person.${record.person_type}`)],
+    [t(lang, "salary.col_month"), formatMonthUrdu(record.salary_month)],
+    [
+      t(lang, "exp.col_amount"),
+      `${record.amount.toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`,
+    ],
+    [t(lang, "salaries.col_payment_date"), formatDate(record.payment_date)],
+    [
+      t(lang, "fee.method_label"),
+      t(lang, `fee.method.${record.payment_method}`),
+    ],
   ];
-  if (record.note) imageRows.push(["نوٹ", record.note]);
-  imageRows.push(["حالت", SALARY_STATUS_LABELS[record.status]]);
+  if (record.note) imageRows.push([t(lang, "fee.form.note"), record.note]);
+  imageRows.push([
+    t(lang, "col.status"),
+    t(lang, `salary.status.${record.status}`),
+  ]);
   const imageData: SlipImageData = {
     madrasaName,
-    title: "تنخواہ کی ادائیگی",
-    numberLabel: "واؤچر نمبر",
+    title: t(lang, "salary.detail_title"),
+    numberLabel: t(lang, "exp.col_voucher"),
     numberValue: voucherNumber,
     rows: imageRows,
     filename: `salary-${record.salary_month}.png`,
@@ -189,7 +194,7 @@ export default async function SalaryDetailPage({
         </div>
 
         <div className="form-actions no-print">
-          <SaveSlipImageButton data={imageData} />
+          <SaveSlipImageButton data={imageData} lang={lang} />
           {record.status === "active" ? (
             <VoidButton id={record.id} lang={lang} />
           ) : null}

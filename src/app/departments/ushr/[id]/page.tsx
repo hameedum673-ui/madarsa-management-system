@@ -9,13 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import { getMyAllowedSections } from "@/lib/permissions";
-import { SECTION_LABELS, type SectionId } from "@/lib/students";
-import { getMyMadrasa } from "@/lib/students";
-import { PAYMENT_METHOD_LABELS } from "@/lib/fees";
-import {
-  USHR_STATUS_LABELS,
-  type UshrRecord,
-} from "@/lib/ushr";
+import { getMyMadrasa, type SectionId } from "@/lib/students";
+import { type UshrRecord } from "@/lib/ushr";
 import VoidButton from "@/app/departments/ushr/[id]/VoidButton";
 import SaveSlipImageButton, {
   type SlipImageData,
@@ -77,18 +72,30 @@ export default async function UshrDetailPage({
 
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
-    ["نام", record.person_name],
-    ["شعبہ (بنین / بنات)", SECTION_LABELS[(record.section ?? "banat") as SectionId]],
-    ["رقم", `${record.amount.toLocaleString("ur-PK")} روپے`],
-    ["تاریخ", formatDate(record.record_date)],
-    ["ادائیگی کا طریقہ", PAYMENT_METHOD_LABELS[record.payment_method]],
+    [t(lang, "col.name"), record.person_name],
+    [
+      t(lang, "students.section_filter"),
+      t(lang, `section.${record.section ?? "banat"}`),
+    ],
+    [
+      t(lang, "fee.amount_label"),
+      `${record.amount.toLocaleString("ur-PK")} ${t(lang, "audit.detail.currency")}`,
+    ],
+    [t(lang, "col.date"), formatDate(record.record_date)],
+    [
+      t(lang, "fee.method_label"),
+      t(lang, `fee.method.${record.payment_method}`),
+    ],
   ];
-  if (record.note) imageRows.push(["نوٹ", record.note]);
-  imageRows.push(["حالت", USHR_STATUS_LABELS[record.status]]);
+  if (record.note) imageRows.push([t(lang, "fee.form.note"), record.note]);
+  imageRows.push([
+    t(lang, "col.status"),
+    t(lang, `fee.status.${record.status}`),
+  ]);
   const imageData: SlipImageData = {
     madrasaName,
-    title: "عشر کا اندراج",
-    numberLabel: "رسید نمبر",
+    title: t(lang, "slip.ushr_title"),
+    numberLabel: t(lang, "col.receipt"),
     numberValue: record.receipt_number,
     rows: imageRows,
     filename: `receipt-${record.receipt_number}.png`,
@@ -152,7 +159,7 @@ export default async function UshrDetailPage({
         </div>
 
         <div className="form-actions no-print">
-          <SaveSlipImageButton data={imageData} />
+          <SaveSlipImageButton data={imageData} lang={lang} />
           {record.status === "active" ? (
             <VoidButton id={record.id} lang={lang} />
           ) : null}
