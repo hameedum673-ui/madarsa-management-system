@@ -12,10 +12,10 @@ import { useRouter } from "next/navigation";
 import { GROUPS } from "@/data/departments";
 import {
   ASSIGNABLE_ROLES,
-  ROLE_LABELS,
   type ApprovedUser,
 } from "@/lib/approval";
-import { SECTION_IDS, SECTION_LABELS } from "@/lib/students";
+import { SECTION_IDS } from "@/lib/students";
+import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
   formData: FormData,
@@ -36,12 +36,12 @@ const EDU_MODULES: string[] =
 const FIN_MODULES: string[] =
   GROUPS.find((g) => g.id === "fin")?.modules.map((m) => m.id) ?? [];
 
-function groupLabel(allowed: Set<string>): string {
+function groupLabel(allowed: Set<string>, lang: Lang): string {
   const hasEdu = EDU_MODULES.some((m) => allowed.has(m));
   const hasFin = FIN_MODULES.some((m) => allowed.has(m));
-  if (hasEdu && hasFin) return "تعلیمی + مالیاتی";
-  if (hasEdu) return "تعلیمی";
-  if (hasFin) return "مالیاتی";
+  if (hasEdu && hasFin) return t(lang, "staffm.group.both");
+  if (hasEdu) return t(lang, "staffm.group.edu");
+  if (hasFin) return t(lang, "staffm.group.fin");
   return "—";
 }
 
@@ -51,11 +51,13 @@ function PermissionFields({
   setAllowedModules,
   allowedSections,
   setAllowedSections,
+  lang,
 }: {
   allowedModules: Set<string>;
   setAllowedModules: (next: Set<string>) => void;
   allowedSections: Set<string>;
   setAllowedSections: (next: Set<string>) => void;
+  lang: Lang;
 }) {
   function applyPreset(preset: "edu" | "fin" | "custom") {
     if (preset === "edu") setAllowedModules(new Set(EDU_MODULES));
@@ -79,37 +81,33 @@ function PermissionFields({
 
   return (
     <>
-      <h3 className="form-section-title">اجازت کا سانچہ</h3>
-      <p className="sub">
-        سانچہ چنیں تو خانے خود بھر جائیں گے — پھر چاہیں تو الگ الگ خانے بدل
-        سکتے ہیں۔ تنخواہیں، بیک اپ اور عمومی ریکارڈ ہمیشہ صرف مالک کے لیے
-        رہیں گے۔
-      </p>
+      <h3 className="form-section-title">{t(lang, "staffm.tpl.title")}</h3>
+      <p className="sub">{t(lang, "staffm.tpl.sub")}</p>
       <div className="form-actions">
         <button
           type="button"
           className="btn-ghost"
           onClick={() => applyPreset("edu")}
         >
-          تعلیمی شعبہ
+          {t(lang, "group.edu")}
         </button>
         <button
           type="button"
           className="btn-ghost"
           onClick={() => applyPreset("fin")}
         >
-          مالیاتی شعبہ
+          {t(lang, "group.fin")}
         </button>
         <button
           type="button"
           className="btn-ghost"
           onClick={() => applyPreset("custom")}
         >
-          اپنی مرضی (سب خالی)
+          {t(lang, "staffm.tpl.custom")}
         </button>
       </div>
 
-      <h3 className="form-section-title">شعبہ (بنین / بنات)</h3>
+      <h3 className="form-section-title">{t(lang, "staffm.tpl.section_title")}</h3>
       <div className="form-grid">
         {SECTION_IDS.map((s) => (
           <label className="field" key={s}>
@@ -120,7 +118,7 @@ function PermissionFields({
                 checked={allowedSections.has(s)}
                 onChange={(e) => toggleSection(s, e.target.checked)}
               />{" "}
-              {SECTION_LABELS[s]}
+              {t(lang, `section.${s}`)}
             </span>
           </label>
         ))}
@@ -133,7 +131,7 @@ function PermissionFields({
         if (modules.length === 0) return null;
         return (
           <div key={group.id}>
-            <h3 className="form-section-title">{group.title}</h3>
+            <h3 className="form-section-title">{t(lang, `group.${group.id}`)}</h3>
             <div className="form-grid">
               {modules.map((m) => (
                 <label className="field" key={m.id}>
@@ -144,7 +142,7 @@ function PermissionFields({
                       checked={allowedModules.has(m.id)}
                       onChange={(e) => toggleModule(m.id, e.target.checked)}
                     />{" "}
-                    {m.label}
+                    {t(lang, `module.${m.id}`)}
                   </span>
                 </label>
               ))}
@@ -157,7 +155,7 @@ function PermissionFields({
 }
 
 /** نیا عملہ شامل کرنے کا فارم */
-export function AddStaffForm({ action }: { action: FormAction }) {
+export function AddStaffForm({ action, lang = "ur" }: { action: FormAction; lang?: Lang }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -190,26 +188,23 @@ export function AddStaffForm({ action }: { action: FormAction }) {
 
   return (
     <form key={formKey} onSubmit={handleSubmit}>
-      <h3 className="form-section-title">نیا عملہ شامل کریں</h3>
-      <p className="sub">
-        عملہ آپ کے مدرسے سے جڑے گا — اس کا اپنا الگ مدرسہ نہیں بنے گا۔ وہ
-        صرف وہی شعبے دیکھے گا جو آپ کھولیں گے؛ صارفین شامل کرنا، تنخواہیں
-        اور بیک اپ ہمیشہ صرف آپ کے لیے رہیں گے۔
-      </p>
+      <input type="hidden" name="lang" value={lang} />
+      <h3 className="form-section-title">{t(lang, "staffm.form.add_title")}</h3>
+      <p className="sub">{t(lang, "staffm.form.add_sub")}</p>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">عملے کا نام *</span>
+          <span className="field-label">{t(lang, "staffm.form.name")}</span>
           <input
             className="field-input"
             name="name"
             type="text"
             required
             maxLength={100}
-            placeholder="مثلاً فاطمہ"
+            placeholder={t(lang, "staffm.form.name_ph")}
           />
         </label>
         <label className="field">
-          <span className="field-label">Gmail *</span>
+          <span className="field-label">{t(lang, "user.form.email")}</span>
           <input
             className="field-input"
             name="email"
@@ -221,7 +216,7 @@ export function AddStaffForm({ action }: { action: FormAction }) {
           />
         </label>
         <label className="field">
-          <span className="field-label">واٹس ایپ نمبر</span>
+          <span className="field-label">{t(lang, "user.form.whatsapp")}</span>
           <input
             className="field-input"
             name="whatsapp"
@@ -232,18 +227,18 @@ export function AddStaffForm({ action }: { action: FormAction }) {
           />
         </label>
         <label className="field">
-          <span className="field-label">عہدہ *</span>
+          <span className="field-label">{t(lang, "staffm.form.designation")}</span>
           <input
             className="field-input"
             name="designation"
             type="text"
             required
             maxLength={100}
-            placeholder="مثلاً ناظم تعلیمات"
+            placeholder={t(lang, "staffm.form.designation_ph")}
           />
         </label>
         <label className="field">
-          <span className="field-label">کردار *</span>
+          <span className="field-label">{t(lang, "staffm.form.role")}</span>
           <select
             className="field-input"
             name="role"
@@ -252,7 +247,7 @@ export function AddStaffForm({ action }: { action: FormAction }) {
           >
             {ASSIGNABLE_ROLES.map((r) => (
               <option key={r} value={r}>
-                {ROLE_LABELS[r]}
+                {t(lang, `role.${r}`)}
               </option>
             ))}
           </select>
@@ -264,16 +259,17 @@ export function AddStaffForm({ action }: { action: FormAction }) {
         setAllowedModules={setAllowedModules}
         allowedSections={allowedSections}
         setAllowedSections={setAllowedSections}
+        lang={lang}
       />
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? (
-        <p className="att-success">عملہ شامل ہو گیا — اب وہ اپنی Gmail سے لاگ ان کر سکتا ہے۔</p>
+        <p className="att-success">{t(lang, "staffm.form.added")}</p>
       ) : null}
 
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "عملہ شامل کریں"}
+          {loading ? t(lang, "common.waiting") : t(lang, "staffm.form.add")}
         </button>
       </div>
     </form>
@@ -285,10 +281,12 @@ export function StaffStatusForm({
   staffId,
   status,
   action,
+  lang = "ur",
 }: {
   staffId: string;
   status: string;
   action: FormAction;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -310,6 +308,7 @@ export function StaffStatusForm({
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "inline" }}>
+      <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="id" value={staffId} />
       <input
         type="hidden"
@@ -318,10 +317,10 @@ export function StaffStatusForm({
       />
       <button className="btn-ghost" type="submit" disabled={loading}>
         {loading
-          ? "براہِ کرم انتظار کریں…"
+          ? t(lang, "common.waiting")
           : active
-            ? "رسائی بند کریں"
-            : "دوبارہ فعال کریں"}
+            ? t(lang, "staffm.status.disable")
+            : t(lang, "users.reactivate")}
       </button>
       {error ? <p className="form-error">{error}</p> : null}
     </form>
@@ -336,6 +335,7 @@ function StaffPermissionsEditor({
   initialSections,
   action,
   onDone,
+  lang = "ur",
 }: {
   staffEmail: string;
   staffName: string;
@@ -343,6 +343,7 @@ function StaffPermissionsEditor({
   initialSections: Set<string>;
   action: FormAction;
   onDone: () => void;
+  lang?: Lang;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -370,24 +371,26 @@ function StaffPermissionsEditor({
 
   return (
     <form onSubmit={handleSubmit}>
+      <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="user_email" value={staffEmail} />
       <h3 className="form-section-title">
-        {staffName} ({staffEmail}) کی اجازتیں
+        {t(lang, "staffm.perms.title", { name: staffName, email: staffEmail })}
       </h3>
       <PermissionFields
         allowedModules={allowedModules}
         setAllowedModules={setAllowedModules}
         allowedSections={allowedSections}
         setAllowedSections={setAllowedSections}
+        lang={lang}
       />
       {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="att-success">اجازتیں محفوظ ہو گئیں۔</p> : null}
+      {success ? <p className="att-success">{t(lang, "staffm.perms.saved")}</p> : null}
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "اجازتیں محفوظ کریں"}
+          {loading ? t(lang, "common.waiting") : t(lang, "staffm.perms.save")}
         </button>
         <button type="button" className="btn-ghost" onClick={onDone}>
-          بند کریں
+          {t(lang, "staffm.perms.close")}
         </button>
       </div>
     </form>
@@ -400,16 +403,18 @@ export function StaffList({
   permissionsByEmail,
   statusAction,
   permissionsAction,
+  lang = "ur",
 }: {
   staff: ApprovedUser[];
   permissionsByEmail: Record<string, { modules: string[]; sections: string[] }>;
   statusAction: FormAction;
   permissionsAction: FormAction;
+  lang?: Lang;
 }) {
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
 
   if (staff.length === 0) {
-    return <p className="sub">ابھی کوئی عملہ شامل نہیں ہے۔</p>;
+    return <p className="sub">{t(lang, "staffm.list.empty")}</p>;
   }
 
   const editing = editingEmail
@@ -421,13 +426,13 @@ export function StaffList({
       <table className="tbl">
         <thead>
           <tr>
-            <th>نام</th>
+            <th>{t(lang, "col.name")}</th>
             <th>Gmail</th>
-            <th>عہدہ</th>
-            <th>کردار</th>
-            <th>کھلا گروپ</th>
-            <th>حالت</th>
-            <th>کارروائی</th>
+            <th>{t(lang, "col.position")}</th>
+            <th>{t(lang, "users.col_role")}</th>
+            <th>{t(lang, "staffm.list.group")}</th>
+            <th>{t(lang, "col.status")}</th>
+            <th>{t(lang, "col.action")}</th>
           </tr>
         </thead>
         <tbody>
@@ -440,10 +445,14 @@ export function StaffList({
                 <td dir="ltr">{s.email}</td>
                 <td>{s.designation ?? "—"}</td>
                 <td>
-                  {s.assigned_role ? ROLE_LABELS[s.assigned_role] : "—"}
+                  {s.assigned_role ? t(lang, `role.${s.assigned_role}`) : "—"}
                 </td>
-                <td>{groupLabel(allowedSet)}</td>
-                <td>{s.status === "approved" ? "فعال" : "غیر فعال"}</td>
+                <td>{groupLabel(allowedSet, lang)}</td>
+                <td>
+                  {s.status === "approved"
+                    ? t(lang, "staffm.status.active")
+                    : t(lang, "staffm.status.inactive")}
+                </td>
                 <td>
                   <button
                     type="button"
@@ -456,12 +465,13 @@ export function StaffList({
                       )
                     }
                   >
-                    اجازتیں
+                    {t(lang, "staffm.list.permissions")}
                   </button>{" "}
                   <StaffStatusForm
                     staffId={s.id}
                     status={s.status}
                     action={statusAction}
+                    lang={lang}
                   />
                 </td>
               </tr>
@@ -484,6 +494,7 @@ export function StaffList({
             }
             action={permissionsAction}
             onDone={() => setEditingEmail(null)}
+            lang={lang}
           />
         </div>
       ) : null}

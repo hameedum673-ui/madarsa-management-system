@@ -17,9 +17,12 @@ import {
   setStaffStatus,
   setStaffPermissions,
 } from "./actions";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function StaffMembersPage() {
   const supabase = await createClient();
+  const langP = getMyLanguage();
   // حصہ 4 کی درستگی — یہ صفحہ مدرسے کے مالک کے لیے ہے (سپر ایڈمن ہونا ضروری نہیں)
   const owner = await isMadrasaOwner(supabase);
   if (!owner) {
@@ -85,29 +88,26 @@ export default async function StaffMembersPage() {
     }
   }
 
+  const lang = await langP;
+
   return (
     <main className="page">
       <BackButton href="/departments/users-permissions" />
-      <h2>عملے کے ارکان</h2>
-      <p className="sub">
-        یہاں آپ اپنے مدرسے کا عملہ شامل کرتے ہیں۔ عملہ آپ کے مدرسے سے جڑتا
-        ہے — اس کا اپنا الگ مدرسہ نہیں بنتا۔ وہ صرف وہی شعبے دیکھے گا جو آپ
-        کھولیں گے؛ تنخواہیں، بیک اپ، عمومی ریکارڈ اور صارفین شامل کرنا ہمیشہ
-        صرف آپ کے لیے رہیں گے۔ جس Gmail کا اپنا مدرسہ پہلے سے ہے، اسے عملہ
-        نہیں بنایا جا سکتا۔
-      </p>
+      <h2>{t(lang, "staffm.title")}</h2>
+      <p className="sub">{t(lang, "staffm.sub")}</p>
 
       <section className="page-card">
-        <AddStaffForm action={addStaffMember} />
+        <AddStaffForm action={addStaffMember} lang={lang} />
       </section>
 
       <section className="page-card">
-        <h3 className="form-section-title">میرا عملہ</h3>
+        <h3 className="form-section-title">{t(lang, "staffm.list_title")}</h3>
         <StaffList
           staff={staff}
           permissionsByEmail={permissionsByEmail}
           statusAction={setStaffStatus}
           permissionsAction={setStaffPermissions}
+          lang={lang}
         />
       </section>
     </main>

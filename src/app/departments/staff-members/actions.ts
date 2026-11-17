@@ -18,10 +18,18 @@ import { getMyMadrasa } from "@/lib/students";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { PERMISSION_MODULE_IDS } from "@/lib/permissions";
 import { SECTION_IDS } from "@/lib/students";
+import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 type ActionResult = { ok: true } | { error: string };
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/** مرحلہ 127 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
+function formLang(formData: FormData): Lang {
+  const v =
+    typeof formData.get("lang") === "string" ? formData.get("lang") : null;
+  return isLang(v) && v !== "en" ? v : "ur";
+}
 
 function clean(value: FormDataEntryValue | null, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -60,13 +68,13 @@ type OwnerContext =
       userId: string;
     };
 
-async function requireOwner(): Promise<OwnerContext> {
+async function requireOwner(lang: Lang = "ur"): Promise<OwnerContext> {
   const supabase = await createClient();
   // حصہ 4 کی درستگی — مالک کی جانچ (سپر ایڈمن ہونا ضروری نہیں)
   const owner = await isMadrasaOwner(supabase);
-  if (!owner) return { error: "صرف مدرسے کا مالک یہ کام کر سکتا ہے۔" };
+  if (!owner) return { error: t(lang, "staffm.err.owner_only") };
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "مالک کا مدرسہ نہیں ملا۔" };
+  if (!mine) return { error: t(lang, "staffm.err.owner_madrasa_missing") };
   return { supabase, ...mine };
 }
 
@@ -111,6 +119,7 @@ async function saveStaffPermissionRows(
   email: string,
   userId: string,
   formData: FormData,
+  lang: Lang = "ur",
 ): Promise<string | null> {
   const rows = PERMISSION_MODULE_IDS.map((module) => ({
     user_email: email,
@@ -130,8 +139,8 @@ async function saveStaffPermissionRows(
     .upsert(rows, { onConflict: "user_email,module" });
   if (error) {
     if ((error as { code?: string } | null)?.code === "23514")
-      return "اجازتیں محفوظ نہیں ہو سکیں — پہلے حصہ 3 کی SQL چلائیں۔";
-    return "اجازتیں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔";
+      return t(lang, "staffm.err.perms_sql");
+    return t(lang, "staffm.err.perms_failed");
   }
 
   const sectionRows = SECTION_IDS.map((section) => ({
@@ -147,8 +156,8 @@ async function saveStaffPermissionRows(
     .upsert(sectionRows, { onConflict: "user_email,section" });
   if (sectionError) {
     if ((sectionError as { code?: string } | null)?.code === "42P01")
-      return "شعبے کی اجازتیں محفوظ نہیں ہو سکیں — پہلے مرحلہ 53 کی SQL چلائیں۔";
-    return "شعبے کی اجازتیں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔";
+      return t(lang, "staffm.err.sections_sql");
+    return t(lang, "staffm.err.sections_failed");
   }
 
   return null;
@@ -158,18 +167,19 @@ async function saveStaffPermissionRows(
 export async function addStaffMember(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const email = clean(formData.get("email"), 200).toLowerCase();
   const name = clean(formData.get("name"), 100);
   const whatsapp = clean(formData.get("whatsapp"), 20);
   const designation = clean(formData.get("designation"), 100);
   const role = clean(formData.get("role"), 30);
-  if (!validEmail(email)) return { error: "Gmail درست لکھیں۔" };
-  if (!name) return { error: "عملے کا نام ضروری ہے۔" };
-  if (!designation) return { error: "عہدہ لکھیں (مثلاً ناظم تعلیمات)۔" };
+  if (!validEmail(email)) return { error: t(lang, "staffm.err.email_invalid") };
+  if (!name) return { error: t(lang, "staffm.err.name_required") };
+  if (!designation) return { error: t(lang, "staffm.err.designation_required") };
   if (!(ASSIGNABLE_ROLES as string[]).includes(role))
-    return { error: "کردار درست منتخب کریں۔" };
+    return { error: t(lang, "staffm.err.role_invalid") };
 
-  const checked = await requireOwner();
+  const checked = await requireOwner(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
@@ -181,8 +191,7 @@ export async function addStaffMember(
     .single();
   if (existing) {
     return {
-      error:
-        "اس Gmail کا اپنا مدرسہ پہلے سے ہے — اسے عملہ نہیں بنایا جا سکتا۔",
+      error: t(lang, "staffm.err.own_madrasa"),
     };
   }
 
@@ -203,8 +212,8 @@ export async function addStaffMember(
     .single();
   if (error || !data) {
     if ((error as { code?: string } | null)?.code === "23505")
-      return { error: "یہ Gmail پہلے سے درج ہے۔" };
-    return { error: "عملہ شامل نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(lang, "staffm.err.email_exists") };
+    return { error: t(lang, "staffm.err.add_failed") };
   }
   const staffId = (data as { id: string }).id;
 
@@ -214,6 +223,7 @@ export async function addStaffMember(
     email,
     userId,
     formData,
+    lang,
   );
   if (permError) {
     // محفوظ رخ: اجازتیں نہ بنیں تو عملہ لاگ ان ہی نہ کر سکے
@@ -241,18 +251,19 @@ export async function addStaffMember(
 export async function setStaffStatus(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const id = clean(formData.get("id"), 100);
   const status = clean(formData.get("status"), 20);
-  if (!id) return { error: "عملے کا رکن نہیں ملا۔" };
+  if (!id) return { error: t(lang, "staffm.err.not_found") };
   if (status !== "approved" && status !== "disabled")
-    return { error: "حالت درست منتخب کریں۔" };
+    return { error: t(lang, "staffm.err.status_invalid") };
 
-  const checked = await requireOwner();
+  const checked = await requireOwner(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
   const target = await getOwnStaffById(supabase, id, madrasaId);
-  if (!target) return { error: "عملے کا رکن نہیں ملا۔" };
+  if (!target) return { error: t(lang, "staffm.err.not_found") };
 
   const { error } = await supabase
     .from("approved_users")
@@ -261,7 +272,7 @@ export async function setStaffStatus(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
-  if (error) return { error: "حالت نہیں بدلی جا سکی۔ دوبارہ کوشش کریں۔" };
+  if (error) return { error: t(lang, "staffm.err.status_failed") };
 
   await writeAudit(
     supabase,
@@ -283,21 +294,23 @@ export async function setStaffStatus(
 export async function setStaffPermissions(
   formData: FormData,
 ): Promise<ActionResult> {
+  const lang = formLang(formData);
   const email = clean(formData.get("user_email"), 200).toLowerCase();
-  if (!validEmail(email)) return { error: "Gmail درست نہیں ہے۔" };
+  if (!validEmail(email)) return { error: t(lang, "staffm.err.email_bad") };
 
-  const checked = await requireOwner();
+  const checked = await requireOwner(lang);
   if ("error" in checked) return { error: checked.error };
   const { supabase, madrasaId, userId } = checked;
 
   const target = await getOwnStaffByEmail(supabase, email, madrasaId);
-  if (!target) return { error: "عملے کا رکن نہیں ملا۔" };
+  if (!target) return { error: t(lang, "staffm.err.not_found") };
 
   const permError = await saveStaffPermissionRows(
     supabase,
     email,
     userId,
     formData,
+    lang,
   );
   if (permError) return { error: permError };
 
