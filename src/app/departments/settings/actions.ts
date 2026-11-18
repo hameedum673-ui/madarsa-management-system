@@ -140,3 +140,59 @@ export async function createAcademicYear(
   revalidatePath("/departments/settings");
   return { ok: true, count: rows.length };
 }
+
+/**
+ * پرانا تعلیمی سال بنائیں — صرف مالک یا ایڈمن۔
+ * موجودہ سال سے فرق: یہ سال موجودہ نہیں بنتا (is_current = false) اور
+ * موجودہ سال پہلے سے ہو تب بھی بن جاتا ہے — اس لیے اس پر err.exists
+ * والی شرط نہیں لگتی۔ پرانے ریکارڈ کے لیے ہے؛ اس میں کوئی طالبہ خود
+ * نہیں ڈالی جاتی — ہر طالبہ طالبہ کی تفصیل والے فارم سے ڈالی جاتی ہے۔
+ * ختم کی تاریخ وہی اصول: شروع سے ایک ہجری سال (354 دن) بعد۔
+ */
+export async function createPastAcademicYear(
+  formData: FormData,
+): Promise<YearResult> {
+  const lang = formLang(formData);
+  const label = clean(formData.get("label"), 20);
+  const startDate = clean(formData.get("start_date"), 10);
+  if (!label) return { error: t(lang, "settings.year.err.label") };
+  if (!validDate(startDate))
+    return { error: t(lang, "settings.year.err.date") };
+
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
+  const owner = await isMadrasaOwner(supabase);
+  const admin = await isAppAdmin(supabase);
+  if (!owner && !admin) return { error: t(lang, "common.not_allowed") };
+
+  // ختم کی تاریخ: شروع سے ایک ہجری سال (354 دن) بعد
+  const end = new Date(`${startDate}T00:00:00`);
+  end.setDate(end.getDate() + 354);
+  const endDate = end.toISOString().slice(0, 10);
+
+  const { data: year, error: insertError } = await supabase
+    .from("academic_years")
+    .insert({
+      madrasa_id: mine.madrasaId,
+      label,
+      start_date: startDate,
+      end_date: endDate,
+      is_current: false,
+    })
+    .select("id")
+    .single();
+  if (insertError || !year) {
+    if ((insertError as { code?: string } | null)?.code === "23505")
+      return { error: t(lang, "settings.year.err.label_exists") };
+    return { error: t(lang, "settings.year.err.failed") };
+  }
+
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "academic_year_past_created", {
+    year_id: year.id as string,
+    label,
+  });
+
+  revalidatePath("/departments/settings");
+  return { ok: true, count: 0 };
+}

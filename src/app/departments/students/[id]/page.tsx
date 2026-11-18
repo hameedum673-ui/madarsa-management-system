@@ -7,11 +7,18 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
+  getMyMadrasa,
   type Student,
 } from "@/lib/students";
 import StudentForm from "@/app/departments/students/StudentForm";
+import PastEnrollmentForm from "@/app/departments/students/[id]/PastEnrollmentForm";
 import { updateStudent } from "@/app/departments/students/actions";
 import { getActiveClasses } from "@/lib/classes";
+import {
+  getPastAcademicYears,
+  getStudentPastEnrollments,
+} from "@/lib/academicYears";
+import { isModuleAllowedForMe } from "@/lib/permissions";
 import { getMyLanguage } from "@/lib/language";
 import { studentStatusLabel, t } from "@/i18n/dictionary";
 
@@ -44,6 +51,29 @@ export default async function StudentDetailPage({
   if (!allowedSections.has(student.section)) notFound();
   const classes = await getActiveClasses(supabase);
   const lang = await langP;
+
+  // پرانے سال — صرف اسی مدرسے کے؛ میز نہ ہو تو خالی (صفحہ نہیں ٹوٹے گا)
+  let pastYears: Awaited<ReturnType<typeof getPastAcademicYears>> = [];
+  let pastEnrollments: Awaited<
+    ReturnType<typeof getStudentPastEnrollments>
+  > = [];
+  let canEnrollPast = false;
+  try {
+    const mine = await getMyMadrasa(supabase);
+    if (mine) {
+      pastYears = await getPastAcademicYears(supabase, mine.madrasaId);
+      pastEnrollments = await getStudentPastEnrollments(
+        supabase,
+        mine.madrasaId,
+        student.id,
+      );
+    }
+    canEnrollPast = await isModuleAllowedForMe(supabase, "students");
+  } catch {
+    pastYears = [];
+    pastEnrollments = [];
+    canEnrollPast = false;
+  }
 
   return (
     <div className="module-view open">
@@ -125,6 +155,23 @@ export default async function StudentDetailPage({
           classes={classes}
           lang={lang}
         />
+
+        {canEnrollPast ? (
+          <>
+            <h3 className="form-section-title">
+              {t(lang, "student.past_enroll.title")}
+            </h3>
+            <PastEnrollmentForm
+              lang={lang}
+              studentId={student.id}
+              pastYears={pastYears}
+              classes={classes}
+              department={student.department}
+              section={student.section}
+              existing={pastEnrollments}
+            />
+          </>
+        ) : null}
 
       </div>
     </div>

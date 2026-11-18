@@ -10,10 +10,11 @@ import BackButton from "@/components/BackButton";
 import InstallAppButton from "@/components/InstallAppButton";
 import ChangePasswordForm from "@/app/departments/settings/ChangePasswordForm";
 import AcademicYearForm from "@/app/departments/settings/AcademicYearForm";
+import PastAcademicYearForm from "@/app/departments/settings/PastAcademicYearForm";
 import MfaSettings from "@/app/departments/settings/MfaSettings";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { getCurrentAcademicYear } from "@/lib/academicYears";
+import { getAllAcademicYears } from "@/lib/academicYears";
 import { isAppAdmin, isMadrasaOwner } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { getMyLanguage } from "@/lib/language";
@@ -61,34 +62,37 @@ export default async function SettingsPage() {
   // تعلیمی سال — صرف مالک یا ایڈمن (migration 056 سے پہلے میز نہ ہو تو
   // کچھ نہیں دکھے گا — صفحہ نہیں ٹوٹے گا)
   const ownerOrAdmin = admin || (await isMadrasaOwner(supabase));
-  let currentYear: Awaited<ReturnType<typeof getCurrentAcademicYear>> = null;
+  let allYears: Awaited<ReturnType<typeof getAllAcademicYears>> = [];
   let activeCount = 0;
-  let enrolledCount = 0;
+  const enrolledByYear = new Map<string, number>();
   if (ownerOrAdmin) {
     try {
       const mine = await getMyMadrasa(supabase);
       if (mine) {
-        currentYear = await getCurrentAcademicYear(supabase, mine.madrasaId);
+        allYears = await getAllAcademicYears(supabase, mine.madrasaId);
         const { count: ac } = await supabase
           .from("students")
           .select("id", { count: "exact", head: true })
           .eq("madrasa_id", mine.madrasaId)
           .eq("status", "active");
         activeCount = ac ?? 0;
-        if (currentYear) {
-          const { count: ec } = await supabase
+        if (allYears.length > 0) {
+          const { data: rows } = await supabase
             .from("enrollments")
-            .select("id", { count: "exact", head: true })
-            .eq("academic_year_id", currentYear.id);
-          enrolledCount = ec ?? 0;
+            .select("academic_year_id")
+            .eq("madrasa_id", mine.madrasaId);
+          for (const row of rows ?? []) {
+            const yid = row.academic_year_id as string;
+            enrolledByYear.set(yid, (enrolledByYear.get(yid) ?? 0) + 1);
+          }
         }
       }
     } catch {
-      currentYear = null;
+      allYears = [];
       activeCount = 0;
-      enrolledCount = 0;
     }
   }
+  const currentYear = allYears.find((y) => y.is_current) ?? null;
 
   return (
     <div className="module-view open">
@@ -121,28 +125,34 @@ export default async function SettingsPage() {
         {ownerOrAdmin ? (
           <>
             <h3 className="form-section-title">{t(lang, "settings.year.title")}</h3>
-            {currentYear ? (
+            {allYears.length > 0 ? (
               <div className="detail-rows">
-                <div className="row">
-                  <span>{t(lang, "settings.year.label")}</span>
-                  <strong>{currentYear.label}</strong>
-                </div>
-                <div className="row">
-                  <span>{t(lang, "settings.year.start")}</span>
-                  <strong>{currentYear.start_date}</strong>
-                </div>
-                <div className="row">
-                  <span>{t(lang, "settings.year.current")}</span>
-                  <strong>
-                    {t(lang, "settings.year.enrolled", {
-                      n: enrolledCount.toLocaleString("ur-PK"),
-                    })}
-                  </strong>
-                </div>
+                {allYears.map((year) => (
+                  <div className="row" key={year.id}>
+                    <span>
+                      {year.label} — {year.start_date}
+                      {year.is_current
+                        ? ` (${t(lang, "settings.year.current")})`
+                        : ""}
+                    </span>
+                    <strong>
+                      {t(lang, "settings.year.enrolled", {
+                        n: (enrolledByYear.get(year.id) ?? 0).toLocaleString("ur-PK"),
+                      })}
+                    </strong>
+                  </div>
+                ))}
               </div>
             ) : (
+              <p className="sub">{t(lang, "settings.year.no_years")}</p>
+            )}
+            {currentYear ? null : (
               <AcademicYearForm lang={lang} activeCount={activeCount} />
             )}
+            <h3 className="form-section-title">
+              {t(lang, "settings.year.past_title")}
+            </h3>
+            <PastAcademicYearForm lang={lang} />
           </>
         ) : null}
 

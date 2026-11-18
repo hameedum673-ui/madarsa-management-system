@@ -259,6 +259,14 @@ const ur: Dict = {
   "student.detail.guardian": "سرپرست",
   "student.detail.admission_type": "داخلے کی قسم",
   "student.detail.admission_date": "داخلہ کی تاریخ",
+  "student.past_enroll.title": "پرانے سال میں داخلہ",
+  "student.past_enroll.year": "سال",
+  "student.past_enroll.saved": "پرانے سال میں داخلہ محفوظ ہو گیا۔",
+  "student.past_enroll.no_years": "پہلے ترتیبات میں پرانا سال بنائیں۔",
+  "student.past_enroll.none": "ابھی کوئی پرانا سال درج نہیں۔",
+  "student.past_enroll.err.year": "سال چنیں۔",
+  "student.past_enroll.err.class": "جماعت لکھیں۔",
+  "student.past_enroll.err.failed": "داخلہ محفوظ نہ ہو سکا۔ دوبارہ کوشش کریں۔",
 
   "student.err.name_required": "طالب علم کا نام ضروری ہے۔",
   "student.err.father_required": "والد کا نام ضروری ہے۔",
@@ -1709,6 +1717,13 @@ const ur: Dict = {
   "settings.year.err.exists": "ایک سال پہلے سے موجودہ ہے۔",
   "settings.year.err.label_exists": "اس نام کا سال پہلے سے ہے۔",
   "settings.year.err.failed": "سال نہیں بن سکا۔ دوبارہ کوشش کریں۔",
+  "settings.year.past_title": "پرانا سال بنائیں",
+  "settings.year.past_label_ph": "1446ھ",
+  "settings.year.past_note": "پرانا سال موجودہ سال نہیں بنتا — یہ صرف پرانے ریکارڈ کے لیے ہے۔ پرانا سال بننے کے بعد ہر طالبہ طالبہ کی تفصیل والے فارم سے اس سال میں ڈالی جاتی ہے۔",
+  "settings.year.past_create": "پرانا سال بنائیں",
+  "settings.year.past_created": "پرانا سال بن گیا۔",
+  "settings.year.all_years": "تمام سال",
+  "settings.year.no_years": "ابھی کوئی سال نہیں بنا۔",
 };
 
 const ar: Dict = {
@@ -1929,6 +1944,14 @@ const ar: Dict = {
   "student.detail.guardian": "ولي الأمر",
   "student.detail.admission_type": "نوع القبول",
   "student.detail.admission_date": "تاريخ القبول",
+  "student.past_enroll.title": "التسجيل في سنة سابقة",
+  "student.past_enroll.year": "السنة",
+  "student.past_enroll.saved": "تم حفظ التسجيل في السنة السابقة.",
+  "student.past_enroll.no_years": "أنشئ سنة سابقة أولاً من الإعدادات.",
+  "student.past_enroll.none": "لا توجد سنوات سابقة مسجلة بعد.",
+  "student.past_enroll.err.year": "اختر السنة.",
+  "student.past_enroll.err.class": "اكتب الصف.",
+  "student.past_enroll.err.failed": "تعذّر حفظ التسجيل. حاول مرة أخرى.",
 
   "student.err.name_required": "اسم الطالب مطلوب.",
   "student.err.father_required": "اسم الأب مطلوب.",
@@ -3375,6 +3398,13 @@ const ar: Dict = {
   "settings.year.err.exists": "توجد سنة حالية بالفعل.",
   "settings.year.err.label_exists": "توجد سنة بهذا الاسم بالفعل.",
   "settings.year.err.failed": "تعذّر إنشاء السنة. حاول مرة أخرى.",
+  "settings.year.past_title": "إنشاء سنة سابقة",
+  "settings.year.past_label_ph": "1446هـ",
+  "settings.year.past_note": "السنة السابقة لا تصبح السنة الحالية — هي للسجلات القديمة فقط. وبعد إنشاء السنة السابقة، تُضاف كل طالبة إليها من نموذج تفاصيل الطالبة.",
+  "settings.year.past_create": "أنشئ السنة السابقة",
+  "settings.year.past_created": "تم إنشاء السنة السابقة.",
+  "settings.year.all_years": "جميع السنوات",
+  "settings.year.no_years": "لا توجد سنوات بعد.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */
