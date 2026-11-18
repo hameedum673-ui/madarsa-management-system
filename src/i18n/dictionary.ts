@@ -1691,6 +1691,9 @@ const ur: Dict = {
   "auth.unauth_account": "لاگ اِن اکاؤنٹ: {email}",
   "auth.unauth_sub": "اگر آپ نئے صارف ہیں تو رابطہ کر کے رسائی کی درخواست کریں۔",
   "auth.unauth_whatsapp": "واٹس ایپ پر رابطہ کریں",
+  "students.print_roster": "فہرست پرنٹ کریں",
+  "students.roster_title": "جماعت کی فہرست",
+  "students.roster_date": "تاریخ: {date}",
 };
 
 const ar: Dict = {
@@ -3339,6 +3342,9 @@ const ar: Dict = {
   "auth.unauth_account": "الحساب المسجّل: {email}",
   "auth.unauth_sub": "إذا كنت مستخدمًا جديدًا فتواصل لطلب الوصول.",
   "auth.unauth_whatsapp": "تواصل عبر واتساب",
+  "students.print_roster": "طباعة القائمة",
+  "students.roster_title": "قائمة الشعبة",
+  "students.roster_date": "التاريخ: {date}",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

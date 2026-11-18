@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { getActiveClasses } from "@/lib/classes";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -27,7 +28,7 @@ function formatDate(value: string | null): string {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; section?: string; department?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; section?: string; department?: string; class?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   // مرحلہ 34 — تلاش: نام، والد کا نام، یا رجسٹریشن نمبر سے
@@ -52,6 +53,13 @@ export default async function StudentsPage({
     (DEPARTMENT_IDS as string[]).includes(rawDepartment)
       ? (rawDepartment as DepartmentId)
       : "all";
+  // جماعت وار فہرست — جماعت کا فلٹر (فعال جماعتوں سے جانچ، ورنہ "سب")
+  const classes = await getActiveClasses(supabase);
+  const rawClass = (sp.class ?? "all").trim();
+  const className: string | "all" =
+    rawClass !== "all" && classes.some((c) => c.name === rawClass)
+      ? rawClass
+      : "all";
 
   // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(sp.page);
@@ -68,6 +76,7 @@ export default async function StudentsPage({
   }
   if (section !== "all") query = query.eq("section", section);
   if (department !== "all") query = query.eq("department", department);
+  if (className !== "all") query = query.eq("class_name", className);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
   query = query.range(from, to);
@@ -144,8 +153,31 @@ export default async function StudentsPage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">{t(lang, "col.class")}</span>
+            <select
+              className="field-input"
+              name="class"
+              defaultValue={className}
+            >
+              <option value="all">{t(lang, "common.all")}</option>
+              {classes.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             {t(lang, "students.search_button")}
+          </button>
+          {/* جماعت وار فہرست — یہ بٹن فارم کی موجودہ قدریں پرنٹ والے صفحے پر بھیجتا ہے */}
+          <button
+            className="btn-ghost"
+            type="submit"
+            formAction="/departments/students/print"
+          >
+            {t(lang, "students.print_roster")}
           </button>
           {q ? (
             <Link className="btn-ghost" href="/departments/students">
