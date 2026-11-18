@@ -160,7 +160,17 @@ export default async function UsersPage() {
                         </td>
                         <td>
                           {u.status === "pending" ? (
-                            <ApproveForm id={u.id} lang={lang} />
+                            <>
+                              <ApproveForm id={u.id} lang={lang} />
+                              <span style={{ marginInlineStart: "6px" }}>
+                                <StatusForm
+                                  id={u.id}
+                                  status="disabled"
+                                  label={t(lang, "users.reject")}
+                                  lang={lang}
+                                />
+                              </span>
+                            </>
                           ) : u.status === "approved" ? (
                             <StatusForm
                               id={u.id}
