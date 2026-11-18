@@ -1694,6 +1694,21 @@ const ur: Dict = {
   "students.print_roster": "فہرست پرنٹ کریں",
   "students.roster_title": "جماعت کی فہرست",
   "students.roster_date": "تاریخ: {date}",
+  "settings.year.title": "تعلیمی سال",
+  "settings.year.note": "نیا تعلیمی سال 10 شوال سے شروع ہوتا ہے اور رجب کے آخر تک چلتا ہے۔ سال بنتے ہی ہر فعال طالبہ کا اس سال کا ریکارڈ بن جائے گا۔",
+  "settings.year.label": "سال کا نام (مثلاً 1447ھ)",
+  "settings.year.label_ph": "1447ھ",
+  "settings.year.start": "شروع کی تاریخ (10 شوال)",
+  "settings.year.create": "سال شروع کریں",
+  "settings.year.will_create": "{n} طلبہ کا ریکارڈ بنے گا",
+  "settings.year.created": "تعلیمی سال بن گیا — {n} طلبہ کا ریکارڈ بنایا گیا۔",
+  "settings.year.current": "موجودہ سال",
+  "settings.year.enrolled": "اس سال میں {n} طلبہ درج ہیں",
+  "settings.year.err.label": "سال کا نام لکھیں۔",
+  "settings.year.err.date": "شروع کی تاریخ درست نہیں۔",
+  "settings.year.err.exists": "ایک سال پہلے سے موجودہ ہے۔",
+  "settings.year.err.label_exists": "اس نام کا سال پہلے سے ہے۔",
+  "settings.year.err.failed": "سال نہیں بن سکا۔ دوبارہ کوشش کریں۔",
 };
 
 const ar: Dict = {
@@ -3345,6 +3360,21 @@ const ar: Dict = {
   "students.print_roster": "طباعة القائمة",
   "students.roster_title": "قائمة الشعبة",
   "students.roster_date": "التاريخ: {date}",
+  "settings.year.title": "السنة الدراسية",
+  "settings.year.note": "تبدأ السنة الدراسية الجديدة في العاشر من شوال وتستمر حتى نهاية رجب. وعند إنشاء السنة، يُنشأ سجل لكل طالبة نشطة في هذه السنة.",
+  "settings.year.label": "اسم السنة (مثال: 1447هـ)",
+  "settings.year.label_ph": "1447هـ",
+  "settings.year.start": "تاريخ البدء (10 شوال)",
+  "settings.year.create": "ابدأ السنة",
+  "settings.year.will_create": "سيتم إنشاء سجل لـ {n} طالبة",
+  "settings.year.created": "تم إنشاء السنة الدراسية — تم إنشاء سجل لـ {n} طالبة.",
+  "settings.year.current": "السنة الحالية",
+  "settings.year.enrolled": "يوجد {n} طالبة مسجلة في هذه السنة",
+  "settings.year.err.label": "اكتب اسم السنة.",
+  "settings.year.err.date": "تاريخ البدء غير صحيح.",
+  "settings.year.err.exists": "توجد سنة حالية بالفعل.",
+  "settings.year.err.label_exists": "توجد سنة بهذا الاسم بالفعل.",
+  "settings.year.err.failed": "تعذّر إنشاء السنة. حاول مرة أخرى.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

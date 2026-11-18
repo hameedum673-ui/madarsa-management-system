@@ -20,6 +20,7 @@ import {
   type SectionId,
   type StudentStatus,
 } from "@/lib/students";
+import { upsertEnrollment } from "@/lib/academicYears";
 import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 /** مرحلہ 103 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
@@ -202,6 +203,16 @@ export async function addStudent(formData: FormData): Promise<ActionResult> {
     name: f.name,
   });
 
+  // تعلیمی سال — موجودہ سال میں داخلے کی قطار (سال نہ ہو تو کچھ نہیں ہوتا)
+  await upsertEnrollment(
+    supabase,
+    mine.madrasaId,
+    data.id as string,
+    f.className || null,
+    f.department,
+    f.section,
+  );
+
   revalidatePath("/departments/students");
   revalidatePath("/");
   return { ok: true };
@@ -273,6 +284,16 @@ export async function updateStudent(
     registration_number: data.registration_number as string,
     name: f.name,
   });
+
+  // تعلیمی سال — موجودہ سال کی قطار میں جماعت بدلیں (سال نہ ہو تو کچھ نہیں ہوتا)
+  await upsertEnrollment(
+    supabase,
+    mine.madrasaId,
+    id,
+    f.className || null,
+    f.department,
+    f.section,
+  );
 
   revalidatePath("/departments/students");
   revalidatePath(`/departments/students/${id}`);

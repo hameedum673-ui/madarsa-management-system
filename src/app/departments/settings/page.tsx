@@ -3,15 +3,18 @@
  * کوئی نئی میز نہیں، کوئی SQL نہیں۔
  * میرا اکاؤنٹ (اصلی نام/کردار/Gmail/مدرسے کا نام — ڈیٹا بیس سے)، پاس ورڈ
  * تبدیل کرنا، نظام کی معلومات (اہم صفحوں کے لنک)۔
+ * تعلیمی سال (migration 056) — صرف مالک یا ایڈمن کے لیے حصہ۔
  */
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import InstallAppButton from "@/components/InstallAppButton";
 import ChangePasswordForm from "@/app/departments/settings/ChangePasswordForm";
+import AcademicYearForm from "@/app/departments/settings/AcademicYearForm";
 import MfaSettings from "@/app/departments/settings/MfaSettings";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
-import { isAppAdmin } from "@/lib/approval";
+import { getCurrentAcademicYear } from "@/lib/academicYears";
+import { isAppAdmin, isMadrasaOwner } from "@/lib/approval";
 import type { MadrasaRole } from "@/lib/tenancy";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
@@ -55,6 +58,38 @@ export default async function SettingsPage() {
     userRole = null;
   }
 
+  // تعلیمی سال — صرف مالک یا ایڈمن (migration 056 سے پہلے میز نہ ہو تو
+  // کچھ نہیں دکھے گا — صفحہ نہیں ٹوٹے گا)
+  const ownerOrAdmin = admin || (await isMadrasaOwner(supabase));
+  let currentYear: Awaited<ReturnType<typeof getCurrentAcademicYear>> = null;
+  let activeCount = 0;
+  let enrolledCount = 0;
+  if (ownerOrAdmin) {
+    try {
+      const mine = await getMyMadrasa(supabase);
+      if (mine) {
+        currentYear = await getCurrentAcademicYear(supabase, mine.madrasaId);
+        const { count: ac } = await supabase
+          .from("students")
+          .select("id", { count: "exact", head: true })
+          .eq("madrasa_id", mine.madrasaId)
+          .eq("status", "active");
+        activeCount = ac ?? 0;
+        if (currentYear) {
+          const { count: ec } = await supabase
+            .from("enrollments")
+            .select("id", { count: "exact", head: true })
+            .eq("academic_year_id", currentYear.id);
+          enrolledCount = ec ?? 0;
+        }
+      }
+    } catch {
+      currentYear = null;
+      activeCount = 0;
+      enrolledCount = 0;
+    }
+  }
+
   return (
     <div className="module-view open">
       <div className="page-card">
@@ -82,6 +117,34 @@ export default async function SettingsPage() {
             <strong>{madrasaName ?? "—"}</strong>
           </div>
         </div>
+
+        {ownerOrAdmin ? (
+          <>
+            <h3 className="form-section-title">{t(lang, "settings.year.title")}</h3>
+            {currentYear ? (
+              <div className="detail-rows">
+                <div className="row">
+                  <span>{t(lang, "settings.year.label")}</span>
+                  <strong>{currentYear.label}</strong>
+                </div>
+                <div className="row">
+                  <span>{t(lang, "settings.year.start")}</span>
+                  <strong>{currentYear.start_date}</strong>
+                </div>
+                <div className="row">
+                  <span>{t(lang, "settings.year.current")}</span>
+                  <strong>
+                    {t(lang, "settings.year.enrolled", {
+                      n: enrolledCount.toLocaleString("ur-PK"),
+                    })}
+                  </strong>
+                </div>
+              </div>
+            ) : (
+              <AcademicYearForm lang={lang} activeCount={activeCount} />
+            )}
+          </>
+        ) : null}
 
         <ChangePasswordForm email={email} lang={lang} />
 

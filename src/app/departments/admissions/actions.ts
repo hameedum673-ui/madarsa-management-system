@@ -22,6 +22,7 @@ import {
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
+import { upsertEnrollment } from "@/lib/academicYears";
 import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 /** مرحلہ 103 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
@@ -301,6 +302,9 @@ export async function approveAdmission(
       department: admission.department as string,
       section: (admission.section as string) || "banat",
       class_name: (admission.class_name as string | null) ?? null,
+      // تعلیمی سال — قدیم کی منظوری پر بھی درخواست والی داخلے کی تاریخ
+      // محفوظ ہو (پہلے یہ نظرانداز ہوتی تھی — صرف جماعت بدلتی تھی)
+      admission_date: admission.admission_date as string,
       admission_type: "returning",
       status: "active",
     };
@@ -315,6 +319,15 @@ export async function approveAdmission(
     if (updateError) {
       return { error: t(lang, "admission.err.student_update_failed") };
     }
+    // تعلیمی سال — موجودہ سال میں داخلے کی قطار (سال نہ ہو تو کچھ نہیں ہوتا)
+    await upsertEnrollment(
+      supabase,
+      mine.madrasaId,
+      returningStudentId,
+      (admission.class_name as string | null) ?? null,
+      admission.department as string,
+      (admission.section as string) || "banat",
+    );
     const { error: approveError } = await supabase
       .from("admissions")
       .update({
@@ -397,6 +410,16 @@ export async function approveAdmission(
       error: t(lang, "admission.err.link_failed"),
     };
   }
+
+  // تعلیمی سال — موجودہ سال میں داخلے کی قطار (سال نہ ہو تو کچھ نہیں ہوتا)
+  await upsertEnrollment(
+    supabase,
+    mine.madrasaId,
+    student.id as string,
+    (admission.class_name as string | null) ?? null,
+    admission.department as string,
+    (admission.section as string) || "banat",
+  );
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "admission_approved", {
     admission_id: id,

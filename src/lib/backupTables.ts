@@ -6,6 +6,8 @@ export const OWN_TABLES = [
   "madrasas",
   "madrasa_profile",
   "students",
+  "academic_years",
+  "enrollments",
   "teachers",
   "staff",
   "classes",
