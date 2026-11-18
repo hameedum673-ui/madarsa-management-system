@@ -11,6 +11,7 @@ import {
 import { isMadrasaOwner } from "@/lib/approval";
 import { todayInKarachi } from "@/lib/attendance";
 import { getMyLanguage } from "@/lib/language";
+import { getMyTheme } from "@/lib/theme";
 import { numLocale, t } from "@/i18n/dictionary";
 
 /** مین ڈیش بورڈ — منظور شدہ ڈیزائن جوں کا توں */
@@ -32,6 +33,8 @@ export default async function DashboardPage() {
   // مرحلہ 102 — صارف کی زبان (کوکی، پھر پروفائل، پھر اردو) — باقی
   // سوالوں کے ساتھ ایک ہی وقت میں
   const langP = getMyLanguage().catch(() => "ur" as const);
+  // تھیم 3 — دن/رات (کوکی؛ زبان کی طرح باقی سوالوں کے ساتھ ایک ہی وقت میں)
+  const themeP = getMyTheme().catch(() => "light" as const);
   const sectionEq =
     allowedSections.size < 2
       ? ([...allowedSections][0] ?? "__none__")
@@ -362,6 +365,7 @@ export default async function DashboardPage() {
   // --- سب سوال ایک ساتھ پوچھے جاتے ہیں، جواب یہاں ملتا ہے ---
   const [
     lang,
+    theme,
     counts,
     attendanceRaw,
     madrasaName,
@@ -375,6 +379,7 @@ export default async function DashboardPage() {
     activeNoticesCount,
   ] = await Promise.all([
     langP,
+    themeP,
     countsP,
     attendanceP,
     madrasaNameP,
@@ -504,6 +509,7 @@ export default async function DashboardPage() {
         notices={recentNotices}
         noticesCount={activeNoticesCount}
         lang={lang}
+        theme={theme}
       />
       {guestRemainingText ? (
         <p className="guest-banner">{guestRemainingText}</p>

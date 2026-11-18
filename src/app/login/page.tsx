@@ -156,7 +156,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login11-page">
+    <main className="login11-page login-legacy">
       <div className="login11-box">
         <h1 className="login11-title">
           جامعہ منیجمنٹ سسٹم

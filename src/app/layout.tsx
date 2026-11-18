@@ -5,6 +5,7 @@ import AutoLogout from "@/components/AutoLogout";
 import NavigationLoader from "@/components/NavigationLoader";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { getMyLanguage } from "@/lib/language";
+import { getMyTheme } from "@/lib/theme";
 import { t } from "@/i18n/dictionary";
 
 /**
@@ -31,6 +32,8 @@ const nastaliqUrdu = Noto_Nastaliq_Urdu({
 export async function generateMetadata(): Promise<Metadata> {
   // زبان کے حساب سے ٹیب کا عنوان اور ایپ کا نام (اردو / عربی)
   const lang = await getMyLanguage();
+  // تھیم 3 — براؤزر کو چنے ہوئے انداز (دن/رات) کے رنگ بتائیں
+  const theme = await getMyTheme();
   return {
     title: t(lang, "app.sysname"),
     manifest: "/manifest.json",
@@ -46,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: t(lang, "app.name"),
       statusBarStyle: "default",
     },
-    other: { "color-scheme": "light dark" },
+    other: { "color-scheme": theme },
   };
 }
 
@@ -54,7 +57,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#123a63",
+  themeColor: "#0e6b66",
 };
 
 export default async function RootLayout({
@@ -66,10 +69,13 @@ export default async function RootLayout({
   // عربی اور اردو دونوں RTL ہیں، اس لیے سمت نہیں بدلتی؛ صرف lang اور
   // فونٹ بدلتا ہے (lang-ar سرخیوں کو نسخ فونٹ دیتی ہے — globals.css)۔
   const lang = await getMyLanguage();
+  // تھیم 3 — دن/رات (کوکی "theme"؛ نہ ہو تو دن والا انداز)
+  const theme = await getMyTheme();
   return (
     <html
       lang={lang}
       dir="rtl"
+      data-theme={theme}
       className={`${naskhArabic.variable} ${nastaliqUrdu.variable}${lang === "ar" ? " lang-ar" : ""}`}
     >
       <body>

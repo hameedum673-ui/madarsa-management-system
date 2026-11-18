@@ -1,35 +1,75 @@
+  /* تھیم 3 — نمونہ 3: گہرا سمندری و سنہری — دن والا انداز */
   :root{
-    --navy:#123a63;
-    --navy-deep:#0c2745;
-    --navy-ink:#0e2c4e;
+    --sea:#0e6b66;
+    --sea-dark:#0a4a47;
     --gold:#c19a2e;
+    --gold-bright:#d9b45b;
+    --bg:#f6f3ea;
+    --surface:#ffffff;
+    --surface-2:#fbf9f3;
+    --line:#dfe7e4;
+    --text:#17302e;
+    --muted:#5a6f6c;
+    --border:#dfe7e4;
+    /* پرانے نام — اب سمندری رنگوں کی طرف اشارہ (سب جگہیں خود بدل جائیں گی) */
+    --navy:var(--sea);
+    --navy-deep:var(--sea-dark);
+    --navy-ink:#17302e;
     --gold-soft:#f3e9cd;
+    --chip:#dcebe8;
+    --shadow:0 1px 2px rgba(10,74,71,.06),0 6px 18px rgba(10,74,71,.06);
+    --radius:14px;
+  }
+  /* تھیم 3 — رات والا انداز (کوکی "theme" سے html[data-theme="dark"]) */
+  html[data-theme="dark"]{
+    --sea:#2aa198;
+    --sea-dark:#0d2926;
+    --gold:#d4af37;
+    --gold-bright:#e8c85a;
+    --bg:#07272a;
+    --surface:#10312f;
+    --surface-2:#0d2926;
+    --line:#1f4a46;
+    --text:#e9f2f0;
+    --muted:#9dbdb7;
+    --border:#1f4a46;
+    --navy:var(--sea);
+    --navy-deep:var(--sea-dark);
+    --navy-ink:#e9f2f0;
+    --gold-soft:#2a2410;
+    --chip:#143f3b;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3);
+  }
+  /* رات میں سرخی گہری رہے (روشن سمندری نہیں)؛ بنیادی بٹنوں پر گہرا متن
+     تاکہ روشن سمندری پس منظر پر صاف پڑھا جائے */
+  html[data-theme="dark"] header.topbar{
+    background:linear-gradient(180deg,#10312f,#0d2926);
+  }
+  html[data-theme="dark"] .btn-primary,
+  html[data-theme="dark"] .back-btn{color:#07272a}
+  html[data-theme="dark"] .btn-primary:hover{background:#35b5ab}
+  html[data-theme="dark"] .guest-banner,
+  html[data-theme="dark"] .backup-banner{color:#e8c85a}
+  html[data-theme="dark"] .backup-banner a{color:#e8c85a}
+  /* لاگ اِن صفحہ — پرانے نیوی رنگ ہی رہیں گے (login-legacy) */
+  .login-legacy{
+    --sea:#123a63;
+    --sea-dark:#0c2745;
+    --gold:#c19a2e;
+    --gold-bright:#d9b45b;
     --bg:#eef1f6;
     --surface:#ffffff;
     --surface-2:#f7f9fc;
     --line:#dde4ee;
     --text:#182638;
     --muted:#5d6f86;
+    --border:#dde4ee;
+    --navy:#123a63;
+    --navy-deep:#0c2745;
+    --navy-ink:#0e2c4e;
+    --gold-soft:#f3e9cd;
     --chip:#e8eef6;
     --shadow:0 1px 2px rgba(14,44,78,.06),0 6px 18px rgba(14,44,78,.06);
-    --radius:14px;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --navy:#2c5f96;
-      --navy-deep:#0a1c31;
-      --navy-ink:#dce9f7;
-      --gold:#d4af37;
-      --gold-soft:#3a331d;
-      --bg:#0d1622;
-      --surface:#152437;
-      --surface-2:#1a2c44;
-      --line:#2a3f5c;
-      --text:#e8eff7;
-      --muted:#9db1c8;
-      --chip:#1e3350;
-      --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3);
-    }
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -121,7 +161,7 @@
   /* مرحلہ 98 — پروفائل صفحے پر لوگو کا بڑا گول نمونہ */
   .logo-preview{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);display:block}
   /* مرحلہ 99 — کاٹنے والی اسکرین کا ڈبہ (گول دائرہ) */
-  .crop-wrap{position:relative;width:100%;height:320px;background:#0c2745;border-radius:12px;overflow:hidden;margin-top:12px}
+  .crop-wrap{position:relative;width:100%;height:320px;background:var(--sea-dark);border-radius:12px;overflow:hidden;margin-top:12px}
   .logo-preview-letter{width:96px;height:96px;border-radius:50%;background:var(--gold);color:#231a02;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:2rem}
   .menu-wrap{position:relative}
   .topbar-actions{display:flex;align-items:center;gap:14px;margin-inline-start:auto;order:4}
@@ -366,6 +406,13 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .sub{font-size:.82rem;color:#666}
 .spacer{flex:1}
 @media print{
+  /* پرنٹ ہمیشہ پرانے ہلکے رنگوں میں — رات والا انداز بھی کاغذ پر سفید چھپے */
+  :root,html[data-theme="dark"]{
+    --sea:#123a63;--sea-dark:#0c2745;--gold:#c19a2e;--gold-bright:#d9b45b;
+    --bg:#fff;--surface:#fff;--surface-2:#fff;--line:#999;--text:#182638;
+    --muted:#5d6f86;--border:#999;--navy:#123a63;--navy-deep:#0c2745;
+    --navy-ink:#0e2c4e;--gold-soft:#f3e9cd;--chip:#e8eef6;
+  }
   .topbar,.foot,.no-print,.back-btn{display:none!important}
   body{background:#fff}
   .module-view{padding:0}
