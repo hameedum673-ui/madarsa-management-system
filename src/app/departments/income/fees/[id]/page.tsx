@@ -77,7 +77,7 @@ export default async function ReceiptPage({
     notFound();
 
   // مدرسے کا نام رسید پر دکھانے کے لیے
-  let madrasaName = "جامعہ منیجمنٹ سسٹم";
+  let madrasaName = t(lang, "app.name");
   const mine = await getMyMadrasa(supabase);
   if (mine) {
     const { data: madrasa } = await supabase

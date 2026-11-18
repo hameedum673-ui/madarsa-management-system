@@ -112,6 +112,7 @@ export default function TopBar({
     setLangBusy(true);
     const formData = new FormData();
     formData.set("language", next);
+    formData.set("current_lang", lang);
     const result = await setLanguage(formData);
     setLangBusy(false);
     if ("error" in result) {
@@ -252,7 +253,7 @@ export default function TopBar({
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="dd-head">
-          {userName ?? "حمید"} — {userRole ?? "سپر ایڈمن"}
+          {userName ?? "حمید"} — {userRole ?? t(lang, "role.super_admin")}
         </div>
         <Link className="dd-item" href="/profile" onClick={closeMenus}>
           <span dangerouslySetInnerHTML={{ __html: PROFILE_ICON_SVG }} />

@@ -8,8 +8,7 @@ import {
   SECTION_IDS,
   type SectionId,
 } from "@/lib/students";
-import { ROLE_LABELS, isMadrasaOwner } from "@/lib/approval";
-import type { MadrasaRole } from "@/lib/tenancy";
+import { isMadrasaOwner } from "@/lib/approval";
 import { todayInKarachi } from "@/lib/attendance";
 import { getMyLanguage } from "@/lib/language";
 import { numLocale, t } from "@/i18n/dictionary";
@@ -445,7 +444,7 @@ export default async function DashboardPage() {
   // مرحلہ 25/67 — صارف کا نام/کردار، مہمان کا باقی وقت
   const userName = myProfile?.name ?? null;
   const userRole = myProfile?.role
-    ? (ROLE_LABELS[myProfile.role as MadrasaRole] ?? null)
+    ? t(lang, `role.${myProfile.role}`)
     : null;
   const isAdmin = myProfile?.role === "super_admin";
   let guestRemainingText: string | null = null;

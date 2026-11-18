@@ -5,6 +5,7 @@ import AutoLogout from "@/components/AutoLogout";
 import NavigationLoader from "@/components/NavigationLoader";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 /**
  * بنیادی ڈھانچہ — زبان اردو، سمت RTL، وہی عنوان اور وہی اردو فونٹ،
@@ -27,23 +28,27 @@ const nastaliqUrdu = Noto_Nastaliq_Urdu({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "جامعہ منیجمنٹ سسٹم — مین ڈیش بورڈ",
-  manifest: "/manifest.json",
-  icons: {
-    icon: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: "/icons/icon-180.png",
-  },
-  appleWebApp: {
-    capable: true,
-    title: "جامعہ مینجمنٹ",
-    statusBarStyle: "default",
-  },
-  other: { "color-scheme": "light dark" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // زبان کے حساب سے ٹیب کا عنوان اور ایپ کا نام (اردو / عربی)
+  const lang = await getMyLanguage();
+  return {
+    title: t(lang, "app.sysname"),
+    manifest: "/manifest.json",
+    icons: {
+      icon: [
+        { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: "/icons/icon-180.png",
+    },
+    appleWebApp: {
+      capable: true,
+      title: t(lang, "app.name"),
+      statusBarStyle: "default",
+    },
+    other: { "color-scheme": "light dark" },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

@@ -7,13 +7,16 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { updateMyProfile } from "@/app/profile/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export default function ProfileForm({
   initialName,
   initialWhatsapp,
+  lang,
 }: {
   initialName: string;
   initialWhatsapp: string;
+  lang: Lang;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -30,6 +33,7 @@ export default function ProfileForm({
     const formData = new FormData();
     formData.set("name", name);
     formData.set("whatsapp", whatsapp);
+    formData.set("lang", lang);
     const result = await updateMyProfile(formData);
     setLoading(false);
     if ("error" in result) {
@@ -42,10 +46,10 @@ export default function ProfileForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3 className="form-section-title">پروفائل بدلیں</h3>
+      <h3 className="form-section-title">{t(lang, "profile.edit")}</h3>
       <div className="form-grid">
         <label className="field">
-          <span className="field-label">نام *</span>
+          <span className="field-label">{t(lang, "profile.name")} *</span>
           <input
             className="field-input"
             type="text"
@@ -53,11 +57,11 @@ export default function ProfileForm({
             maxLength={100}
             value={name}
             onChange={(ev) => setName(ev.target.value)}
-            placeholder="اپنا نام"
+            placeholder={t(lang, "profile.name_ph")}
           />
         </label>
         <label className="field">
-          <span className="field-label">واٹس ایپ نمبر</span>
+          <span className="field-label">{t(lang, "profile.whatsapp")}</span>
           <input
             className="field-input"
             type="text"
@@ -70,15 +74,13 @@ export default function ProfileForm({
         </label>
       </div>
       {error ? <p className="form-error">{error}</p> : null}
-      {saved ? <p className="form-note">پروفائل محفوظ ہو گئی۔</p> : null}
+      {saved ? <p className="form-note">{t(lang, "profile.saved")}</p> : null}
       <div className="form-actions">
         <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "براہِ کرم انتظار کریں…" : "محفوظ کریں"}
+          {loading ? t(lang, "common.wait") : t(lang, "common.save")}
         </button>
       </div>
-      <p className="form-note">
-        عہدہ، Gmail اور ادارہ نہیں بدلے جا سکتے — وہ صرف دکھائے جاتے ہیں۔
-      </p>
+      <p className="form-note">{t(lang, "profile.note")}</p>
     </form>
   );
 }

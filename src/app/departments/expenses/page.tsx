@@ -201,7 +201,7 @@ export default async function ExpensesPage({
           </p>
         ) : null}
 
-        <Pagination page={page} totalPages={pages} params={params} />
+        <Pagination page={page} totalPages={pages} params={params} lang={lang} />
 
       </div>
     </div>

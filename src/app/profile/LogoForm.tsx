@@ -12,15 +12,18 @@ import Cropper, { type Area, type Point } from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
 import { getCroppedImg } from "@/lib/cropImage";
 import { removeMadrasaLogo, uploadMadrasaLogo } from "@/app/profile/actions";
+import { t, type Lang } from "@/i18n/dictionary";
 
 export default function LogoForm({
   logoUrl,
   canManage,
   madrasaName,
+  lang,
 }: {
   logoUrl: string | null;
   canManage: boolean;
   madrasaName: string;
+  lang: Lang;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,11 +43,11 @@ export default function LogoForm({
     setSaved(false);
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setError("صرف JPG، PNG یا WebP تصویر چلے گی۔");
+      setError(t(lang, "profile.logo_err_type"));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setError("تصویر 2MB سے بڑی ہے — چھوٹی تصویر چنیں۔");
+      setError(t(lang, "profile.logo_err_size"));
       return;
     }
     setCrop({ x: 0, y: 0 });
@@ -62,7 +65,7 @@ export default function LogoForm({
 
   async function handleUpload() {
     if (!imageSrc) {
-      setError("پہلے تصویر چنیں۔");
+      setError(t(lang, "profile.logo_err_nofile"));
       return;
     }
     setError("");
@@ -70,11 +73,12 @@ export default function LogoForm({
     setLoading(true);
     try {
       const pixels = croppedAreaPixelsRef.current;
-      if (!pixels) throw new Error("کاٹنے والا حصہ نہیں ملا۔");
+      if (!pixels) throw new Error(t(lang, "profile.logo_err_crop"));
       // کاٹی ہوئی تصویر بنائیں (512×512) اور وہی اپلوڈ کریں
       const croppedFile = await getCroppedImg(imageSrc, pixels);
       const formData = new FormData();
       formData.set("logo", croppedFile);
+      formData.set("lang", lang);
       const result = await uploadMadrasaLogo(formData);
       if ("error" in result) {
         setError(result.error);
@@ -85,7 +89,7 @@ export default function LogoForm({
       router.refresh();
     } catch {
       // کچھ بھی ناکام ہو تو بٹن رکا رہے، "انتظار کریں" پر پھنسے نہیں
-      setError("لوگو اپلوڈ نہیں ہو سکا۔ دوبارہ کوشش کریں۔");
+      setError(t(lang, "profile.logo_err_upload"));
     } finally {
       setLoading(false);
     }
@@ -96,7 +100,7 @@ export default function LogoForm({
     setSaved(false);
     setLoading(true);
     try {
-      const result = await removeMadrasaLogo();
+      const result = await removeMadrasaLogo(lang);
       if ("error" in result) {
         setError(result.error);
         return;
@@ -104,7 +108,7 @@ export default function LogoForm({
       setSaved(true);
       router.refresh();
     } catch {
-      setError("لوگو ہٹایا نہیں جا سکا۔ دوبارہ کوشش کریں۔");
+      setError(t(lang, "profile.logo_err_remove"));
     } finally {
       setLoading(false);
     }
@@ -112,9 +116,13 @@ export default function LogoForm({
 
   return (
     <div>
-      <h3 className="form-section-title">مدرسے کا لوگو</h3>
+      <h3 className="form-section-title">{t(lang, "profile.logo_title")}</h3>
       {logoUrl && !imageSrc ? (
-        <img className="logo-preview" src={logoUrl} alt="مدرسے کا لوگو" />
+        <img
+          className="logo-preview"
+          src={logoUrl}
+          alt={t(lang, "profile.logo_title")}
+        />
       ) : !imageSrc ? (
         <div className="logo-preview-letter" aria-hidden="true">
           {firstLetter}
@@ -140,7 +148,9 @@ export default function LogoForm({
                 />
               </div>
               <label className="field" style={{ marginTop: 12 }}>
-                <span className="field-label">زوم — تصویر چھوٹی بڑی کریں</span>
+                <span className="field-label">
+                  {t(lang, "profile.logo_zoom")}
+                </span>
                 <input
                   type="range"
                   min={1}
@@ -148,18 +158,17 @@ export default function LogoForm({
                   step={0.1}
                   value={zoom}
                   onChange={(ev) => setZoom(Number(ev.target.value))}
-                  aria-label="زوم"
+                  aria-label={t(lang, "profile.logo_zoom")}
                 />
               </label>
-              <p className="form-note">
-                تصویر کو کھینچ کر جس حصے کو چاہیں گول دائرے میں رکھ لیں —
-                باہر والا حصہ نہیں جائے گا۔
-              </p>
+              <p className="form-note">{t(lang, "profile.logo_hint")}</p>
             </>
           ) : (
             <div className="form-grid" style={{ marginTop: 12 }}>
               <label className="field">
-                <span className="field-label">تصویر چنیں (JPG، PNG یا WebP — زیادہ سے زیادہ 2MB)</span>
+                <span className="field-label">
+                  {t(lang, "profile.logo_pick")}
+                </span>
                 <input
                   className="field-input"
                   ref={inputRef}
@@ -171,7 +180,9 @@ export default function LogoForm({
             </div>
           )}
           {error ? <p className="form-error">{error}</p> : null}
-          {saved ? <p className="form-note">لوگو محفوظ ہو گیا۔</p> : null}
+          {saved ? (
+            <p className="form-note">{t(lang, "profile.logo_saved")}</p>
+          ) : null}
           <div className="form-actions">
             {imageSrc ? (
               <>
@@ -181,7 +192,9 @@ export default function LogoForm({
                   disabled={loading}
                   onClick={handleUpload}
                 >
-                  {loading ? "براہِ کرم انتظار کریں…" : "لوگو لگائیں"}
+                  {loading
+                    ? t(lang, "common.wait")
+                    : t(lang, "profile.logo_apply")}
                 </button>
                 <button
                   className="btn-ghost"
@@ -189,7 +202,7 @@ export default function LogoForm({
                   disabled={loading}
                   onClick={handleCancelCrop}
                 >
-                  واپس
+                  {t(lang, "common.back")}
                 </button>
               </>
             ) : logoUrl ? (
@@ -199,18 +212,14 @@ export default function LogoForm({
                 disabled={loading}
                 onClick={handleRemove}
               >
-                لوگو ہٹائیں
+                {t(lang, "profile.logo_remove")}
               </button>
             ) : null}
           </div>
-          <p className="form-note">
-            لوگو ڈیش بورڈ کی سرخی میں گول دکھے گا — مہمان کو بھی نظر آئے گا۔
-          </p>
+          <p className="form-note">{t(lang, "profile.logo_note")}</p>
         </>
       ) : (
-        <p className="form-note">
-          لوگو صرف مدرسے کا مالک بدل سکتا ہے۔
-        </p>
+        <p className="form-note">{t(lang, "profile.logo_owner")}</p>
       )}
     </div>
   );

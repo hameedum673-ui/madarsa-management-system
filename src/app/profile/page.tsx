@@ -9,11 +9,12 @@ import ProfileForm from "@/app/profile/ProfileForm";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
-import { ROLE_LABELS } from "@/lib/approval";
-import type { MadrasaRole } from "@/lib/tenancy";
+import { getMyLanguage } from "@/lib/language";
+import { t } from "@/i18n/dictionary";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
+  const lang = await getMyLanguage();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -62,7 +63,7 @@ export default async function ProfilePage() {
         .single();
       userName = (myProfile as { name?: string } | null)?.name ?? "—";
       const role = (myProfile as { role?: string } | null)?.role;
-      userRole = role ? (ROLE_LABELS[role as MadrasaRole] ?? role) : "—";
+      userRole = role ? t(lang, `role.${role}`) : "—";
 
       // مرحلہ 86 — اپنا واٹس ایپ نمبر (اپنی قطار پڑھنے کی پالیسی سے؛
       // مہمان کی کوئی منظوری والی قطار نہیں — خالی رہتا ہے)
@@ -88,9 +89,9 @@ export default async function ProfilePage() {
     <ModuleCard
       department={{
         id: "profile",
-        label: "میرا پروفائل",
+        label: t(lang, "topbar.my_profile"),
         icon: "users",
-        group: "اکاؤنٹ",
+        group: t(lang, "profile.group"),
         desc: "",
       }}
       hideUnderConstruction
@@ -98,11 +99,11 @@ export default async function ProfilePage() {
         <>
           <div className="profile-rows">
             <div className="row">
-              <span>نام</span>
+              <span>{t(lang, "profile.name")}</span>
               <span>{userName}</span>
             </div>
             <div className="row">
-              <span>عہدہ</span>
+              <span>{t(lang, "profile.role")}</span>
               <span>{userRole}</span>
             </div>
             <div className="row">
@@ -110,7 +111,7 @@ export default async function ProfilePage() {
               <span>{email || "—"}</span>
             </div>
             <div className="row">
-              <span>ادارہ</span>
+              <span>{t(lang, "profile.madrasa")}</span>
               <span>{madrasaName}</span>
             </div>
           </div>
@@ -118,12 +119,14 @@ export default async function ProfilePage() {
           <ProfileForm
             initialName={userName === "—" ? "" : userName}
             initialWhatsapp={userWhatsapp}
+            lang={lang}
           />
           {/* مرحلہ 98 — مدرسے کا لوگو */}
           <LogoForm
             logoUrl={madrasaLogoUrl}
             canManage={canManageLogo}
             madrasaName={madrasaName === "—" ? "" : madrasaName}
+            lang={lang}
           />
         </>
       }

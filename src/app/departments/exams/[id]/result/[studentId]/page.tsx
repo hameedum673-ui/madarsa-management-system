@@ -139,10 +139,9 @@ export default async function ExamResultPage({
     .select("name")
     .eq("id", exam.madrasa_id)
     .single();
-  const madrasaName =
-    (madrasaData as { name: string } | null)?.name ??
-    "جامعہ منیجمنٹ سسٹم";
   const lang = await langP;
+  const madrasaName =
+    (madrasaData as { name: string } | null)?.name ?? t(lang, "app.name");
 
   if (!mine) {
     return (

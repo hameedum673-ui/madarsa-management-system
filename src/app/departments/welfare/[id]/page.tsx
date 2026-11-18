@@ -54,7 +54,7 @@ export default async function WelfareDetailPage({
 
   const record = data as WelfareRecord;
   const mine = await getMyMadrasa(supabase);
-  let madrasaName = "جامعہ منیجمنٹ سسٹم";
+  let madrasaName = t(lang, "app.name");
   if (mine) {
     const { data: madrasa } = await supabase
       .from("madrasas")

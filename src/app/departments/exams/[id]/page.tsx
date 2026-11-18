@@ -58,7 +58,7 @@ export default async function ExamDetailPage({
     .single();
   const madrasaName =
     (madrasaData as { name: string } | null)?.name ??
-    "جامعہ منیجمنٹ سسٹم";
+    t(lang, "app.name");
   // مرحلہ 54 — بند شعبے کا امتحان نہیں کھلے گا (پرانا امتحان ہو تو
   // شعبہ خالی ہو سکتا ہے — اس صورت میں یہ جانچ نہیں لگتی)
   const allowedSections = await getMyAllowedSections(supabase);

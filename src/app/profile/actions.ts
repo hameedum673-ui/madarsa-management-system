@@ -10,6 +10,18 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
+import { isSelectableLang, t, type Lang } from "@/i18n/dictionary";
+
+/** فارم سے زبان پڑھیں (نہ ہو یا غلط ہو تو اردو) — غلطیاں اسی زبان میں */
+function langFromForm(formData: FormData, field = "lang"): Lang {
+  const v = String(formData.get(field) ?? "");
+  return isSelectableLang(v) ? v : "ur";
+}
+
+/** براہِ راست دی گئی زبان (نہ ہو یا غلط ہو تو اردو) */
+function langFromValue(value: string | undefined): Lang {
+  return value && isSelectableLang(value) ? value : "ur";
+}
 
 export type ProfileResult = { ok: true } | { error: string };
 
@@ -36,15 +48,18 @@ async function writeAudit(
 export async function updateMyProfile(
   formData: FormData,
 ): Promise<ProfileResult> {
+  const formLang = langFromForm(formData);
   const name = String(formData.get("name") ?? "").trim();
   const whatsapp = String(formData.get("whatsapp") ?? "").trim();
-  if (!name) return { error: "نام لکھیں۔" };
-  if (name.length > 100) return { error: "نام بہت لمبا ہے۔" };
-  if (whatsapp.length > 30) return { error: "واٹس ایپ نمبر بہت لمبا ہے۔" };
+  if (!name) return { error: t(formLang, "profile.err_name") };
+  if (name.length > 100)
+    return { error: t(formLang, "profile.err_name_long") };
+  if (whatsapp.length > 30)
+    return { error: t(formLang, "profile.err_wa_long") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(formLang, "profile.err_login") };
 
   const { error } = await supabase.rpc("update_my_profile", {
     p_name: name,
@@ -52,9 +67,9 @@ export async function updateMyProfile(
   });
   if (error) {
     if (error.code === "PGRST202" || error.code === "42883") {
-      return { error: "پہلے مرحلہ 86 کی SQL چلائیں۔" };
+      return { error: t(formLang, "profile.err_sql86") };
     }
-    return { error: error.message || "پروفائل محفوظ نہیں ہو سکی۔" };
+    return { error: error.message || t(formLang, "profile.err_save") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "profile_updated", {
@@ -74,22 +89,26 @@ export async function updateMyProfile(
 export async function setLanguage(
   formData: FormData,
 ): Promise<ProfileResult> {
+  // غلطی موجودہ زبان میں دکھے — نئی زبان میں نہیں
+  const currentLang = langFromForm(formData, "current_lang");
   const lang = String(formData.get("language") ?? "").trim();
   if (lang !== "ur" && lang !== "ar")
-    return { error: "انگریزی جلد آ رہا ہے۔" };
+    return { error: t(currentLang, "profile.err_en") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(currentLang, "profile.err_login") };
 
   const { error } = await supabase.rpc("set_my_language", {
     p_language: lang,
   });
   if (error) {
     if (error.code === "PGRST202" || error.code === "42883") {
-      return { error: "پہلے مرحلہ 102 کی SQL چلائیں۔" };
+      return { error: t(currentLang, "profile.err_sql102") };
     }
-    return { error: error.message || "زبان محفوظ نہیں ہو سکی۔" };
+    return {
+      error: error.message || t(currentLang, "profile.language_error"),
+    };
   }
 
   const cookieStore = await cookies();
@@ -119,19 +138,20 @@ const LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export async function uploadMadrasaLogo(
   formData: FormData,
 ): Promise<ProfileResult> {
+  const formLang = langFromForm(formData);
   const file = formData.get("logo");
   if (!(file instanceof File) || file.size === 0)
-    return { error: "پہلے تصویر چنیں۔" };
+    return { error: t(formLang, "profile.logo_err_nofile") };
   if (!LOGO_TYPES.includes(file.type))
-    return { error: "صرف JPG، PNG یا WebP تصویر چلے گی۔" };
+    return { error: t(formLang, "profile.logo_err_type") };
   if (file.size > LOGO_MAX_BYTES)
-    return { error: "تصویر 2MB سے بڑی ہے — چھوٹی تصویر چنیں۔" };
+    return { error: t(formLang, "profile.logo_err_size") };
 
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(formLang, "profile.err_login") };
   if (!(await isMadrasaOwner(supabase)))
-    return { error: "صرف مدرسے کا مالک لوگو بدل سکتا ہے۔" };
+    return { error: t(formLang, "profile.logo_owner") };
 
   const path = `${mine.madrasaId}/logo`;
   const { error: uploadError } = await supabase.storage
@@ -139,8 +159,8 @@ export async function uploadMadrasaLogo(
     .upload(path, file, { contentType: file.type, upsert: true });
   if (uploadError) {
     if (uploadError.message.includes("Bucket not found"))
-      return { error: "پہلے مرحلہ 98 کی SQL چلائیں۔" };
-    return { error: "لوگو اپلوڈ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(formLang, "profile.err_sql98") };
+    return { error: t(formLang, "profile.logo_err_upload") };
   }
 
   // ?v= وقت کے ساتھ — تاکہ نیا لوگو لگتے ہی تازہ تصویر دکھے، پرانی
@@ -164,8 +184,8 @@ export async function uploadMadrasaLogo(
     // ریکارڈ نہ بنا تو اپلوڈ کی ہوئی فائل بھی ہٹا دیں تاکہ کچرا نہ رہے
     await supabase.storage.from("madrasa-logos").remove([path]);
     if (profileError.code === "PGRST204")
-      return { error: "پہلے مرحلہ 98 کی SQL چلائیں۔" };
-    return { error: "لوگو محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔" };
+      return { error: t(formLang, "profile.err_sql98") };
+    return { error: t(formLang, "profile.logo_err_save") };
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "madrasa_logo_updated", {
@@ -177,12 +197,15 @@ export async function uploadMadrasaLogo(
 }
 
 /** مرحلہ 98 — مدرسے کا لوگو ہٹانا (صرف مالک) */
-export async function removeMadrasaLogo(): Promise<ProfileResult> {
+export async function removeMadrasaLogo(
+  lang?: string,
+): Promise<ProfileResult> {
+  const formLang = langFromValue(lang);
   const supabase = await createClient();
   const mine = await getMyMadrasa(supabase);
-  if (!mine) return { error: "لاگ اِن نہیں ہے۔ دوبارہ لاگ اِن کریں۔" };
+  if (!mine) return { error: t(formLang, "profile.err_login") };
   if (!(await isMadrasaOwner(supabase)))
-    return { error: "صرف مدرسے کا مالک لوگو بدل سکتا ہے۔" };
+    return { error: t(formLang, "profile.logo_owner") };
 
   await supabase.storage
     .from("madrasa-logos")
@@ -191,7 +214,7 @@ export async function removeMadrasaLogo(): Promise<ProfileResult> {
     .from("madrasa_profile")
     .update({ logo_url: null, updated_at: new Date().toISOString() })
     .eq("madrasa_id", mine.madrasaId);
-  if (error) return { error: "لوگو ہٹایا نہیں جا سکا۔ دوبارہ کوشش کریں۔" };
+  if (error) return { error: t(formLang, "profile.logo_err_remove") };
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "madrasa_logo_removed", {});
   revalidatePath("/profile");
