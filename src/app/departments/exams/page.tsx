@@ -12,7 +12,9 @@ import { getMyAllowedSections } from "@/lib/permissions";
 import { getMyLanguage } from "@/lib/language";
 import { examTypeLabelLang, t } from "@/i18n/dictionary";
 import {
+  DEPARTMENT_IDS,
   SECTION_IDS,
+  type DepartmentId,
   type SectionId,
 } from "@/lib/students";
 import {
@@ -31,6 +33,7 @@ export default async function ExamsPage({
 }: {
   searchParams: Promise<{
     section?: string;
+    department?: string;
     exam_type?: string;
     page?: string;
   }>;
@@ -55,6 +58,12 @@ export default async function ExamsPage({
   )
     ? (rawType as ExamType)
     : "all";
+  // شعبہ جات کا فلٹر (پہلے سے "سب")
+  const rawDepartment = params.department ?? "all";
+  const department: DepartmentId | "all" =
+    (DEPARTMENT_IDS as string[]).includes(rawDepartment)
+      ? (rawDepartment as DepartmentId)
+      : "all";
 
   // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
@@ -66,6 +75,7 @@ export default async function ExamsPage({
     .order("exam_date", { ascending: false });
   if (section !== "all") query = query.eq("section", section);
   if (examType !== "all") query = query.eq("exam_type", examType);
+  if (department !== "all") query = query.eq("department", department);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
   query = query.range(from, to);
@@ -94,6 +104,21 @@ export default async function ExamsPage({
         </div>
 
         <form className="att-controls" method="get">
+          <label className="field">
+            <span className="field-label">{t(lang, "col.dept")}</span>
+            <select
+              className="field-input"
+              name="department"
+              defaultValue={department}
+            >
+              <option value="all">{t(lang, "common.all")}</option>
+              {DEPARTMENT_IDS.map((d) => (
+                <option key={d} value={d}>
+                  {t(lang, `dept.${d}`)}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="field">
             <span className="field-label">
               {t(lang, "classes.section_filter")}

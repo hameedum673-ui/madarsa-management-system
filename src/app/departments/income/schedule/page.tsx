@@ -12,6 +12,7 @@ import {
   getMySectionFilter,
 } from "@/lib/permissions";
 import {
+  DEPARTMENT_IDS,
   SECTION_IDS,
   type DepartmentId,
   type SectionId,
@@ -55,7 +56,7 @@ function statusBadgeClass(status: FeeDueStatus): string {
 export default async function FeeSchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; section?: string }>;
+  searchParams: Promise<{ month?: string; section?: string; department?: string }>;
 }) {
   const sp = await searchParams;
   const month =
@@ -71,13 +72,22 @@ export default async function FeeSchedulePage({
   const section = getMySectionFilter(allowedSections, sp.section);
   const effectiveSections =
     section === "all" ? allowedSections : new Set<SectionId>([section]);
+  // شعبہ جات کا فلٹر (پہلے سے "سب")
+  const rawDepartment = sp.department ?? "all";
+  const department: DepartmentId | "all" =
+    (DEPARTMENT_IDS as string[]).includes(rawDepartment)
+      ? (rawDepartment as DepartmentId)
+      : "all";
 
-  const { data: scheduleData, error: scheduleError } = await supabase
+  let scheduleQuery = supabase
     .from("fee_schedule")
     .select("id, department, class_name, amount")
     .eq("status", "active")
     .order("department", { ascending: true })
     .order("class_name", { ascending: true });
+  if (department !== "all")
+    scheduleQuery = scheduleQuery.eq("department", department);
+  const { data: scheduleData, error: scheduleError } = await scheduleQuery;
 
   const tableMissing =
     (scheduleError as { code?: string } | null)?.code === "42P01";
@@ -107,6 +117,9 @@ export default async function FeeSchedulePage({
   // مرحلہ 55 — چنا ہوا شعبہ ہو تو صرف وہی شعبہ
   if (section !== "all") {
     scheduleStudentsQuery = scheduleStudentsQuery.eq("section", section);
+  }
+  if (department !== "all") {
+    scheduleStudentsQuery = scheduleStudentsQuery.eq("department", department);
   }
   const { data: studentsData } = await scheduleStudentsQuery;
   const students = (studentsData ?? []) as Pick<
@@ -225,6 +238,21 @@ export default async function FeeSchedulePage({
                   name="month"
                   defaultValue={month}
                 />
+              </label>
+              <label className="field">
+                <span className="field-label">{t(lang, "col.dept")}</span>
+                <select
+                  className="field-input"
+                  name="department"
+                  defaultValue={department}
+                >
+                  <option value="all">{t(lang, "common.all")}</option>
+                  {DEPARTMENT_IDS.map((d) => (
+                    <option key={d} value={d}>
+                      {t(lang, `dept.${d}`)}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="field">
                 <span className="field-label">{t(lang, "students.section_filter")}</span>

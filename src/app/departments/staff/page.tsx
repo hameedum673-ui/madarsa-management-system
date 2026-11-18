@@ -15,7 +15,9 @@ import {
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
 import {
+  DEPARTMENT_IDS,
   SECTION_IDS,
+  type DepartmentId,
   type SectionId,
 } from "@/lib/students";
 import { getMyLanguage } from "@/lib/language";
@@ -30,7 +32,7 @@ function formatDate(value: string | null): string {
 export default async function StaffPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; section?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; section?: string; department?: string; page?: string }>;
 }) {
   const params = await searchParams;
   // مرحلہ 58 — تلاش: نام، والد کا نام، یا فون نمبر سے
@@ -47,6 +49,12 @@ export default async function StaffPage({
     allowedSections.has(rawSection as SectionId)
       ? (rawSection as SectionId)
       : "all";
+  // شعبہ جات کا فلٹر (پہلے سے "سب")
+  const rawDepartment = params.department ?? "all";
+  const department: DepartmentId | "all" =
+    (DEPARTMENT_IDS as string[]).includes(rawDepartment)
+      ? (rawDepartment as DepartmentId)
+      : "all";
 
   // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
@@ -57,6 +65,7 @@ export default async function StaffPage({
     .select("*", { count: "exact" })
     .order("created_at", { ascending: false });
   if (section !== "all") query = query.eq("section", section);
+  if (department !== "all") query = query.eq("department", department);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
   if (safeQ) {
@@ -98,6 +107,21 @@ export default async function StaffPage({
               defaultValue={q}
               placeholder={t(lang, "staff.search_placeholder")}
             />
+          </label>
+          <label className="att-field">
+            <span className="att-label">{t(lang, "col.dept")}</span>
+            <select
+              className="att-input"
+              name="department"
+              defaultValue={department}
+            >
+              <option value="all">{t(lang, "common.all")}</option>
+              {DEPARTMENT_IDS.map((d) => (
+                <option key={d} value={d}>
+                  {t(lang, `dept.${d}`)}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="att-field">
             <span className="att-label">{t(lang, "students.section_filter")}</span>
