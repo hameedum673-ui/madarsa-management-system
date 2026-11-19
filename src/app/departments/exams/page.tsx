@@ -6,6 +6,7 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { createClient } from "@/lib/supabase/server";
+import { isAppAdmin, isMadrasaOwner } from "@/lib/approval";
 import { parsePage, pageRange, pageCount } from "@/lib/pagination";
 import Pagination from "@/components/Pagination";
 import { getMyAllowedSections } from "@/lib/permissions";
@@ -47,10 +48,14 @@ export default async function ExamsPage({
   const params = await searchParams;
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
-  const [allowedSections, lang] = await Promise.all([
+  // نمبر درآمد کا لنک صرف مالک / ایڈمن کو دکھے
+  const [allowedSections, lang, admin, owner] = await Promise.all([
     getMyAllowedSections(supabase),
     getMyLanguage(),
+    isAppAdmin(supabase),
+    isMadrasaOwner(supabase),
   ]);
+  const canImport = admin || owner;
   const rawSection = params.section ?? "all";
   const section: SectionId | "all" =
     (SECTION_IDS as string[]).includes(rawSection) &&
@@ -122,6 +127,11 @@ export default async function ExamsPage({
             })}
           </span>
           <span className="spacer" />
+          {canImport ? (
+            <Link className="btn-ghost" href="/departments/exams/import">
+              {t(lang, "exam.marks_import.link")}
+            </Link>
+          ) : null}
           <Link className="btn-primary" href="/departments/exams/new">
             {t(lang, "exams.new")}
           </Link>

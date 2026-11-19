@@ -733,6 +733,58 @@ const ur: Dict = {
   "exam.marks.save": "نمبر محفوظ کریں",
   "exam.marks.saved": "نمبر محفوظ ہو گئے ہیں۔",
 
+  "exam.marks_import.title": "نمبر ایک ساتھ ڈالیں (CSV)",
+  "exam.marks_import.link": "نمبر ایک ساتھ ڈالیں",
+  "exam.marks_import.sub":
+    "ایک امتحان کے سب طلبہ کے نمبر ایک CSV فائل سے ایک ساتھ ڈالیں — پہلے امتحان چنیں، پھر فائل اپ لوڈ کریں۔",
+  "exam.marks_import.exam": "امتحان",
+  "exam.marks_import.file": "CSV فائل",
+  "exam.marks_import.file_hint":
+    "زیادہ سے زیادہ 1 MB، زیادہ سے زیادہ 500 قطاریں۔",
+  "exam.marks_import.sample": "نمونہ فائل ڈاؤن لوڈ کریں",
+  "exam.marks_import.format":
+    "کالم: name, father_name + امتحان کا ہر مضمون — نمبر: 0–100 — خالی خانہ = اس مضمون کے نمبر نہیں ڈالنے",
+  "exam.marks_import.preview_btn": "پیش نظارہ دیکھیں",
+  "exam.marks_import.preview_title": "پیش نظارہ — ابھی کچھ محفوظ نہیں ہوا",
+  "exam.marks_import.valid": "درست قطاریں",
+  "exam.marks_import.errors": "غلطی والی قطاریں",
+  "exam.marks_import.already":
+    "پہلے سے موجود (دوبارہ لکھنے پر درست ہو جائیں گے)",
+  "exam.marks_import.confirm": "تصدیق کریں اور نمبر ڈالیں",
+  "exam.marks_import.warning":
+    "خبردار: غلط نمبر بعد میں درست ہو سکتے ہیں (دوبارہ درآمد یا ہاتھ سے) — لیکن نتیجہ ڈیلیٹ نہیں ہوتا۔ تصدیق سے پہلے پیش نظارہ اچھی طرح دیکھ لیں۔",
+  "exam.marks_import.done": "نمبر ڈال دیے گئے۔",
+  "exam.marks_import.no_valid":
+    "کوئی درست قطار نہیں — پہلے غلطیاں درست کریں۔",
+  "exam.marks_import.row": "قطار",
+  "exam.marks_import.reason": "وجہ",
+  "exam.marks_import.name": "نام",
+  "exam.marks_import.father": "والد کا نام",
+  "exam.marks_import.marks": "نمبر",
+  "exam.marks_import.subjects": "مضامین",
+  "exam.marks_import.added": "ڈالے گئے نمبر",
+  "exam.marks_import.skipped": "چھوڑے گئے",
+  "exam.marks_import.more": "اور {n} مزید",
+  "exam.marks_import.no_exams": "پہلے امتحان بنائیں۔",
+  "exam.marks_import.err.no_file": "CSV فائل منتخب کریں۔",
+  "exam.marks_import.err.file_big":
+    "فائل بہت بڑی ہے (زیادہ سے زیادہ 1 MB)۔",
+  "exam.marks_import.err.too_many":
+    "قطاریں بہت زیادہ ہیں (زیادہ سے زیادہ 500)۔",
+  "exam.marks_import.err.bad_header":
+    "فائل کے کالم درست نہیں — کالم امتحان کے مضامین جیسے ہونے چاہییں۔ نمونہ فائل دیکھیں۔",
+  "exam.marks_import.err.no_rows": "فائل میں کوئی قطار نہیں۔",
+  "exam.marks_import.err.parse_failed": "فائل پڑھی نہ جا سکی۔",
+  "exam.marks_import.err.confirm_failed":
+    "نمبر ڈالے نہ جا سکے۔ دوبارہ کوشش کریں۔",
+  "exam.marks_import.err.exam": "امتحان منتخب کریں۔",
+  "exam.marks_import.err.student_not_found": "طالب علم نہیں ملا",
+  "exam.marks_import.err.student_ambiguous":
+    "ایک جیسے نام کی دو طالبات ہیں — نمبر نہیں ڈالا گیا",
+  "exam.marks_import.err.marks_empty": "کوئی نمبر نہیں لکھا گیا",
+  "exam.marks_import.err.duplicate_student":
+    "یہ طالب علم فائل میں دو بار ہے",
+
   "exam.result.title": "امتحان کا نتیجہ",
   "exam.result.no_marks":
     "{name} کے اس امتحان میں ابھی نمبر درج نہیں ہیں۔",
@@ -2455,6 +2507,56 @@ const ar: Dict = {
 
   "exam.marks.save": "حفظ الدرجات",
   "exam.marks.saved": "تم حفظ الدرجات.",
+
+  "exam.marks_import.title": "إدخال جماعي للدرجات (CSV)",
+  "exam.marks_import.link": "إدخال جماعي للدرجات",
+  "exam.marks_import.sub":
+    "أدخل درجات جميع الطلاب في امتحان واحد دفعة واحدة من ملف CSV — اختر الامتحان أولاً، ثم ارفع الملف.",
+  "exam.marks_import.exam": "الامتحان",
+  "exam.marks_import.file": "ملف CSV",
+  "exam.marks_import.file_hint": "بحد أقصى 1 ميغابايت و500 صف.",
+  "exam.marks_import.sample": "تنزيل ملف نموذجي",
+  "exam.marks_import.format":
+    "الأعمدة: name, father_name + كل مادة في الامتحان — الدرجة: 0–100 — الخانة الفارغة تعني عدم إدخال درجة لتلك المادة",
+  "exam.marks_import.preview_btn": "عرض المعاينة",
+  "exam.marks_import.preview_title": "معاينة — لم يُحفظ شيء بعد",
+  "exam.marks_import.valid": "صفوف صحيحة",
+  "exam.marks_import.errors": "صفوف فيها أخطاء",
+  "exam.marks_import.already":
+    "موجودة مسبقاً (ستُصحَّح عند إعادة الإدخال)",
+  "exam.marks_import.confirm": "تأكيد وإدخال الدرجات",
+  "exam.marks_import.warning":
+    "تحذير: يمكن تصحيح الدرجات الخاطئة لاحقاً (بإعادة الإدخال أو يدوياً) — لكن النتيجة لا تُحذف. راجع المعاينة جيداً قبل التأكيد.",
+  "exam.marks_import.done": "تم إدخال الدرجات.",
+  "exam.marks_import.no_valid":
+    "لا توجد صفوف صحيحة — صحّح الأخطاء أولاً.",
+  "exam.marks_import.row": "الصف",
+  "exam.marks_import.reason": "السبب",
+  "exam.marks_import.name": "الاسم",
+  "exam.marks_import.father": "اسم الأب",
+  "exam.marks_import.marks": "الدرجات",
+  "exam.marks_import.subjects": "المواد",
+  "exam.marks_import.added": "الدرجات المُدخلة",
+  "exam.marks_import.skipped": "تُركت",
+  "exam.marks_import.more": "و{n} أخرى",
+  "exam.marks_import.no_exams": "أنشئ امتحاناً أولاً.",
+  "exam.marks_import.err.no_file": "اختر ملف CSV.",
+  "exam.marks_import.err.file_big":
+    "الملف كبير جداً (بحد أقصى 1 ميغابايت).",
+  "exam.marks_import.err.too_many":
+    "الصفوف كثيرة جداً (بحد أقصى 500).",
+  "exam.marks_import.err.bad_header":
+    "أعمدة الملف غير صحيحة — يجب أن تطابق مواد الامتحان. راجع الملف النموذجي.",
+  "exam.marks_import.err.no_rows": "لا توجد صفوف في الملف.",
+  "exam.marks_import.err.parse_failed": "تعذّرت قراءة الملف.",
+  "exam.marks_import.err.confirm_failed":
+    "تعذّر إدخال الدرجات. حاول مرة أخرى.",
+  "exam.marks_import.err.exam": "اختر الامتحان.",
+  "exam.marks_import.err.student_not_found": "لم يُعثر على الطالب",
+  "exam.marks_import.err.student_ambiguous":
+    "يوجد طالبان بالاسم نفسه — لم تُدخل الدرجة",
+  "exam.marks_import.err.marks_empty": "لم تُكتب أي درجة",
+  "exam.marks_import.err.duplicate_student": "هذا الطالب مكرر في الملف",
 
   "exam.result.title": "نتيجة الامتحان",
   "exam.result.no_marks":
