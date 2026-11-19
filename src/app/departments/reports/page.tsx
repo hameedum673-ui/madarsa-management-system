@@ -388,6 +388,11 @@ export default async function ReportsPage({
                 <strong>{countStatus(attTeachers, "absent")}</strong>
               </div>
             </div>
+            <div className="form-actions no-print">
+              <Link className="btn-ghost" href="/departments/att-students/report">
+                {t(lang, "att.report.link")}
+              </Link>
+            </div>
 
             <h3 className="form-section-title">
               {t(lang, "reports.exams")}

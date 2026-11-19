@@ -48,3 +48,93 @@ export function isValidPastOrTodayDate(value: string): boolean {
   if (Number.isNaN(d.getTime())) return false;
   return value <= todayInKarachi();
 }
+
+/**
+ * درجہ وار حاضری کی رپورٹ (مرحلہ — مہتمم کے لیے)
+ * ہر جماعت: حاضر/غیر حاضر/رخصت/بیمار/باقی کی گنتی + ناموں کی فہرستیں۔
+ * طلبہ نام کے حساب سے ترتیب میں آتے ہیں (سوال نام کے حساب سے کرتا ہے)،
+ * اس لیے ہر فہرست بھی اسی ترتیب میں رہتی ہے۔ جماعتیں نام کے حساب سے۔
+ * خالص فعل — ڈیٹا بیس نہیں چھوتا، اس لیے الگ سے جانچا جا سکتا ہے۔
+ */
+export interface ReportStudent {
+  id: string;
+  name: string;
+  father_name: string;
+  class_name: string | null;
+}
+
+export interface ClassAttendanceGroup {
+  className: string;
+  present: ReportStudent[];
+  absent: ReportStudent[];
+  leave: ReportStudent[];
+  sick: ReportStudent[];
+  unmarked: ReportStudent[];
+  total: number;
+}
+
+export interface ClassAttendanceReport {
+  groups: ClassAttendanceGroup[];
+  present: number;
+  absent: number;
+  leave: number;
+  sick: number;
+  unmarked: number;
+  total: number;
+}
+
+export function buildClassAttendanceReport(
+  students: ReportStudent[],
+  existing: Record<string, AttendanceStatus>,
+  noClassLabel: string,
+): ClassAttendanceReport {
+  const report: ClassAttendanceReport = {
+    groups: [],
+    present: 0,
+    absent: 0,
+    leave: 0,
+    sick: 0,
+    unmarked: 0,
+    total: 0,
+  };
+  const byClass = new Map<string, ClassAttendanceGroup>();
+  for (const s of students) {
+    const key = (s.class_name ?? "").trim() || noClassLabel;
+    let g = byClass.get(key);
+    if (!g) {
+      g = {
+        className: key,
+        present: [],
+        absent: [],
+        leave: [],
+        sick: [],
+        unmarked: [],
+        total: 0,
+      };
+      byClass.set(key, g);
+    }
+    const status = existing[s.id];
+    if (status === "present") {
+      g.present.push(s);
+      report.present++;
+    } else if (status === "absent") {
+      g.absent.push(s);
+      report.absent++;
+    } else if (status === "leave") {
+      g.leave.push(s);
+      report.leave++;
+    } else if (status === "sick") {
+      g.sick.push(s);
+      report.sick++;
+    } else {
+      g.unmarked.push(s);
+      report.unmarked++;
+    }
+    g.total++;
+    report.total++;
+  }
+  report.groups = [...byClass.values()].sort((a, b) =>
+    a.className.localeCompare(b.className, "ur"),
+  );
+  return report;
+}

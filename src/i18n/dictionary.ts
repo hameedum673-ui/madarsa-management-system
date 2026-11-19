@@ -517,6 +517,10 @@ const ur: Dict = {
   "att.err.verify.students": "طلبہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "att.err.verify.teachers": "اساتذہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "att.err.save_failed": "حاضری محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "att.report.title": "درجہ وار حاضری کی رپورٹ",
+  "att.report.link": "درجہ وار رپورٹ دیکھیں",
+  "att.report.total": "کل",
+  "att.report.no_class": "جماعت درج نہیں",
 
   // مرحلہ 107 — تعلیمی ریکارڈ
   "common.view": "دیکھیں",
@@ -2309,6 +2313,10 @@ const ar: Dict = {
   "att.err.verify.students": "تعذّر التحقق من الطلاب. حاول مرة أخرى.",
   "att.err.verify.teachers": "تعذّر التحقق من المعلمين. حاول مرة أخرى.",
   "att.err.save_failed": "تعذّر حفظ الحضور. حاول مرة أخرى.",
+  "att.report.title": "تقرير الحضور حسب الصف",
+  "att.report.link": "عرض تقرير الحضور حسب الصف",
+  "att.report.total": "المجموع",
+  "att.report.no_class": "الصف غير مسجل",
 
   // المرحلة 107 — السجل التعليمي
   "common.view": "عرض",

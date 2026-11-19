@@ -6,6 +6,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ATTENDANCE_STATUSES,
@@ -173,6 +174,13 @@ export default function AttendanceForm({
         >
           {t(lang, "att.form.clear_all")}
         </button>
+        <span className="spacer" />
+        <Link
+          className="btn-ghost"
+          href={`/departments/att-students/report?date=${date}&department=${department}&section=${section}`}
+        >
+          {t(lang, "att.report.link")}
+        </Link>
       </div>
 
       <div className="att-summary">
