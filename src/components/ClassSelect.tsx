@@ -23,6 +23,7 @@ export default function ClassSelect({
   department,
   section,
   initialClassName,
+  onClassChange,
   lang = "ur",
 }: {
   classes: ClassOption[];
@@ -31,6 +32,8 @@ export default function ClassSelect({
   // جائے (امتحان والا فارم) تو دونوں شعبوں کی جماعتیں دکھائیں۔
   section?: string;
   initialClassName?: string | null;
+  // جماعت بدلنے پر بتائیں (نئے امتحان کا فارم اس سے مضامین کا سانچہ بھرتا ہے) — نہ دیا جائے تو کچھ نہیں ہوتا
+  onClassChange?: (className: string) => void;
   // مرحلہ 103 — زبان نہ دی جائے تو اردو (دوسرے ماڈیول ویسے ہی رہتے ہیں)
   lang?: Lang;
 }) {
@@ -100,7 +103,11 @@ export default function ClassSelect({
       <select
         className="field-input"
         value={selected}
-        onChange={(e) => setSelected(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          setSelected(v);
+          onClassChange?.(v);
+        }}
       >
         <option value="">{t(lang, "class.select.choose")}</option>
         {deptClasses.map((c) => (

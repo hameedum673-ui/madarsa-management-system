@@ -118,6 +118,27 @@ export default function ClassForm({
         </label>
       </div>
 
+      <label className="field">
+        <span className="field-label">{t(lang, "class.form.subjects")}</span>
+        <textarea
+          className="field-input field-textarea"
+          name="subjects"
+          maxLength={1000}
+          defaultValue={(initial?.subjects ?? []).join("، ")}
+          placeholder={t(lang, "class.form.subjects_ph")}
+        />
+        <span
+          style={{
+            display: "block",
+            marginTop: 8,
+            fontSize: ".85rem",
+            color: "var(--muted)",
+          }}
+        >
+          {t(lang, "class.form.subjects_hint")}
+        </span>
+      </label>
+
       {showStatus ? (
         <label className="field">
           <span className="field-label">{t(lang, "col.status")}</span>

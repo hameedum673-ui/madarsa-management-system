@@ -39,6 +39,17 @@ interface ClassFields {
   department: DepartmentId;
   section: SectionId;
   sortOrder: number;
+  /** جماعت کے مضامین کا سانچہ — خالی ہو تو کوئی سانچہ نہیں */
+  subjects: string[];
+}
+
+/** مضامین کی فہرست — اردو کوما (،) اور انگریزی کوما (,) دونوں چلتے ہیں */
+function parseSubjects(value: string): string[] {
+  const parts = value
+    .split(/[،,]/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return [...new Set(parts)];
 }
 
 /** فارم کی جانچ — غلط ہو تو غلطی، درست ہو تو صاف شدہ کھیت */
@@ -51,6 +62,7 @@ function validateFields(
   const section = clean(formData.get("section"), 20);
   const sortOrderRaw = clean(formData.get("sort_order"), 10);
   const sortOrder = Number(sortOrderRaw);
+  const subjects = parseSubjects(clean(formData.get("subjects"), 1000));
 
   if (!name) return { error: t(lang, "class.err.name_required") };
   if (!DEPARTMENT_IDS.includes(department as DepartmentId))
@@ -59,6 +71,8 @@ function validateFields(
     return { error: t(lang, "student.err.section_invalid") };
   if (!Number.isInteger(sortOrder) || sortOrder < 1 || sortOrder > 999)
     return { error: t(lang, "class.err.sort_order") };
+  if (subjects.length > 10)
+    return { error: t(lang, "class.err.subjects_max") };
 
   return {
     fields: {
@@ -66,6 +80,7 @@ function validateFields(
       department: department as DepartmentId,
       section: section as SectionId,
       sortOrder,
+      subjects,
     },
   };
 }
@@ -87,6 +102,30 @@ async function writeAudit(
     });
   } catch {
     /* آڈٹ ناکام ہو تو اصل کام نہیں رکتا */
+  }
+}
+
+/**
+ * جماعت کے مضامین کا سانچہ الگ محفوظ کریں — جان بوجھ کر الگ اپڈیٹ ہے
+ * تاکہ migration 060 چلنے سے پہلے بھی جماعت بننا/بدلنا نہ رکے
+ * (امتحان والے سال کی طرح: اصل کام کبھی سانچے پر نہیں رکتا)۔
+ * ناکام ہو تو خاموشی سے چھوڑ دیں — اگلی بار جماعت بدلتے وقت
+ * مضامین دوبارہ محفوظ ہو جائیں گے۔
+ */
+async function saveSubjectsGuarded(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  madrasaId: string,
+  classId: string,
+  subjects: string[],
+) {
+  try {
+    await supabase
+      .from("classes")
+      .update({ subjects })
+      .eq("id", classId)
+      .eq("madrasa_id", madrasaId);
+  } catch {
+    /* کالم نہ ہو تو خاموشی سے چھوڑ دیں */
   }
 }
 
@@ -125,6 +164,8 @@ export async function addClass(formData: FormData): Promise<ActionResult> {
   if (error || !data) {
     return { error: t(lang, "student.err.save_failed") };
   }
+
+  await saveSubjectsGuarded(supabase, mine.madrasaId, data.id as string, f.subjects);
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "class_created", {
     class_id: data.id as string,
@@ -181,6 +222,8 @@ export async function updateClass(
   if (error || !data) {
     return { error: t(lang, "student.err.update_failed") };
   }
+
+  await saveSubjectsGuarded(supabase, mine.madrasaId, data.id as string, f.subjects);
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "class_updated", {
     class_id: data.id as string,

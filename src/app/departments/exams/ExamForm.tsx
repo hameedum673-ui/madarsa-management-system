@@ -42,6 +42,46 @@ export default function ExamForm({
   const [section, setSection] = useState<SectionId>("banat");
   // مرحلہ 70 — امتحان کی قسم (سب سے عام: سہ ماہی)
   const [examType, setExamType] = useState<ExamType>("quarterly");
+  // جماعت کے مضامین کا سانچہ — جماعت چنتے ہی خانہ خود بھر جاتا ہے،
+  // پھر بھی بدلا جا سکتا ہے (ہاتھ سے لکھتے ہی یہ سانچہ نہیں رہتا)
+  const [subjects, setSubjects] = useState("");
+  const [subjectsFromTemplate, setSubjectsFromTemplate] = useState(false);
+
+  function handleClassChange(className: string) {
+    const match = classes.find(
+      (c) =>
+        c.name === className &&
+        c.department === department &&
+        c.section === section,
+    );
+    const tpl = match?.subjects ?? [];
+    if (tpl.length > 0) {
+      setSubjects(tpl.join("، "));
+      setSubjectsFromTemplate(true);
+    } else if (subjectsFromTemplate) {
+      // نئی جماعت کا کوئی سانچہ نہیں — پرانی جماعت کے مضامین نہ رہیں
+      setSubjects("");
+      setSubjectsFromTemplate(false);
+    }
+  }
+
+  // شعبہ/حصہ بدلے تو جماعت کا انتخاب ختم ہو جاتا ہے — سانچے والے
+  // مضامین بھی ساتھ صاف کر دیں؛ ہاتھ سے لکھے مضامین ویسے ہی رہیں
+  function handleDepartmentChange(value: string) {
+    setDepartment(value);
+    if (subjectsFromTemplate) {
+      setSubjects("");
+      setSubjectsFromTemplate(false);
+    }
+  }
+
+  function handleSectionChange(value: SectionId) {
+    setSection(value);
+    if (subjectsFromTemplate) {
+      setSubjects("");
+      setSubjectsFromTemplate(false);
+    }
+  }
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -111,7 +151,7 @@ export default function ExamForm({
             name="department"
             required
             value={department}
-            onChange={(e) => setDepartment(e.target.value)}
+            onChange={(e) => handleDepartmentChange(e.target.value)}
           >
             {DEPARTMENT_IDS.map((d) => (
               <option key={d} value={d}>
@@ -130,7 +170,7 @@ export default function ExamForm({
             name="section"
             required
             value={section}
-            onChange={(e) => setSection(e.target.value as SectionId)}
+            onChange={(e) => handleSectionChange(e.target.value as SectionId)}
           >
             {SECTION_IDS.map((s) => (
               <option key={s} value={s}>
@@ -140,7 +180,7 @@ export default function ExamForm({
           </select>
         </label>
 
-        <ClassSelect classes={classes} department={department} section={section} lang={lang} />
+        <ClassSelect classes={classes} department={department} section={section} onClassChange={handleClassChange} lang={lang} />
       </div>
 
       <label className="field">
@@ -150,8 +190,25 @@ export default function ExamForm({
           name="subjects"
           required
           maxLength={1000}
+          value={subjects}
+          onChange={(e) => {
+            setSubjects(e.target.value);
+            setSubjectsFromTemplate(false);
+          }}
           placeholder={t(lang, "exam.form.subjects_ph")}
         />
+        {subjectsFromTemplate ? (
+          <span
+            style={{
+              display: "block",
+              marginTop: 8,
+              fontSize: ".85rem",
+              color: "var(--muted)",
+            }}
+          >
+            {t(lang, "exam.form.subjects_from_class")}
+          </span>
+        ) : null}
       </label>
 
       {error ? <p className="form-error">{error}</p> : null}

@@ -464,10 +464,15 @@ const ur: Dict = {
   "class.form.dept": "شعبہ *",
   "class.form.section": "شعبہ (بنین / بنات) *",
   "class.form.sort_order": "ترتیب نمبر *",
+  "class.form.subjects": "جماعت کے مضامین",
+  "class.form.subjects_ph": "مثلاً ناظرہ، تجوید، اردو",
+  "class.form.subjects_hint":
+    "یہ مضامین ہر نئے امتحان میں جماعت چنتے ہی خود بھر جائیں گے۔ خالی چھوڑیں تو کوئی سانچہ نہیں بنے گا۔",
 
   "class.err.name_required": "جماعت کا نام ضروری ہے۔",
   "class.err.sort_order": "ترتیب نمبر 1 سے 999 کے درمیان ہونا چاہیے۔",
   "class.err.status_invalid": "حالت درست منتخب کریں (فعال یا غیر فعال)۔",
+  "class.err.subjects_max": "زیادہ سے زیادہ 10 مضامین ہو سکتے ہیں۔",
 
   "att.status.present": "حاضر",
   "att.status.absent": "غیر حاضر",
@@ -696,6 +701,8 @@ const ur: Dict = {
   "exam.form.dept": "شعبہ *",
   "exam.form.subjects": "مضامین *",
   "exam.form.subjects_ph": "مثلاً ناظرہ، تجوید، اردو",
+  "exam.form.subjects_from_class":
+    "یہ مضامین جماعت کے سانچے سے آئے ہیں — بدلے جا سکتے ہیں۔",
   "exam.form.note":
     "ہر مضمون 100 نمبر کا ہوگا۔ مضامین کوما (،) سے الگ لکھیں۔ جماعت خالی ہو تو پورا شعبہ شامل ہوگا۔",
   "exam.form.create": "امتحان بنائیں",
@@ -2239,10 +2246,15 @@ const ar: Dict = {
   "class.form.dept": "القسم *",
   "class.form.section": "القسم (بنون / بنات) *",
   "class.form.sort_order": "رقم الترتيب *",
+  "class.form.subjects": "مواد الشعبة",
+  "class.form.subjects_ph": "مثال: الناظرة، التجويد، الأردية",
+  "class.form.subjects_hint":
+    "ستُملأ هذه المواد تلقائيًا عند اختيار الشعبة في كل امتحان جديد. اتركها فارغة إذا لم ترد قالبًا.",
 
   "class.err.name_required": "اسم الشعبة مطلوب.",
   "class.err.sort_order": "يجب أن يكون رقم الترتيب بين 1 و999.",
   "class.err.status_invalid": "اختر الحالة الصحيحة (نشط أو غير نشط).",
+  "class.err.subjects_max": "الحد الأقصى 10 مواد.",
 
   "att.status.present": "حاضر",
   "att.status.absent": "غائب",
@@ -2471,6 +2483,8 @@ const ar: Dict = {
   "exam.form.dept": "القسم *",
   "exam.form.subjects": "المواد *",
   "exam.form.subjects_ph": "مثال: الناظرة، التجويد، الأردية",
+  "exam.form.subjects_from_class":
+    "هذه المواد من قالب الشعبة — ويمكن تعديلها.",
   "exam.form.note":
     "كل مادة من 100 درجة. افصل المواد بفاصلة (،). إذا تُركت الشعبة فارغة شمل القسم كله.",
   "exam.form.create": "إنشاء الامتحان",
