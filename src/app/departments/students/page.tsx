@@ -19,6 +19,7 @@ import {
   type Student,
 } from "@/lib/students";
 import { getAllAcademicYears, type AcademicYear } from "@/lib/academicYears";
+import { isAppAdmin, isMadrasaOwner } from "@/lib/approval";
 import { getMyLanguage } from "@/lib/language";
 import { studentStatusLabel, t } from "@/i18n/dictionary";
 
@@ -40,6 +41,12 @@ export default async function StudentsPage({
   // مرحلہ 51 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
   const langP = getMyLanguage();
+  // CSV درآمد کا بٹن صرف مالک / ایڈمن کو دکھے
+  const [admin, owner] = await Promise.all([
+    isAppAdmin(supabase),
+    isMadrasaOwner(supabase),
+  ]);
+  const canImport = admin || owner;
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   const allowedSections = await getMyAllowedSections(supabase);
   const lang = await langP;
@@ -181,6 +188,11 @@ export default async function StudentsPage({
                 })}
           </span>
           <span className="spacer" />
+          {canImport ? (
+            <Link className="btn-ghost" href="/departments/students/import">
+              {t(lang, "student.import.link")}
+            </Link>
+          ) : null}
           <Link className="btn-primary" href="/departments/students/new">
             {t(lang, "students.add")}
           </Link>
