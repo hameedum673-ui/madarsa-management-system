@@ -13,10 +13,12 @@ import { getActiveClasses } from "@/lib/classes";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
+  getMyMadrasa,
   type DepartmentId,
   type SectionId,
   type Student,
 } from "@/lib/students";
+import { getAllAcademicYears, type AcademicYear } from "@/lib/academicYears";
 import { getMyLanguage } from "@/lib/language";
 import { studentStatusLabel, t } from "@/i18n/dictionary";
 
@@ -28,7 +30,7 @@ function formatDate(value: string | null): string {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; section?: string; department?: string; class?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; section?: string; department?: string; class?: string; year?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   // مرحلہ 34 — تلاش: نام، والد کا نام، یا رجسٹریشن نمبر سے
@@ -65,24 +67,100 @@ export default async function StudentsPage({
   const page = parsePage(sp.page);
   const { from, to } = pageRange(page);
 
-  let query = supabase
-    .from("students")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false });
-  if (safeQ) {
-    query = query.or(
-      `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
-    );
+  // سال کا فلٹر — صرف اپنے مدرسے کے سال (موجودہ پہلے، پھر پرانے)؛
+  // غلط یا دوسرے مدرسے کا سال ہو تو "سب" مانا جاتا ہے — صفحہ نہیں ٹوٹتا
+  let years: AcademicYear[] = [];
+  let yearId: string | "all" = "all";
+  let madrasaId: string | null = null;
+  try {
+    const mine = await getMyMadrasa(supabase);
+    if (mine) {
+      madrasaId = mine.madrasaId;
+      years = await getAllAcademicYears(supabase, mine.madrasaId);
+      const found = years.find((y) => y.id === (sp.year ?? "all").trim());
+      if (found) yearId = found.id;
+    }
+  } catch {
+    years = [];
+    yearId = "all";
+    madrasaId = null;
   }
-  if (section !== "all") query = query.eq("section", section);
-  if (department !== "all") query = query.eq("department", department);
-  if (className !== "all") query = query.eq("class_name", className);
-  if (allowedSections.size < 2)
-    query = query.eq("section", [...allowedSections][0] ?? "__none__");
-  query = query.range(from, to);
-  const { data, error, count } = await query;
 
-  const students = (data ?? []) as Student[];
+  let students: Student[] = [];
+  let count: number | null = null;
+  let error: unknown = null;
+  // سال چنا ہو تو جماعت کا کالم اس سال کی جماعت دکھاتا ہے
+  const yearClassById = new Map<string, string | null>();
+
+  if (yearId !== "all" && madrasaId) {
+    // اس سال کی قطاریں — شعبہ/حصہ/جماعت اس سال کے ریکارڈ سے
+    let enrQuery = supabase
+      .from("enrollments")
+      .select("student_id, class_name, section, department")
+      .eq("madrasa_id", madrasaId)
+      .eq("academic_year_id", yearId);
+    if (section !== "all") enrQuery = enrQuery.eq("section", section);
+    if (department !== "all") enrQuery = enrQuery.eq("department", department);
+    if (className !== "all") enrQuery = enrQuery.eq("class_name", className);
+    if (allowedSections.size < 2)
+      enrQuery = enrQuery.eq(
+        "section",
+        [...allowedSections][0] ?? "__none__",
+      );
+    const { data: enrData, error: enrError } = await enrQuery;
+    if (enrError) {
+      error = enrError;
+    } else {
+      const rows = (enrData ?? []) as {
+        student_id: string;
+        class_name: string | null;
+      }[];
+      for (const r of rows) yearClassById.set(r.student_id, r.class_name);
+      const ids = rows.map((r) => r.student_id);
+      if (ids.length === 0) {
+        students = [];
+        count = 0;
+      } else {
+        let sq = supabase
+          .from("students")
+          .select("*", { count: "exact" })
+          .in("id", ids)
+          .order("created_at", { ascending: false });
+        if (safeQ) {
+          sq = sq.or(
+            `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
+          );
+        }
+        sq = sq.range(from, to);
+        const res = await sq;
+        students = (res.data ?? []) as Student[];
+        error = res.error;
+        count = res.count;
+      }
+    }
+  } else {
+    // "سب" — آج کا طریقہ ویسا ہی
+    let query = supabase
+      .from("students")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
+    if (safeQ) {
+      query = query.or(
+        `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
+      );
+    }
+    if (section !== "all") query = query.eq("section", section);
+    if (department !== "all") query = query.eq("department", department);
+    if (className !== "all") query = query.eq("class_name", className);
+    if (allowedSections.size < 2)
+      query = query.eq("section", [...allowedSections][0] ?? "__none__");
+    query = query.range(from, to);
+    const res = await query;
+    students = (res.data ?? []) as Student[];
+    error = res.error;
+    count = res.count;
+  }
+
   const pages = pageCount(count);
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
@@ -168,6 +246,21 @@ export default async function StudentsPage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">{t(lang, "students.year_filter")}</span>
+            <select
+              className="field-input"
+              name="year"
+              defaultValue={yearId}
+            >
+              <option value="all">{t(lang, "students.year_all")}</option>
+              {years.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             {t(lang, "students.search_button")}
           </button>
@@ -227,7 +320,11 @@ export default async function StudentsPage({
                     <td>{s.father_name}</td>
                     <td>{t(lang, `dept.${s.department}`)}</td>
                     <td>{t(lang, `section.${s.section}`)}</td>
-                    <td>{s.class_name ?? "—"}</td>
+                    <td>
+                      {yearId !== "all"
+                        ? (yearClassById.get(s.id) ?? "—")
+                        : (s.class_name ?? "—")}
+                    </td>
                     <td>{t(lang, `admission.type.${s.admission_type}`)}</td>
                     <td>{formatDate(s.admission_date)}</td>
                     <td>

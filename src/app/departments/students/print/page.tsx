@@ -18,6 +18,7 @@ import {
   type Student,
 } from "@/lib/students";
 import { getMyLanguage } from "@/lib/language";
+import { getAllAcademicYears, type AcademicYear } from "@/lib/academicYears";
 import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string | null): string {
@@ -33,6 +34,7 @@ export default async function StudentsPrintPage({
     section?: string;
     department?: string;
     class?: string;
+    year?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -62,25 +64,94 @@ export default async function StudentsPrintPage({
       ? rawClass
       : "all";
 
-  // صرف فعال طلبہ، داخلہ نمبر کے حساب سے، بغیر صفحہ بندی کے
-  let query = supabase
-    .from("students")
-    .select("*")
-    .eq("status", "active")
-    .order("registration_number", { ascending: true });
-  if (safeQ) {
-    query = query.or(
-      `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
-    );
+  // سال کا فلٹر — صرف اپنے مدرسے کے سال؛ غلط سال ہو تو "سب"
+  let years: AcademicYear[] = [];
+  let yearId: string | "all" = "all";
+  let yearLabel: string | null = null;
+  let madrasaId: string | null = null;
+  try {
+    const mine0 = await getMyMadrasa(supabase);
+    if (mine0) {
+      madrasaId = mine0.madrasaId;
+      years = await getAllAcademicYears(supabase, mine0.madrasaId);
+      const found = years.find((y) => y.id === (sp.year ?? "all").trim());
+      if (found) {
+        yearId = found.id;
+        yearLabel = found.label;
+      }
+    }
+  } catch {
+    years = [];
+    yearId = "all";
+    madrasaId = null;
   }
-  if (section !== "all") query = query.eq("section", section);
-  if (department !== "all") query = query.eq("department", department);
-  if (className !== "all") query = query.eq("class_name", className);
-  if (allowedSections.size < 2)
-    query = query.eq("section", [...allowedSections][0] ?? "__none__");
-  const { data, error } = await query;
 
-  const students = (data ?? []) as Student[];
+  // صرف فعال طلبہ، داخلہ نمبر کے حساب سے، بغیر صفحہ بندی کے
+  let students: Student[] = [];
+  let error: unknown = null;
+  if (yearId !== "all" && madrasaId) {
+    // اس سال کی قطاریں — شعبہ/حصہ/جماعت اس سال کے ریکارڈ سے
+    let enrQuery = supabase
+      .from("enrollments")
+      .select("student_id, class_name, section, department")
+      .eq("madrasa_id", madrasaId)
+      .eq("academic_year_id", yearId);
+    if (section !== "all") enrQuery = enrQuery.eq("section", section);
+    if (department !== "all") enrQuery = enrQuery.eq("department", department);
+    if (className !== "all") enrQuery = enrQuery.eq("class_name", className);
+    if (allowedSections.size < 2)
+      enrQuery = enrQuery.eq(
+        "section",
+        [...allowedSections][0] ?? "__none__",
+      );
+    const { data: enrData, error: enrError } = await enrQuery;
+    if (enrError) {
+      error = enrError;
+    } else {
+      const ids = ((enrData ?? []) as { student_id: string }[]).map(
+        (r) => r.student_id,
+      );
+      if (ids.length === 0) {
+        students = [];
+      } else {
+        let sq = supabase
+          .from("students")
+          .select("*")
+          .eq("status", "active")
+          .in("id", ids)
+          .order("registration_number", { ascending: true });
+        if (safeQ) {
+          sq = sq.or(
+            `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
+          );
+        }
+        const res = await sq;
+        students = (res.data ?? []) as Student[];
+        error = res.error;
+      }
+    }
+  } else {
+    // "سب" — آج کا طریقہ ویسا ہی
+    let query = supabase
+      .from("students")
+      .select("*")
+      .eq("status", "active")
+      .order("registration_number", { ascending: true });
+    if (safeQ) {
+      query = query.or(
+        `name.ilike.%${safeQ}%,father_name.ilike.%${safeQ}%,registration_number.ilike.%${safeQ}%`,
+      );
+    }
+    if (section !== "all") query = query.eq("section", section);
+    if (department !== "all") query = query.eq("department", department);
+    if (className !== "all") query = query.eq("class_name", className);
+    if (allowedSections.size < 2)
+      query = query.eq("section", [...allowedSections][0] ?? "__none__");
+    const res = await query;
+    students = (res.data ?? []) as Student[];
+    error = res.error;
+  }
+
   const tableMissing =
     (error as { code?: string } | null)?.code === "42P01";
 
@@ -99,6 +170,7 @@ export default async function StudentsPrintPage({
   const today = formatDate(new Date().toISOString());
   const total = students.length.toLocaleString("ur-PK");
   const metaLine = [
+    `${t(lang, "students.year_filter")}: ${yearLabel ?? t(lang, "students.year_all")}`,
     `${t(lang, "col.class")}: ${className !== "all" ? className : t(lang, "common.all")}`,
     `${t(lang, "col.dept")}: ${department !== "all" ? t(lang, `dept.${department}`) : t(lang, "common.all")}`,
     `${t(lang, "col.section")}: ${section !== "all" ? t(lang, `section.${section}`) : t(lang, "common.all")}`,
@@ -110,6 +182,7 @@ export default async function StudentsPrintPage({
   if (department !== "all") backParams.set("department", department);
   if (section !== "all") backParams.set("section", section);
   if (className !== "all") backParams.set("class", className);
+  if (yearId !== "all") backParams.set("year", yearId);
   const backHref = backParams.toString()
     ? `/departments/students?${backParams.toString()}`
     : "/departments/students";
@@ -126,6 +199,42 @@ export default async function StudentsPrintPage({
           <span className="spacer" />
           <PrintButton lang={lang} />
         </div>
+
+        {/* سال کا فلٹر (صرف اسکرین پر — پرنٹ میں نہیں آتا) */}
+        <form
+          method="get"
+          action="/departments/students/print"
+          className="att-controls no-print"
+        >
+          {q ? <input type="hidden" name="q" value={q} /> : null}
+          {department !== "all" ? (
+            <input type="hidden" name="department" value={department} />
+          ) : null}
+          {section !== "all" ? (
+            <input type="hidden" name="section" value={section} />
+          ) : null}
+          {className !== "all" ? (
+            <input type="hidden" name="class" value={className} />
+          ) : null}
+          <label className="field">
+            <span className="field-label">{t(lang, "students.year_filter")}</span>
+            <select
+              className="field-input"
+              name="year"
+              defaultValue={yearId}
+            >
+              <option value="all">{t(lang, "students.year_all")}</option>
+              {years.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="btn-primary" type="submit">
+            {t(lang, "common.show")}
+          </button>
+        </form>
 
         {/* پرنٹ والی شیٹ کا سرنامہ (صرف پرنٹ میں دکھتا ہے) */}
         <div className="print-only print-sheet-head">
