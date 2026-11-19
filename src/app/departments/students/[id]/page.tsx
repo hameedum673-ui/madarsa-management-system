@@ -21,6 +21,8 @@ import {
 import { isModuleAllowedForMe } from "@/lib/permissions";
 import { getMyLanguage } from "@/lib/language";
 import { studentStatusLabel, t } from "@/i18n/dictionary";
+import { getStudentExamHistory } from "@/lib/exams";
+import StudentHistory from "@/app/departments/students/[id]/StudentHistory";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -58,11 +60,18 @@ export default async function StudentDetailPage({
     ReturnType<typeof getStudentPastEnrollments>
   > = [];
   let canEnrollPast = false;
+  // نتائج کی تاریخ — صرف اسی طالبہ کے؛ نہ ملے تو خالی (صفحہ نہیں ٹوٹے گا)
+  let history: Awaited<ReturnType<typeof getStudentExamHistory>> = [];
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
       pastYears = await getPastAcademicYears(supabase, mine.madrasaId);
       pastEnrollments = await getStudentPastEnrollments(
+        supabase,
+        mine.madrasaId,
+        student.id,
+      );
+      history = await getStudentExamHistory(
         supabase,
         mine.madrasaId,
         student.id,
@@ -73,6 +82,7 @@ export default async function StudentDetailPage({
     pastYears = [];
     pastEnrollments = [];
     canEnrollPast = false;
+    history = [];
   }
 
   return (
@@ -90,7 +100,7 @@ export default async function StudentDetailPage({
           </span>
         </div>
 
-        <div className="detail-rows">
+        <div className="detail-rows no-print">
           <div className="row">
             <span>{t(lang, "col.reg")}</span>
             <span>{student.registration_number}</span>
@@ -145,33 +155,42 @@ export default async function StudentDetailPage({
           </div>
         </div>
 
-        <h3 className="form-section-title">{t(lang, "student.detail.edit_title")}</h3>
-        <StudentForm
-          initial={student}
-          action={updateStudent.bind(null, student.id)}
-          submitLabel={t(lang, "student.form.update")}
-          cancelHref="/departments/students"
-          showStatus
-          classes={classes}
-          lang={lang}
-        />
+        <div className="no-print">
+          <h3 className="form-section-title">{t(lang, "student.detail.edit_title")}</h3>
+          <StudentForm
+            initial={student}
+            action={updateStudent.bind(null, student.id)}
+            submitLabel={t(lang, "student.form.update")}
+            cancelHref="/departments/students"
+            showStatus
+            classes={classes}
+            lang={lang}
+          />
 
-        {canEnrollPast ? (
-          <>
-            <h3 className="form-section-title">
-              {t(lang, "student.past_enroll.title")}
-            </h3>
-            <PastEnrollmentForm
-              lang={lang}
-              studentId={student.id}
-              pastYears={pastYears}
-              classes={classes}
-              department={student.department}
-              section={student.section}
-              existing={pastEnrollments}
-            />
-          </>
-        ) : null}
+          {canEnrollPast ? (
+            <>
+              <h3 className="form-section-title">
+                {t(lang, "student.past_enroll.title")}
+              </h3>
+              <PastEnrollmentForm
+                lang={lang}
+                studentId={student.id}
+                pastYears={pastYears}
+                classes={classes}
+                department={student.department}
+                section={student.section}
+                existing={pastEnrollments}
+              />
+            </>
+          ) : null}
+        </div>
+
+        <StudentHistory
+          lang={lang}
+          studentName={student.name}
+          regNo={student.registration_number}
+          groups={history}
+        />
 
       </div>
     </div>
