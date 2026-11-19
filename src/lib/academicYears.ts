@@ -113,6 +113,54 @@ export async function getCurrentAcademicYear(
 }
 
 /**
+ * تاریخ سے تعلیمی سال نکالیں — خالص حساب (migration 057 کے
+ * امتحان والے اصول جیسا؛ جانچ کے لیے الگ رکھا گیا ہے)۔
+ * تاریخیں ISO شکل (YYYY-MM-DD) میں ہیں، اس لیے لفظی موازنہ درست ہے۔
+ *
+ *   * تاریخ کسی سال کے اندر (start_date..end_date) → وہی سال
+ *   * تاریخ شعبان–رمضان کے وقفے میں (کوئی سال ختم ہو چکا، اگلا ابھی
+ *     شروع نہیں ہوا) → آنے والا سال (وقفے میں آنے والا سال ہی
+ *     موجودہ مانا جاتا ہے)
+ *   * ورنہ → null (پہلے سال سے بھی پرانی تاریخ، یا آنے والا سال
+ *     ابھی بنا ہی نہیں)
+ */
+export function pickAcademicYearForDate(
+  years: AcademicYear[],
+  date: string,
+): AcademicYear | null {
+  if (years.length === 0 || !date) return null;
+  const inside = years.find(
+    (y) => date >= y.start_date && date <= y.end_date,
+  );
+  if (inside) return inside;
+  const ended = years.some((y) => y.end_date < date);
+  if (!ended) return null;
+  const upcoming = [...years]
+    .sort((a, b) => (a.start_date < b.start_date ? -1 : 1))
+    .find((y) => y.start_date > date);
+  return upcoming ?? null;
+}
+
+/**
+ * تاریخ سے اپنے مدرسے کے تعلیمی سال کا id نکالیں — امتحان بناتے /
+ * بدلتے وقت سال تاریخ سے خود لگتا ہے۔ سال نہ بنا ہو یا migration
+ * ابھی نہ چلی ہو تو null — کبھی نہیں پھینکتا۔
+ */
+export async function deriveAcademicYearId(
+  supabase: ServerClient,
+  madrasaId: string,
+  date: string,
+): Promise<string | null> {
+  try {
+    const years = await getAllAcademicYears(supabase, madrasaId);
+    const year = pickAcademicYearForDate(years, date);
+    return year ? year.id : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * طالبہ کو موجودہ سال میں درج کریں (یا جماعت بدلیں) — ایک طالبہ،
  * ایک سال، ایک قطار۔ سال نہ ہو تو کچھ نہیں ہوتا۔ کبھی نہیں پھینکتا۔
  */

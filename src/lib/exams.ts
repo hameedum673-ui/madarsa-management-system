@@ -15,6 +15,8 @@ export interface Exam {
   exam_type: string | null;
   class_name: string | null;
   subjects: string[];
+  /** مرحلہ 57 — تعلیمی سال (migration 057؛ تاریخ سے نکلتا ہے، خالی ہو سکتا ہے) */
+  academic_year_id?: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

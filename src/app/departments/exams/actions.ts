@@ -20,6 +20,7 @@ import {
   type SectionId,
 } from "@/lib/students";
 import { EXAM_TYPE_IDS, type ExamType } from "@/lib/exams";
+import { deriveAcademicYearId } from "@/lib/academicYears";
 
 /** مرحلہ 109 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
 function formLang(formData: FormData): Lang {
@@ -136,6 +137,26 @@ export async function addExam(formData: FormData): Promise<AddResult> {
     return { error: t(lang, "exam.err.save_failed") };
   }
 
+  // مرحلہ 57 — سال امتحان کی تاریخ سے خود لگتا ہے۔ الگ اپ ڈیٹ اس لیے
+  // کہ migration 057 ابھی نہ چلی ہو تو بھی امتحان بچ جائے — سال اگلی
+  // ترمیم پر لگ جائے گا۔
+  const yearId = await deriveAcademicYearId(
+    supabase,
+    mine.madrasaId,
+    examDate,
+  );
+  if (yearId) {
+    try {
+      await supabase
+        .from("exams")
+        .update({ academic_year_id: yearId })
+        .eq("id", data.id as string)
+        .eq("madrasa_id", mine.madrasaId);
+    } catch {
+      /* migration 057 نہ چلی ہو — امتحان پھر بھی بچ گیا */
+    }
+  }
+
   await writeAudit(supabase, mine.madrasaId, mine.userId, "exam_created", {
     exam_id: data.id as string,
     name,
@@ -221,6 +242,26 @@ export async function updateExam(
     .eq("madrasa_id", mine.madrasaId);
   if (error) {
     return { error: t(lang, "exam.err.update_failed") };
+  }
+
+  // مرحلہ 57 — تاریخ بدلی ہو تو سال دوبارہ نکلتا ہے (نہ بدلی ہو تو
+  // وہی سال پھر لگتا ہے)۔ migration 057 نہ چلی ہو تو خاموشی سے
+  // چھوڑ دیں — ترمیم پھر بھی بچ گئی۔
+  const yearId = await deriveAcademicYearId(
+    supabase,
+    mine.madrasaId,
+    examDate,
+  );
+  if (yearId) {
+    try {
+      await supabase
+        .from("exams")
+        .update({ academic_year_id: yearId })
+        .eq("id", examId)
+        .eq("madrasa_id", mine.madrasaId);
+    } catch {
+      /* migration 057 نہ چلی ہو — ترمیم پھر بھی بچ گئی */
+    }
   }
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "exam_updated", {

@@ -677,6 +677,8 @@ const ur: Dict = {
   // مرحلہ 109 — امتحانات
   "exams.new": "+ نیا امتحان بنائیں",
   "exams.filter.type": "امتحان کی قسم",
+  "exams.year_filter": "تعلیمی سال",
+  "exams.year_all": "سب سال",
   "exams.table_missing":
     "امتحانات کی میز ابھی نہیں بنی — پہلے مرحلہ 10 کی SQL چلائیں۔",
   "exams.empty":
@@ -2398,6 +2400,8 @@ const ar: Dict = {
   // المرحلة 109 — الامتحانات
   "exams.new": "+ إنشاء امتحان جديد",
   "exams.filter.type": "نوع الامتحان",
+  "exams.year_filter": "السنة الدراسية",
+  "exams.year_all": "كل السنوات",
   "exams.table_missing":
     "جدول الامتحانات غير موجود بعد — نفّذ SQL المرحلة 10 أولًا.",
   "exams.empty":

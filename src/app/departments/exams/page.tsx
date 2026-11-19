@@ -14,9 +14,14 @@ import { examTypeLabelLang, t } from "@/i18n/dictionary";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
+  getMyMadrasa,
   type DepartmentId,
   type SectionId,
 } from "@/lib/students";
+import {
+  getAllAcademicYears,
+  type AcademicYear,
+} from "@/lib/academicYears";
 import {
   EXAM_TYPE_IDS,
   type Exam,
@@ -35,6 +40,7 @@ export default async function ExamsPage({
     section?: string;
     department?: string;
     exam_type?: string;
+    year?: string;
     page?: string;
   }>;
 }) {
@@ -65,6 +71,23 @@ export default async function ExamsPage({
       ? (rawDepartment as DepartmentId)
       : "all";
 
+  // مرحلہ 57 — سال کا فلٹر — صرف اپنے مدرسے کے سال (موجودہ پہلے،
+  // پھر پرانے)؛ غلط یا دوسرے مدرسے کا سال ہو تو "سب" مانا جاتا ہے —
+  // صفحہ نہیں ٹوٹتا۔ خالی سال والے امتحان صرف "سب سال" میں دکھتے ہیں۔
+  let years: AcademicYear[] = [];
+  let yearId: string | "all" = "all";
+  try {
+    const mine = await getMyMadrasa(supabase);
+    if (mine) {
+      years = await getAllAcademicYears(supabase, mine.madrasaId);
+      const found = years.find((y) => y.id === (params.year ?? "all").trim());
+      if (found) yearId = found.id;
+    }
+  } catch {
+    years = [];
+    yearId = "all";
+  }
+
   // مرحلہ 58 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ)
   const page = parsePage(params.page);
   const { from, to } = pageRange(page);
@@ -76,6 +99,7 @@ export default async function ExamsPage({
   if (section !== "all") query = query.eq("section", section);
   if (examType !== "all") query = query.eq("exam_type", examType);
   if (department !== "all") query = query.eq("department", department);
+  if (yearId !== "all") query = query.eq("academic_year_id", yearId);
   if (allowedSections.size < 2)
     query = query.eq("section", [...allowedSections][0] ?? "__none__");
   query = query.range(from, to);
@@ -149,6 +173,21 @@ export default async function ExamsPage({
               {EXAM_TYPE_IDS.map((ty) => (
                 <option key={ty} value={ty}>
                   {t(lang, "exam.type." + ty)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span className="field-label">{t(lang, "exams.year_filter")}</span>
+            <select
+              className="field-input"
+              name="year"
+              defaultValue={yearId}
+            >
+              <option value="all">{t(lang, "exams.year_all")}</option>
+              {years.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.label}
                 </option>
               ))}
             </select>
