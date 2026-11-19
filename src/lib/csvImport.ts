@@ -100,12 +100,33 @@ function clean(value: string | undefined, max = 200): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function validDateStrict(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const d = new Date(value + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return false;
-  // 2026-02-30 جیسی جعلی تاریخ پکڑیں (Date اسے 2 مارچ بنا دیتا ہے)
-  return d.toISOString().slice(0, 10) === value;
+/**
+ * تاریخ — دو شکلیں قبول: DD-MM-YYYY (05-04-2025 — اب یہی بتائی جاتی ہے)
+ * اور پرانی YYYY-MM-DD (پہلے سے بنی فائلیں چلتی رہیں)۔ درست ہو تو
+ * ISO شکل (YYYY-MM-DD) ورنہ null۔ پہلا حصہ 4 ہندسوں کا ہو تو سال پہلے۔
+ */
+function normalizeDate(value: string): string | null {
+  const dmy = /^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(value);
+  const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value);
+  let day: number, month: number, year: number;
+  if (dmy) {
+    day = Number(dmy[1]);
+    month = Number(dmy[2]);
+    year = Number(dmy[3]);
+  } else if (ymd) {
+    year = Number(ymd[1]);
+    month = Number(ymd[2]);
+    day = Number(ymd[3]);
+  } else {
+    return null;
+  }
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return null;
+  // 31-02-2025 جیسی جعلی تاریخ پکڑیں (Date اسے 3 مارچ بنا دیتا ہے)
+  if (d.toISOString().slice(0, 10) !== iso) return null;
+  return iso;
 }
 
 function notFuture(value: string): boolean {
@@ -146,10 +167,12 @@ export function validateImportRow(
   const department = byHeader("department");
   const section = byHeader("section");
   const className = clean(fields[IMPORT_HEADERS.indexOf("class_name")], 100);
-  const admissionDate = clean(
+  const admissionDateRaw = clean(
     fields[IMPORT_HEADERS.indexOf("admission_date")],
     10,
   );
+  // دونوں شکلیں قبول؛ محفوظ ہمیشہ ISO شکل ہوتی ہے
+  const admissionDate = normalizeDate(admissionDateRaw);
   const district = clean(fields[IMPORT_HEADERS.indexOf("district")], 100);
 
   if (!name) return { errorKey: "student.err.name_required" };
@@ -158,7 +181,7 @@ export function validateImportRow(
     return { errorKey: "student.err.dept_invalid" };
   if (!SECTION_IDS.includes(section as SectionId))
     return { errorKey: "student.err.section_invalid" };
-  if (!validDateStrict(admissionDate))
+  if (!admissionDate)
     return { errorKey: "student.err.admission_date_invalid" };
   if (!notFuture(admissionDate))
     return { errorKey: "student.err.admission_date_future" };
