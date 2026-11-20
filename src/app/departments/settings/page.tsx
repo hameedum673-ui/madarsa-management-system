@@ -149,6 +149,14 @@ export default async function SettingsPage() {
             {currentYear ? null : (
               <AcademicYearForm lang={lang} activeCount={activeCount} />
             )}
+            <div className="form-actions">
+              <Link
+                className="btn-primary"
+                href="/departments/students/promotion"
+              >
+                {t(lang, "promotion.link")}
+              </Link>
+            </div>
             <h3 className="form-section-title">
               {t(lang, "settings.year.past_title")}
             </h3>

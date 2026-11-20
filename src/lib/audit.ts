@@ -9,6 +9,7 @@ import { t, type Lang } from "@/i18n/dictionary";
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   student_created: "طالب علم شامل کیا گیا",
   student_updated: "طالب علم کا ریکارڈ بدلا گیا",
+  students_promoted: "طالبات کی اگلے سال میں ترقی کی گئی",
   teacher_created: "استاد شامل کیا گیا",
   teacher_updated: "استاد کا ریکارڈ بدلا گیا",
   staff_created: "عملے کا رکن شامل کیا گیا",
@@ -83,6 +84,7 @@ export const AUDIT_CATEGORIES = [
     actions: [
       "student_created",
       "student_updated",
+      "students_promoted",
       "admission_created",
       "admission_approved",
       "admission_rejected",

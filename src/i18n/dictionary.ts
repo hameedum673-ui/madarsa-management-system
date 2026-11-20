@@ -1680,6 +1680,7 @@ const ur: Dict = {
   "audit.cat.notices": "اطلاعات اور دستاویزات",
   "audit.cat.users": "صارفین اور نظام",
   "audit.action.student_created": "طالب علم شامل کیا گیا",
+  "audit.action.students_promoted": "طالبات کی اگلے سال میں ترقی کی گئی",
   "audit.action.student_updated": "طالب علم کا ریکارڈ بدلا گیا",
   "audit.action.teacher_created": "استاد شامل کیا گیا",
   "audit.action.teacher_updated": "استاد کا ریکارڈ بدلا گیا",
@@ -1863,6 +1864,22 @@ const ur: Dict = {
   "settings.year.past_created": "پرانا سال بن گیا۔",
   "settings.year.all_years": "تمام سال",
   "settings.year.no_years": "ابھی کوئی سال نہیں بنا۔",
+
+  "promotion.title": "اگلے سال میں ترقی",
+  "promotion.link": "اگلے سال میں ترقی دیں",
+  "promotion.source": "موجودہ سال",
+  "promotion.target": "نیا سال",
+  "promotion.repeat": "دوبارہ",
+  "promotion.current_class": "موجودہ جماعت",
+  "promotion.next_class": "اگلی جماعت",
+  "promotion.last_class_title": "آخری جماعت — ترقی نہیں",
+  "promotion.no_enrollment_title": "موجودہ سال میں اندراج نہیں",
+  "promotion.none": "ترقی کے لیے کوئی طالبہ نہیں ہے۔",
+  "promotion.no_target": "پہلے نیا سال بنائیں — ترتیبات میں تعلیمی سال کے حصے سے۔",
+  "promotion.no_source": "پہلے موجودہ سال بنائیں — ترتیبات میں تعلیمی سال کے حصے سے۔",
+  "promotion.confirm": "ترقی کی تصدیق کریں",
+  "promotion.done": "{n} طالبات کی ترقی ہو گئی۔",
+  "promotion.err.save": "ترقی محفوظ نہ ہو سکی — دوبارہ کوشش کریں۔",
 };
 
 const ar: Dict = {
@@ -3498,6 +3515,7 @@ const ar: Dict = {
   "audit.cat.notices": "الإشعارات والمستندات",
   "audit.cat.users": "المستخدمون والنظام",
   "audit.action.student_created": "أُضيف طالب",
+  "audit.action.students_promoted": "تمت ترقية الطلاب إلى السنة التالية",
   "audit.action.student_updated": "عُدّل سجل الطالب",
   "audit.action.teacher_created": "أُضيف معلم",
   "audit.action.teacher_updated": "عُدّل سجل المعلم",
@@ -3681,6 +3699,22 @@ const ar: Dict = {
   "settings.year.past_created": "تم إنشاء السنة السابقة.",
   "settings.year.all_years": "جميع السنوات",
   "settings.year.no_years": "لا توجد سنوات بعد.",
+
+  "promotion.title": "الترقية إلى السنة التالية",
+  "promotion.link": "رقِّ الطلاب إلى السنة التالية",
+  "promotion.source": "السنة الحالية",
+  "promotion.target": "السنة الجديدة",
+  "promotion.repeat": "إعادة",
+  "promotion.current_class": "الصف الحالي",
+  "promotion.next_class": "الصف التالي",
+  "promotion.last_class_title": "الصف الأخير — لا ترقية",
+  "promotion.no_enrollment_title": "لا تسجيل في السنة الحالية",
+  "promotion.none": "لا يوجد طلاب للترقية.",
+  "promotion.no_target": "أنشئ السنة الجديدة أولًا — من قسم السنة الدراسية في الإعدادات.",
+  "promotion.no_source": "أنشئ السنة الحالية أولًا — من قسم السنة الدراسية في الإعدادات.",
+  "promotion.confirm": "تأكيد الترقية",
+  "promotion.done": "تمت ترقية {n} من الطلاب.",
+  "promotion.err.save": "تعذّر حفظ الترقية — حاول مرة أخرى.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

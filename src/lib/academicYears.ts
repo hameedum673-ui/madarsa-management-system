@@ -221,3 +221,121 @@ export async function upsertEnrollmentForYear(
     // سال کی میز نہ ہو یا کوئی خرابی ہو — اصل کام نہیں رکنا چاہیے
   }
 }
+
+/**
+ * ترقی (پروموشن) کا جائزہ — خالص حساب (جانچ کے لیے الگ رکھا گیا ہے)
+ *
+ * ہر فعال طالبہ کے لیے موجودہ سال کا اندراج دیکھیں: اگلی جماعت اسی
+ * شعبے + اسی حصے کی ترتیب (sort_order) سے اگلی فعال جماعت ہے۔
+ *   * اگلی جماعت ملے → rows (ترقی ہو گی)
+ *   * نہ ملے (آخری جماعت، یا جماعت فہرست میں نہیں) → lastClass
+ *   * موجودہ سال میں اندراج ہی نہیں → noEnrollment (ترقی نہیں ہو گی)
+ */
+export interface PromotionInputStudent {
+  id: string;
+  name: string;
+  father_name: string;
+  registration_number: string;
+  class_name: string | null;
+  department: string;
+  section: string;
+}
+
+export interface PromotionInputEnrollment {
+  student_id: string;
+  class_name: string | null;
+  department: string;
+  section: string;
+}
+
+export interface PromotionInputClass {
+  name: string;
+  department: string;
+  section: string;
+  sort_order: number;
+}
+
+export interface PromotionRow {
+  student_id: string;
+  name: string;
+  father_name: string;
+  registration_number: string;
+  current_class: string | null;
+  department: string;
+  section: string;
+  next_class: string | null;
+}
+
+export interface PromotionNoEnrollmentRow {
+  student_id: string;
+  name: string;
+  father_name: string;
+  registration_number: string;
+  class_name: string | null;
+  department: string;
+  section: string;
+}
+
+export interface PromotionPreview {
+  rows: PromotionRow[];
+  lastClass: PromotionRow[];
+  noEnrollment: PromotionNoEnrollmentRow[];
+}
+
+export function buildPromotionPreview(
+  students: PromotionInputStudent[],
+  enrollments: PromotionInputEnrollment[],
+  classes: PromotionInputClass[],
+): PromotionPreview {
+  const byStudent = new Map(enrollments.map((e) => [e.student_id, e]));
+  const byDeptSection = new Map<string, PromotionInputClass[]>();
+  for (const c of classes) {
+    const key = `${c.department}|${c.section}`;
+    const list = byDeptSection.get(key) ?? [];
+    list.push(c);
+    byDeptSection.set(key, list);
+  }
+  for (const list of byDeptSection.values()) {
+    list.sort(
+      (a, b) =>
+        a.sort_order - b.sort_order ||
+        (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
+    );
+  }
+  const rows: PromotionRow[] = [];
+  const lastClass: PromotionRow[] = [];
+  const noEnrollment: PromotionNoEnrollmentRow[] = [];
+  for (const s of students) {
+    const enr = byStudent.get(s.id);
+    if (!enr) {
+      noEnrollment.push({
+        student_id: s.id,
+        name: s.name,
+        father_name: s.father_name,
+        registration_number: s.registration_number,
+        class_name: s.class_name,
+        department: s.department,
+        section: s.section,
+      });
+      continue;
+    }
+    const current = enr.class_name;
+    const list = byDeptSection.get(`${enr.department}|${enr.section}`) ?? [];
+    const idx = current ? list.findIndex((c) => c.name === current) : -1;
+    const next =
+      idx >= 0 && idx + 1 < list.length ? list[idx + 1].name : null;
+    const row: PromotionRow = {
+      student_id: s.id,
+      name: s.name,
+      father_name: s.father_name,
+      registration_number: s.registration_number,
+      current_class: current,
+      department: enr.department,
+      section: enr.section,
+      next_class: next,
+    };
+    if (next === null) lastClass.push(row);
+    else rows.push(row);
+  }
+  return { rows, lastClass, noEnrollment };
+}
