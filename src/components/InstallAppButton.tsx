@@ -8,6 +8,14 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+// layout والی اسکرپٹ اشارہ یہاں رکھتی ہے تاکہ بٹن لگنے سے پہلے
+// آیا ہوا اشارہ بھی نہ چھوٹے (ورنہ بٹن کبھی دکھتا ہے کبھی نہیں)
+declare global {
+  interface Window {
+    __deferredInstallPrompt?: BeforeInstallPromptEvent | null;
+  }
+}
+
 /**
  * مرحلہ 76 — "ایپ ڈاؤن لوڈ کریں" والا بٹن۔
  * اینڈرائیڈ/Chrome: براؤزر کا beforeinstallprompt ایونٹ آئے تو بٹن
@@ -37,11 +45,16 @@ export default function InstallAppButton({
     }
     const ua = window.navigator.userAgent;
     setIsIOS(/iphone|ipad|ipod/i.test(ua));
+    // سر والی اسکرپٹ نے اشارہ پہلے ہی پکڑ رکھا ہو تو وہیں سے لیں
+    const stashed = window.__deferredInstallPrompt;
+    if (stashed) setDeferred(stashed);
     const onPrompt = (e: Event) => {
       e.preventDefault();
+      window.__deferredInstallPrompt = e as BeforeInstallPromptEvent;
       setDeferred(e as BeforeInstallPromptEvent);
     };
     const onInstalled = () => {
+      window.__deferredInstallPrompt = null;
       setInstalled(true);
       setDeferred(null);
     };
@@ -68,8 +81,11 @@ export default function InstallAppButton({
         type="button"
         onClick={async () => {
           await deferred.prompt();
-          const choice = await deferred.userChoice;
-          if (choice.outcome === "accepted") setDeferred(null);
+          await deferred.userChoice;
+          // منظور ہو یا مسترد — اشارہ ایک بار کا ہے، دوبارہ نہیں چلتا؛
+          // بٹن ہٹا دیں ورنہ مردہ بٹن رہتا ہے (نیا اشارہ آئے تو پھر دکھے گا)
+          window.__deferredInstallPrompt = null;
+          setDeferred(null);
         }}
       >
         {t(lang, "settings.app.download")}

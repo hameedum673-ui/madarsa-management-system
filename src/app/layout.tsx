@@ -78,6 +78,15 @@ export default async function RootLayout({
       data-theme={theme}
       className={`${naskhArabic.variable} ${nastaliqUrdu.variable}${lang === "ar" ? " lang-ar" : ""}`}
     >
+      <head>
+        {/* ایپ ڈاؤن لوڈ والا بٹن — انسٹال کا اشارہ ری ایکٹ لگنے سے پہلے
+            پکڑ لیں، ورنہ کبھی بٹن دکھتا ہے کبھی نہیں (اشارہ پہلے آ جاتا ہے) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__deferredInstallPrompt=e;});window.addEventListener('appinstalled',function(){window.__deferredInstallPrompt=null;});`,
+          }}
+        />
+      </head>
       <body>
         <AutoLogout />
         <NavigationLoader />

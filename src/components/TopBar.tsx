@@ -116,18 +116,24 @@ export default function TopBar({
     if (next === "en" || next === lang || langBusy) return;
     setLangError("");
     setLangBusy(true);
-    const formData = new FormData();
-    formData.set("language", next);
-    formData.set("current_lang", lang);
-    const result = await setLanguage(formData);
-    setLangBusy(false);
-    if ("error" in result) {
-      setLangError(result.error);
-      return;
+    try {
+      const formData = new FormData();
+      formData.set("language", next);
+      formData.set("current_lang", lang);
+      const result = await setLanguage(formData);
+      if ("error" in result) {
+        setLangError(result.error);
+        return;
+      }
+      closeMenus();
+      // پوری سرخی اور ڈیش بورڈ نئی زبان میں کھلے — صفحہ دوبارہ لادیں
+      window.location.reload();
+    } catch {
+      // کام بیچ میں رک جائے تو غلطی دکھے (پہلے خاموشی سے اٹک جاتا تھا)
+      setLangError(t(lang, "profile.language_error"));
+    } finally {
+      setLangBusy(false);
     }
-    closeMenus();
-    // پوری سرخی اور ڈیش بورڈ نئی زبان میں کھلے — صفحہ دوبارہ لادیں
-    window.location.reload();
   }
 
   // تھیم 3 — دن/رات بدلنا (کوکی "theme"، فی ڈیوائس محفوظ؛ کوئی SQL نہیں)
