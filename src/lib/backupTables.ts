@@ -9,6 +9,7 @@ export const OWN_TABLES = [
   "academic_years",
   "enrollments",
   "teachers",
+  "teacher_classes",
   "staff",
   "classes",
   "student_attendance",

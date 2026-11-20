@@ -3,9 +3,11 @@
  * RLS یقین دلاتی ہے کہ صرف اپنے مدرسے کی جماعت کھل سکتی ہے۔
  */
 import BackButton from "@/components/BackButton";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { getMyMadrasa } from "@/lib/students";
 import type { MadrasaClass } from "@/lib/classes";
 import ClassForm from "@/app/departments/classes/ClassForm";
 import { updateClass } from "@/app/departments/classes/actions";
@@ -35,6 +37,42 @@ export default async function ClassDetailPage({
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(madrasaClass.section)) notFound();
   const lang = await langP;
+
+  // اس جماعت کے استاد — نہ ملیں تو خالی (صفحہ نہیں ٹوٹے گا)
+  let classTeachers: {
+    id: string;
+    teacher_id: string;
+    teacher_name: string;
+    subject: string;
+  }[] = [];
+  try {
+    const mine = await getMyMadrasa(supabase);
+    if (mine) {
+      const { data: tcData } = await supabase
+        .from("teacher_classes")
+        .select("id, subject, teachers(id, name)")
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("class_id", madrasaClass.id)
+        .order("created_at", { ascending: true });
+      classTeachers = (
+        (tcData ?? []) as {
+          id: string;
+          subject: string;
+          teachers: { id: string; name: string }[] | { id: string; name: string } | null;
+        }[]
+      ).map((r) => {
+        const teacher = Array.isArray(r.teachers) ? r.teachers[0] : r.teachers;
+        return {
+          id: r.id,
+          teacher_id: teacher?.id ?? "",
+          teacher_name: teacher?.name ?? "—",
+          subject: r.subject ?? "",
+        };
+      });
+    }
+  } catch {
+    classTeachers = [];
+  }
 
   return (
     <div className="module-view open">
@@ -79,6 +117,40 @@ export default async function ClassDetailPage({
           showStatus
           lang={lang}
         />
+
+        <h3 className="form-section-title">
+          {t(lang, "teacher.classes.teachers_title")}
+        </h3>
+        {classTeachers.length === 0 ? (
+          <p className="sub">{t(lang, "teacher.classes.none")}</p>
+        ) : (
+          <div className="tbl-wrap">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>{t(lang, "col.name")}</th>
+                  <th>{t(lang, "teacher.classes.subject")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {classTeachers.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      {row.teacher_id ? (
+                        <Link href={`/departments/teachers/${row.teacher_id}`}>
+                          {row.teacher_name}
+                        </Link>
+                      ) : (
+                        row.teacher_name
+                      )}
+                    </td>
+                    <td>{row.subject === "" ? "—" : row.subject}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
       </div>
     </div>

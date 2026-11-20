@@ -6,7 +6,7 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
-import { isMadrasaOwner } from "@/lib/approval";
+import { isAppAdmin, isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
 import {
   buildTeacherAttendanceHistory,
@@ -16,6 +16,10 @@ import {
 import TeacherHistory, {
   type SalaryHistoryRow,
 } from "@/app/departments/teachers/[id]/TeacherHistory";
+import TeacherClasses, {
+  type TeacherClassOption,
+  type TeacherClassRow,
+} from "@/app/departments/teachers/[id]/TeacherClasses";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import type { Teacher } from "@/lib/teachers";
@@ -64,6 +68,10 @@ export default async function TeacherDetailPage({
   };
   let salaries: SalaryHistoryRow[] = [];
   let showSalaries = false;
+  // پڑھائی گئی جماعتیں — نہ ملیں تو خالی (صفحہ نہیں ٹوٹے گا)
+  let assignments: TeacherClassRow[] = [];
+  let classOptions: TeacherClassOption[] = [];
+  let canAssign = false;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -87,6 +95,37 @@ export default async function TeacherDetailPage({
         .order("salary_month", { ascending: false });
       salaries = (salData ?? []) as SalaryHistoryRow[];
     }
+    if (mine) {
+      const { data: tcData } = await supabase
+        .from("teacher_classes")
+        .select("id, subject, classes(name)")
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("teacher_id", teacher.id)
+        .order("created_at", { ascending: true });
+      assignments = (
+        (tcData ?? []) as {
+          id: string;
+          subject: string;
+          classes: { name: string }[] | { name: string } | null;
+        }[]
+      ).map((r) => ({
+        id: r.id,
+        class_name: Array.isArray(r.classes)
+          ? (r.classes[0]?.name ?? "—")
+          : (r.classes?.name ?? "—"),
+        subject: r.subject ?? "",
+      }));
+      const { data: clsData } = await supabase
+        .from("classes")
+        .select("id, name")
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("department", teacher.department)
+        .eq("section", teacher.section)
+        .eq("status", "active")
+        .order("sort_order", { ascending: true });
+      classOptions = (clsData ?? []) as TeacherClassOption[];
+    }
+    canAssign = (await isAppAdmin(supabase)) || showSalaries;
   } catch {
     att = {
       months: [],
@@ -99,6 +138,9 @@ export default async function TeacherDetailPage({
     };
     salaries = [];
     showSalaries = false;
+    assignments = [];
+    classOptions = [];
+    canAssign = false;
   }
 
   return (
@@ -168,6 +210,14 @@ export default async function TeacherDetailPage({
           att={att}
           salaries={salaries}
           showSalaries={showSalaries}
+        />
+
+        <TeacherClasses
+          lang={lang}
+          teacherId={teacher.id}
+          assignments={assignments}
+          classes={classOptions}
+          canAssign={canAssign}
         />
 
       </div>

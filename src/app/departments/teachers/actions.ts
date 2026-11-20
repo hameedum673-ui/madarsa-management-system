@@ -12,6 +12,7 @@ import {
   getMyAllowedSections,
   isModuleAllowedForMe,
 } from "@/lib/permissions";
+import { isAppAdmin, isMadrasaOwner } from "@/lib/approval";
 import {
   DEPARTMENT_IDS,
   SECTION_IDS,
@@ -246,5 +247,116 @@ export async function updateTeacher(
   revalidatePath("/departments/teachers");
   revalidatePath(`/departments/teachers/${id}`);
   revalidatePath("/");
+  return { ok: true };
+}
+
+/** استاد کو جماعت سونپنا — صرف منتظم/مالک (صفحہ بھی فارم صرف انہیں دکھاتا ہے) */
+export async function assignTeacherClass(
+  teacherId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const lang = formLang(formData);
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
+  const admin = await isAppAdmin(supabase);
+  const owner = await isMadrasaOwner(supabase);
+  if (!admin && !owner) return { error: t(lang, "common.not_allowed") };
+  if (!(await isModuleAllowedForMe(supabase, "teachers"))) {
+    return { error: t(lang, "common.not_allowed") };
+  }
+  const classId = clean(formData.get("class_id"), 100);
+  const subject = clean(formData.get("subject"), 100);
+  if (!classId) return { error: t(lang, "teacher.classes.err.class") };
+  // استاد اور جماعت — دونوں میرے مدرسے کے، ایک ہی شعبے اور حصے کے
+  const { data: teacher } = await supabase
+    .from("teachers")
+    .select("id, department, section")
+    .eq("id", teacherId)
+    .eq("madrasa_id", mine.madrasaId)
+    .single();
+  if (!teacher) return { error: t(lang, "common.not_logged_in") };
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(teacher.section as SectionId)) {
+    return { error: t(lang, "common.not_allowed") };
+  }
+  const { data: klass } = await supabase
+    .from("classes")
+    .select("id, name, department, section")
+    .eq("id", classId)
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("status", "active")
+    .single();
+  if (
+    !klass ||
+    klass.department !== teacher.department ||
+    klass.section !== teacher.section
+  ) {
+    return { error: t(lang, "teacher.classes.err.class") };
+  }
+  // پہلے سے سونپی ہوئی تو نقل نہ بنے
+  const { data: existing } = await supabase
+    .from("teacher_classes")
+    .select("id")
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("teacher_id", teacherId)
+    .eq("class_id", classId)
+    .eq("subject", subject)
+    .maybeSingle();
+  if (existing) return { error: t(lang, "teacher.classes.err.duplicate") };
+  const { error } = await supabase.from("teacher_classes").insert({
+    madrasa_id: mine.madrasaId,
+    teacher_id: teacherId,
+    class_id: classId,
+    subject,
+  });
+  if (error) return { error: t(lang, "student.err.save_failed") };
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "teacher_class_assigned", {
+    teacher_id: teacherId,
+    class_id: classId,
+    subject,
+  });
+  revalidatePath(`/departments/teachers/${teacherId}`);
+  revalidatePath(`/departments/classes/${classId}`);
+  return { ok: true };
+}
+
+/** سونپی ہوئی جماعت ہٹانا — صرف جوڑ مٹتا ہے، استاد/جماعت نہیں */
+export async function removeTeacherClass(
+  teacherId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const lang = formLang(formData);
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
+  const admin = await isAppAdmin(supabase);
+  const owner = await isMadrasaOwner(supabase);
+  if (!admin && !owner) return { error: t(lang, "common.not_allowed") };
+  if (!(await isModuleAllowedForMe(supabase, "teachers"))) {
+    return { error: t(lang, "common.not_allowed") };
+  }
+  const assignmentId = clean(formData.get("assignment_id"), 100);
+  if (!assignmentId) return { error: t(lang, "common.not_logged_in") };
+  const { data: row } = await supabase
+    .from("teacher_classes")
+    .select("id, class_id")
+    .eq("id", assignmentId)
+    .eq("madrasa_id", mine.madrasaId)
+    .eq("teacher_id", teacherId)
+    .single();
+  if (!row) return { error: t(lang, "common.not_logged_in") };
+  const { error } = await supabase
+    .from("teacher_classes")
+    .delete()
+    .eq("id", assignmentId)
+    .eq("madrasa_id", mine.madrasaId);
+  if (error) return { error: t(lang, "student.err.update_failed") };
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "teacher_class_removed", {
+    teacher_id: teacherId,
+    class_id: row.class_id,
+  });
+  revalidatePath(`/departments/teachers/${teacherId}`);
+  revalidatePath(`/departments/classes/${row.class_id}`);
   return { ok: true };
 }
