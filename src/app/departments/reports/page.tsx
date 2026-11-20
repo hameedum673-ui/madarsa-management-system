@@ -326,6 +326,11 @@ export default async function ReportsPage({
                 ),
               )}
             </div>
+            <div className="form-actions no-print">
+              <Link className="btn-ghost" href="/departments/reports/year">
+                {t(lang, "year_report.link")}
+              </Link>
+            </div>
 
             <h3 className="form-section-title">
               {t(lang, "reports.teachers_staff")}

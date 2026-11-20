@@ -339,3 +339,95 @@ export function buildPromotionPreview(
   }
   return { rows, lastClass, noEnrollment };
 }
+
+/**
+ * سال کی رپورٹ — طالبات کی گنتی (خالص حساب، جانچ کے لیے الگ)
+ * اندراج کی قطاریں (ایک طالبہ، ایک سال، ایک قطار) → کل/فعال/خارج
+ * + شعبے کے حساب سے + جماعت کے حساب سے (جماعت + شعبہ + حصہ)۔
+ * جماعت نہ لکھی ہو تو noClassLabel دکھتا ہے۔
+ */
+export interface YearSummaryEnrollment {
+  class_name: string | null;
+  department: string;
+  section: string;
+  status: string;
+}
+
+export interface YearSummaryDepartmentRow {
+  department: string;
+  active: number;
+  withdrawn: number;
+  total: number;
+}
+
+export interface YearSummaryClassRow {
+  class_name: string;
+  department: string;
+  section: string;
+  active: number;
+  withdrawn: number;
+  total: number;
+}
+
+export interface YearSummary {
+  total: number;
+  active: number;
+  withdrawn: number;
+  byDepartment: YearSummaryDepartmentRow[];
+  byClass: YearSummaryClassRow[];
+}
+
+export function buildYearSummary(
+  enrollments: YearSummaryEnrollment[],
+  noClassLabel: string,
+): YearSummary {
+  let active = 0;
+  let withdrawn = 0;
+  const deptMap = new Map<string, { active: number; withdrawn: number }>();
+  const classMap = new Map<string, YearSummaryClassRow>();
+  for (const e of enrollments) {
+    const isWithdrawn = e.status === "withdrawn";
+    if (isWithdrawn) withdrawn++;
+    else active++;
+    const d = deptMap.get(e.department) ?? { active: 0, withdrawn: 0 };
+    if (isWithdrawn) d.withdrawn++;
+    else d.active++;
+    deptMap.set(e.department, d);
+    const className = e.class_name ?? noClassLabel;
+    const key = `${e.department}|${e.section}|${className}`;
+    const c = classMap.get(key) ?? {
+      class_name: className,
+      department: e.department,
+      section: e.section,
+      active: 0,
+      withdrawn: 0,
+      total: 0,
+    };
+    if (isWithdrawn) c.withdrawn++;
+    else c.active++;
+    c.total++;
+    classMap.set(key, c);
+  }
+  const byDepartment = [...deptMap.entries()]
+    .map(([department, v]) => ({
+      department,
+      active: v.active,
+      withdrawn: v.withdrawn,
+      total: v.active + v.withdrawn,
+    }))
+    .sort((a, b) => (a.department < b.department ? -1 : 1));
+  const byClass = [...classMap.values()].sort((a, b) =>
+    a.department !== b.department
+      ? a.department < b.department
+        ? -1
+        : 1
+      : a.section !== b.section
+        ? a.section < b.section
+          ? -1
+          : 1
+        : a.class_name < b.class_name
+          ? -1
+          : 1,
+  );
+  return { total: active + withdrawn, active, withdrawn, byDepartment, byClass };
+}

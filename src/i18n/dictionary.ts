@@ -1865,6 +1865,13 @@ const ur: Dict = {
   "settings.year.all_years": "تمام سال",
   "settings.year.no_years": "ابھی کوئی سال نہیں بنا۔",
 
+  "year_report.title": "سال کی رپورٹ",
+  "year_report.link": "سال کی رپورٹ",
+  "year_report.year": "سال",
+  "year_report.by_department": "شعبے کے حساب سے",
+  "year_report.by_class": "جماعت کے حساب سے",
+  "year_report.empty": "اس سال کوئی اندراج نہیں۔",
+
   "promotion.title": "اگلے سال میں ترقی",
   "promotion.link": "اگلے سال میں ترقی دیں",
   "promotion.source": "موجودہ سال",
@@ -3699,6 +3706,13 @@ const ar: Dict = {
   "settings.year.past_created": "تم إنشاء السنة السابقة.",
   "settings.year.all_years": "جميع السنوات",
   "settings.year.no_years": "لا توجد سنوات بعد.",
+
+  "year_report.title": "تقرير السنة",
+  "year_report.link": "تقرير السنة",
+  "year_report.year": "السنة",
+  "year_report.by_department": "حسب القسم",
+  "year_report.by_class": "حسب الشعبة",
+  "year_report.empty": "لا يوجد تسجيل في هذه السنة.",
 
   "promotion.title": "الترقية إلى السنة التالية",
   "promotion.link": "رقِّ الطلاب إلى السنة التالية",
