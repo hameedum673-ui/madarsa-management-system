@@ -16,6 +16,7 @@ import {
   DEPARTMENT_IDS,
   SECTION_IDS,
 } from "@/lib/students";
+import type { ClassOption } from "@/lib/classes";
 import { t, type Lang } from "@/i18n/dictionary";
 import { saveAttendance } from "@/app/departments/att-students/actions";
 
@@ -35,6 +36,8 @@ export default function AttendanceForm({
   date,
   department,
   section,
+  classes,
+  className,
   allowedSections,
   lang = "ur",
 }: {
@@ -43,6 +46,9 @@ export default function AttendanceForm({
   date: string;
   department: string;
   section: string;
+  // جماعت والا فلٹر — شعبے/بنین-بنات کے مطابق جماعتیں
+  classes: ClassOption[];
+  className: string;
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
   allowedSections: string[];
   lang?: Lang;
@@ -65,9 +71,27 @@ export default function AttendanceForm({
     return c;
   }, [marks, students]);
 
-  function go(nextDate: string, nextDepartment: string, nextSection: string) {
+  // جماعت کے انتخاب شعبے اور بنین/بنات کے مطابق — شعبہ یا بنین/بنات
+  // بدلنے پر جماعت "سب" پر واپس جاتی ہے تاکہ خالی فہرست نہ آئے۔
+  const classOptions = useMemo(
+    () =>
+      classes.filter(
+        (c) =>
+          (department === "all" || c.department === department) &&
+          (section === "all" || c.section === section) &&
+          allowedSections.includes(c.section),
+      ),
+    [classes, department, section, allowedSections],
+  );
+
+  function go(
+    nextDate: string,
+    nextDepartment: string,
+    nextSection: string,
+    nextClass: string,
+  ) {
     router.push(
-      `/departments/att-students?date=${nextDate}&department=${nextDepartment}&section=${nextSection}`,
+      `/departments/att-students?date=${nextDate}&department=${nextDepartment}&section=${nextSection}&class=${encodeURIComponent(nextClass)}`,
     );
   }
 
@@ -121,7 +145,7 @@ export default function AttendanceForm({
             type="date"
             value={date}
             onChange={(e) => {
-              if (e.target.value) go(e.target.value, department, section);
+              if (e.target.value) go(e.target.value, department, section, className);
             }}
           />
         </label>
@@ -130,7 +154,7 @@ export default function AttendanceForm({
           <select
             className="field-input"
             value={department}
-            onChange={(e) => go(date, e.target.value, section)}
+            onChange={(e) => go(date, e.target.value, section, "all")}
           >
             <option value="all">{t(lang, "att.form.all_depts")}</option>
             {DEPARTMENT_IDS.map((d) => (
@@ -147,12 +171,27 @@ export default function AttendanceForm({
           <select
             className="field-input"
             value={section}
-            onChange={(e) => go(date, department, e.target.value)}
+            onChange={(e) => go(date, department, e.target.value, "all")}
           >
             <option value="all">{t(lang, "common.all")}</option>
             {SECTION_IDS.filter((s) => allowedSections.includes(s)).map((s) => (
               <option key={s} value={s}>
                 {t(lang, `section.${s}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span className="field-label">{t(lang, "col.class")}</span>
+          <select
+            className="field-input"
+            value={className}
+            onChange={(e) => go(date, department, section, e.target.value)}
+          >
+            <option value="all">{t(lang, "common.all")}</option>
+            {classOptions.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
               </option>
             ))}
           </select>

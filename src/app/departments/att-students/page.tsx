@@ -19,6 +19,7 @@ import {
 import AttendanceForm, {
   type AttendanceStudent,
 } from "@/app/departments/att-students/AttendanceForm";
+import { getActiveClasses } from "@/lib/classes";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 
@@ -34,7 +35,7 @@ function formatDate(value: string): string {
 export default async function AttendancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; department?: string; section?: string }>;
+  searchParams: Promise<{ date?: string; department?: string; section?: string; class?: string }>;
 }) {
   const sp = await searchParams;
   const date =
@@ -46,15 +47,22 @@ export default async function AttendancePage({
   // مرحلہ 52 — شعبے کا فلٹر (پہلے سے "سب")
   const supabase = await createClient();
   // مرحلہ 54 — اجازت والے شعبے (بنین / بنات)
-  const [allowedSections, lang] = await Promise.all([
+  const [allowedSections, lang, classes] = await Promise.all([
     getMyAllowedSections(supabase),
     getMyLanguage(),
+    getActiveClasses(supabase),
   ]);
   const rawSection = sp.section ?? "all";
   const section: SectionId | "all" =
     (SECTION_IDS as string[]).includes(rawSection) &&
     allowedSections.has(rawSection as SectionId)
       ? (rawSection as SectionId)
+      : "all";
+  // جماعت والا فلٹر — طلبہ والی فہرست جیسا (نام کی تصدیق فعال جماعتوں سے)
+  const rawClass = (sp.class ?? "all").trim();
+  const className: string | "all" =
+    rawClass !== "all" && classes.some((c) => c.name === rawClass)
+      ? rawClass
       : "all";
 
 
@@ -68,6 +76,9 @@ export default async function AttendancePage({
   }
   if (section !== "all") {
     studentsQuery = studentsQuery.eq("section", section);
+  }
+  if (className !== "all") {
+    studentsQuery = studentsQuery.eq("class_name", className);
   }
   if (allowedSections.size < 2) {
     studentsQuery = studentsQuery.eq(
@@ -117,6 +128,8 @@ export default async function AttendancePage({
             date={date}
             department={department}
             section={section}
+            classes={classes}
+            className={className}
             allowedSections={[...allowedSections]}
             lang={lang}
           />
