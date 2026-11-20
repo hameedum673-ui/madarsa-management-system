@@ -49,9 +49,9 @@ async function writeAudit(
 
 /**
  * نیا تعلیمی سال شروع کریں — صرف مالک یا ایڈمن۔
- * شروع کی تاریخ 10 شوال کی عیسوی تاریخ ہوتی ہے؛ ختم کی تاریخ ایک
- * ہجری سال (354 دن) بعد خود لگ جاتی ہے — اس مرحلے میں ختم کی تاریخ
- * سے کوئی حساب نہیں ہوتا، موجودہ سال is_current سے طے ہوتا ہے۔
+ * شروع کی تاریخ یکم شوال کی عیسوی تاریخ ہوتی ہے؛ ختم کی تاریخ رمضان
+ * کے آخر (شروع سے 353 دن بعد) خود لگ جاتی ہے — اس مرحلے میں ختم کی
+ * تاریخ سے کوئی حساب نہیں ہوتا، موجودہ سال is_current سے طے ہوتا ہے۔
  */
 export async function createAcademicYear(
   formData: FormData,
@@ -80,9 +80,10 @@ export async function createAcademicYear(
   if (existing && existing.length > 0)
     return { error: t(lang, "settings.year.err.exists") };
 
-  // ختم کی تاریخ: شروع سے ایک ہجری سال (354 دن) بعد
+  // ختم کی تاریخ: رمضان کا آخر — شروع سے 353 دن بعد
+  // (اگلے یکم شوال سے ایک دن پہلے)
   const end = new Date(`${startDate}T00:00:00`);
-  end.setDate(end.getDate() + 354);
+  end.setDate(end.getDate() + 353);
   const endDate = end.toISOString().slice(0, 10);
 
   const { error: unsetError } = await supabase
@@ -147,7 +148,7 @@ export async function createAcademicYear(
  * موجودہ سال پہلے سے ہو تب بھی بن جاتا ہے — اس لیے اس پر err.exists
  * والی شرط نہیں لگتی۔ پرانے ریکارڈ کے لیے ہے؛ اس میں کوئی طالبہ خود
  * نہیں ڈالی جاتی — ہر طالبہ طالبہ کی تفصیل والے فارم سے ڈالی جاتی ہے۔
- * ختم کی تاریخ وہی اصول: شروع سے ایک ہجری سال (354 دن) بعد۔
+ * ختم کی تاریخ وہی اصول: شروع سے 353 دن بعد (رمضان کا آخر)۔
  */
 export async function createPastAcademicYear(
   formData: FormData,
@@ -166,9 +167,9 @@ export async function createPastAcademicYear(
   const admin = await isAppAdmin(supabase);
   if (!owner && !admin) return { error: t(lang, "common.not_allowed") };
 
-  // ختم کی تاریخ: شروع سے ایک ہجری سال (354 دن) بعد
+  // ختم کی تاریخ: رمضان کا آخر — شروع سے 353 دن بعد
   const end = new Date(`${startDate}T00:00:00`);
-  end.setDate(end.getDate() + 354);
+  end.setDate(end.getDate() + 353);
   const endDate = end.toISOString().slice(0, 10);
 
   const { data: year, error: insertError } = await supabase
