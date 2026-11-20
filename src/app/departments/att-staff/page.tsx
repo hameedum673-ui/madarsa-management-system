@@ -104,6 +104,7 @@ export default async function StaffAttendancePage({
           <p className="empty-state">{t(lang, "att.load_error")}</p>
         ) : (
           <StaffAttendanceForm
+            key={`${date}-${department}-${section}`}
             staff={staff}
             existing={existing}
             date={date}

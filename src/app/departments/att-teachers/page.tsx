@@ -112,6 +112,7 @@ export default async function TeacherAttendancePage({
           <p className="empty-state">{t(lang, "att.load_error")}</p>
         ) : (
           <TeacherAttendanceForm
+            key={`${date}-${department}-${section}`}
             teachers={teachers}
             existing={existing}
             date={date}
