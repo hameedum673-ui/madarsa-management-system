@@ -26,6 +26,12 @@ const ATTENDANCE_MODULES = [
     descKey: "att.hub.desc.teachers",
     href: "/departments/att-teachers",
   },
+  {
+    id: "att-staff",
+    titleKey: "module.att-staff",
+    descKey: "att.hub.desc.staff",
+    href: "/departments/att-staff",
+  },
 ] as const;
 
 export default async function AttendanceHubPage() {
@@ -46,7 +52,7 @@ export default async function AttendanceHubPage() {
     }
   }
 
-  // دونوں کی اجازت نہیں ہے → ڈیش بورڈ پر واپس
+  // کسی کی اجازت نہیں ہے → ڈیش بورڈ پر واپس
   if (!ATTENDANCE_MODULES.some((m) => allowed[m.id])) {
     redirect("/");
   }

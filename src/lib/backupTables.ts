@@ -14,6 +14,7 @@ export const OWN_TABLES = [
   "classes",
   "student_attendance",
   "teacher_attendance",
+  "staff_attendance",
   "fee_payments",
   "fee_schedule",
   "expenses",

@@ -65,6 +65,7 @@ const ur: Dict = {
   "module.att-students": "طلبہ کی حاضری",
   "module.att-students.desc": "طلبہ کی روزانہ حاضری اور حاضری رپورٹس کا نظام یہاں تیار ہوگا۔",
   "module.att-teachers": "اساتذہ کی حاضری",
+  "module.att-staff": "عملے کی حاضری",
   "module.att-teachers.desc": "اساتذہ کی حاضری اور تدریسی اوقات کا ریکارڈ یہاں ہوگا۔",
   "module.academic": "تعلیمی ریکارڈ",
   "module.academic.desc": "اسباق کی پیش رفت اور تعلیمی کارکردگی کا ریکارڈ یہاں محفوظ ہوگا۔",
@@ -523,20 +524,26 @@ const ur: Dict = {
     "حاضری کی میز ابھی نہیں بنی — پہلے مرحلہ 6 کی SQL چلائیں۔",
   "att.table_missing.teachers":
     "حاضری کی میز ابھی نہیں بنی — پہلے مرحلہ 7 کی SQL چلائیں۔",
+  "att.table_missing.staff":
+    "حاضری کی میز ابھی نہیں بنی — پہلے عملے کی حاضری کی SQL (062) چلائیں۔",
   "att.load_error": "حاضری نہیں کھل سکی — دوبارہ کوشش کریں۔",
 
   "att.empty.students": "اس شعبے میں کوئی فعال طالب علم نہیں ہے۔",
   "att.empty.teachers": "اس شعبے میں کوئی فعال استاد نہیں ہے۔",
+  "att.empty.staff": "اس شعبے میں کوئی فعال عملہ نہیں ہے۔",
 
   "att.hub.desc.students": "طلبہ کی روزانہ حاضری درج کریں اور دیکھیں۔",
   "att.hub.desc.teachers": "اساتذہ کی روزانہ حاضری درج کریں اور دیکھیں۔",
+  "att.hub.desc.staff": "عملے کی روزانہ حاضری درج کریں اور دیکھیں۔",
   "att.hub.open": "{title} کھولیں",
 
   "att.err.date_invalid": "تاریخ درست نہیں ہے۔",
   "att.err.none_marked.students": "کسی طالب علم کی حاضری نہیں لگائی گئی۔",
   "att.err.none_marked.teachers": "کسی استاد کی حاضری نہیں لگائی گئی۔",
+  "att.err.none_marked.staff": "کسی عملے کی حاضری نہیں لگائی گئی۔",
   "att.err.verify.students": "طلبہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "att.err.verify.teachers": "اساتذہ کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "att.err.verify.staff": "عملے کی تصدیق نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "att.err.save_failed": "حاضری محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
   "att.report.title": "درجہ وار حاضری کی رپورٹ",
   "att.report.link": "درجہ وار رپورٹ دیکھیں",
@@ -1883,6 +1890,7 @@ const ar: Dict = {
   "module.att-students": "حضور الطلاب",
   "module.att-students.desc": "نظام الحضور اليومي للطلاب وتقارير الحضور.",
   "module.att-teachers": "حضور المعلمين",
+  "module.att-staff": "حضور الموظفين",
   "module.att-teachers.desc": "سجل حضور المعلمين وأوقات التدريس.",
   "module.academic": "السجل التعليمي",
   "module.academic.desc": "سجل تقدم الدروس والأداء التعليمي.",
@@ -2340,20 +2348,26 @@ const ar: Dict = {
     "لم يتم إنشاء جدول الحضور بعد — شغّل SQL للمرحلة 6 أولًا.",
   "att.table_missing.teachers":
     "لم يتم إنشاء جدول الحضور بعد — شغّل SQL للمرحلة 7 أولًا.",
+  "att.table_missing.staff":
+    "لم يتم إنشاء جدول الحضور بعد — شغّل SQL لحضور الموظفين (062) أولًا.",
   "att.load_error": "تعذّر فتح الحضور — حاول مرة أخرى.",
 
   "att.empty.students": "لا يوجد طالب نشط في هذا القسم.",
   "att.empty.teachers": "لا يوجد معلم نشط في هذا القسم.",
+  "att.empty.staff": "لا يوجد موظف نشط في هذا القسم.",
 
   "att.hub.desc.students": "سجّل حضور الطلاب اليومي واطّلع عليه.",
   "att.hub.desc.teachers": "سجّل حضور المعلمين اليومي واطّلع عليه.",
+  "att.hub.desc.staff": "سجّل حضور الموظفين اليومي واطّلع عليه.",
   "att.hub.open": "افتح {title}",
 
   "att.err.date_invalid": "التاريخ غير صحيح.",
   "att.err.none_marked.students": "لم يتم تسجيل حضور أي طالب.",
   "att.err.none_marked.teachers": "لم يتم تسجيل حضور أي معلم.",
+  "att.err.none_marked.staff": "لم يتم تسجيل حضور أي موظف.",
   "att.err.verify.students": "تعذّر التحقق من الطلاب. حاول مرة أخرى.",
   "att.err.verify.teachers": "تعذّر التحقق من المعلمين. حاول مرة أخرى.",
+  "att.err.verify.staff": "تعذّر التحقق من الموظفين. حاول مرة أخرى.",
   "att.err.save_failed": "تعذّر حفظ الحضور. حاول مرة أخرى.",
   "att.report.title": "تقرير الحضور حسب الصف",
   "att.report.link": "عرض تقرير الحضور حسب الصف",
