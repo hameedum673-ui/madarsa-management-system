@@ -6,6 +6,16 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { isMadrasaOwner } from "@/lib/approval";
+import { getMyMadrasa } from "@/lib/students";
+import {
+  buildTeacherAttendanceHistory,
+  type AttendanceStatus,
+  type TeacherAttendanceHistory,
+} from "@/lib/attendance";
+import TeacherHistory, {
+  type SalaryHistoryRow,
+} from "@/app/departments/teachers/[id]/TeacherHistory";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import type { Teacher } from "@/lib/teachers";
@@ -40,6 +50,56 @@ export default async function TeacherDetailPage({
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(teacher.section)) notFound();
   const lang = await langP;
+
+  // استاد کی تاریخ — نہ ملے تو خالی (صفحہ نہیں ٹوٹے گا)
+  // تنخواہوں کی تاریخ صرف مالک کے لیے (تنخواہوں والا صفحہ بھی صرف مالک کا ہے)
+  let att: TeacherAttendanceHistory = {
+    months: [],
+    present: 0,
+    absent: 0,
+    leave: 0,
+    sick: 0,
+    total: 0,
+    percentage: 0,
+  };
+  let salaries: SalaryHistoryRow[] = [];
+  let showSalaries = false;
+  try {
+    const mine = await getMyMadrasa(supabase);
+    if (mine) {
+      const { data: attData } = await supabase
+        .from("teacher_attendance")
+        .select("date, status")
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("teacher_id", teacher.id);
+      att = buildTeacherAttendanceHistory(
+        (attData ?? []) as { date: string; status: AttendanceStatus }[],
+      );
+    }
+    showSalaries = await isMadrasaOwner(supabase);
+    if (showSalaries && mine) {
+      const { data: salData } = await supabase
+        .from("salary_payments")
+        .select("salary_month, payment_date, amount, payment_method, status")
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("person_type", "teacher")
+        .eq("person_id", teacher.id)
+        .order("salary_month", { ascending: false });
+      salaries = (salData ?? []) as SalaryHistoryRow[];
+    }
+  } catch {
+    att = {
+      months: [],
+      present: 0,
+      absent: 0,
+      leave: 0,
+      sick: 0,
+      total: 0,
+      percentage: 0,
+    };
+    salaries = [];
+    showSalaries = false;
+  }
 
   return (
     <div className="module-view open">
@@ -101,6 +161,13 @@ export default async function TeacherDetailPage({
           cancelHref="/departments/teachers"
           showStatus
           lang={lang}
+        />
+
+        <TeacherHistory
+          lang={lang}
+          att={att}
+          salaries={salaries}
+          showSalaries={showSalaries}
         />
 
       </div>

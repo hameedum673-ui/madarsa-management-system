@@ -138,3 +138,77 @@ export function buildClassAttendanceReport(
   );
   return report;
 }
+
+/**
+ * استاد کی حاضری کی تاریخ (مرحلہ — استاد کی تفصیل پر)
+ * مہینے کے حساب سے گروپ (نیا مہینہ پہلے) + کل خلاصہ + حاضری کی فیصد۔
+ * پرانی "late" حالت اگر کہیں رہ گئی ہو تو گنی نہیں جاتی (مرحلہ 110
+ * میں پرانی late قطاریں present میں بدل دی گئی تھیں)۔
+ * خالص فعل — ڈیٹا بیس نہیں چھوتا، اس لیے الگ سے جانچا جا سکتا ہے۔
+ */
+export interface TeacherAttendanceMonth {
+  month: string; // YYYY-MM
+  present: number;
+  absent: number;
+  leave: number;
+  sick: number;
+  total: number;
+}
+
+export interface TeacherAttendanceHistory {
+  months: TeacherAttendanceMonth[];
+  present: number;
+  absent: number;
+  leave: number;
+  sick: number;
+  total: number;
+  /** حاضر ÷ نشان زدہ دن × 100؛ کوئی دن نہ ہو تو 0 */
+  percentage: number;
+}
+
+export function buildTeacherAttendanceHistory(
+  rows: { date: string; status: AttendanceStatus }[],
+): TeacherAttendanceHistory {
+  const history: TeacherAttendanceHistory = {
+    months: [],
+    present: 0,
+    absent: 0,
+    leave: 0,
+    sick: 0,
+    total: 0,
+    percentage: 0,
+  };
+  const byMonth = new Map<string, TeacherAttendanceMonth>();
+  for (const r of rows) {
+    const month = r.date.slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(month)) continue;
+    let m = byMonth.get(month);
+    if (!m) {
+      m = { month, present: 0, absent: 0, leave: 0, sick: 0, total: 0 };
+      byMonth.set(month, m);
+    }
+    if (r.status === "present") {
+      m.present++;
+      history.present++;
+    } else if (r.status === "absent") {
+      m.absent++;
+      history.absent++;
+    } else if (r.status === "leave") {
+      m.leave++;
+      history.leave++;
+    } else if (r.status === "sick") {
+      m.sick++;
+      history.sick++;
+    } else {
+      continue;
+    }
+    m.total++;
+    history.total++;
+  }
+  history.months = [...byMonth.values()].sort((a, b) =>
+    a.month < b.month ? 1 : a.month > b.month ? -1 : 0,
+  );
+  history.percentage =
+    history.total > 0 ? (history.present / history.total) * 100 : 0;
+  return history;
+}
