@@ -6,6 +6,10 @@ import BackButton from "@/components/BackButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
+import { isMadrasaOwner } from "@/lib/approval";
+import { getMyMadrasa } from "@/lib/students";
+import StaffHistory from "@/app/departments/staff/[id]/StaffHistory";
+import type { SalaryHistoryRow } from "@/app/departments/teachers/[id]/TeacherHistory";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 import type { StaffMember } from "@/lib/staff";
@@ -40,6 +44,30 @@ export default async function StaffDetailPage({
   const allowedSections = await getMyAllowedSections(supabase);
   if (!allowedSections.has(member.section)) notFound();
   const lang = await langP;
+
+  // عملے کی تاریخ — صرف تنخواہوں کی تاریخ، صرف مالک کے لیے
+  // (تنخواہوں والا صفحہ بھی صرف مالک کا ہے)؛ نہ ملے تو خالی
+  let salaries: SalaryHistoryRow[] = [];
+  let showSalaries = false;
+  try {
+    showSalaries = await isMadrasaOwner(supabase);
+    if (showSalaries) {
+      const mine = await getMyMadrasa(supabase);
+      if (mine) {
+        const { data: salData } = await supabase
+          .from("salary_payments")
+          .select("salary_month, payment_date, amount, payment_method, status")
+          .eq("madrasa_id", mine.madrasaId)
+          .eq("person_type", "staff")
+          .eq("person_id", member.id)
+          .order("salary_month", { ascending: false });
+        salaries = (salData ?? []) as SalaryHistoryRow[];
+      }
+    }
+  } catch {
+    salaries = [];
+    showSalaries = false;
+  }
 
   return (
     <div className="module-view open">
@@ -101,6 +129,12 @@ export default async function StaffDetailPage({
           cancelHref="/departments/staff"
           showStatus
           lang={lang}
+        />
+
+        <StaffHistory
+          lang={lang}
+          salaries={salaries}
+          showSalaries={showSalaries}
         />
 
       </div>
