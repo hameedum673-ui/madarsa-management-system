@@ -11,6 +11,7 @@ import InstallAppButton from "@/components/InstallAppButton";
 import ChangePasswordForm from "@/app/departments/settings/ChangePasswordForm";
 import AcademicYearForm from "@/app/departments/settings/AcademicYearForm";
 import PastAcademicYearForm from "@/app/departments/settings/PastAcademicYearForm";
+import YearEditForm from "@/app/departments/settings/YearEditForm";
 import MfaSettings from "@/app/departments/settings/MfaSettings";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
@@ -20,10 +21,16 @@ import type { MadrasaRole } from "@/lib/tenancy";
 import { getMyLanguage } from "@/lib/language";
 import { t } from "@/i18n/dictionary";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ edit?: string }>;
+}) {
   const supabase = await createClient();
   const langP = getMyLanguage();
   const admin = await isAppAdmin(supabase);
+  const params = (await searchParams) ?? {};
+  const editId = typeof params.edit === "string" ? params.edit : "";
 
   const {
     data: { user },
@@ -93,6 +100,9 @@ export default async function SettingsPage() {
     }
   }
   const currentYear = allYears.find((y) => y.is_current) ?? null;
+  const editingYear = editId
+    ? (allYears.find((y) => y.id === editId) ?? null)
+    : null;
 
   return (
     <div className="module-view open">
@@ -133,7 +143,13 @@ export default async function SettingsPage() {
                       {year.label} — {year.start_date}
                       {year.is_current
                         ? ` (${t(lang, "settings.year.current")})`
-                        : ""}
+                        : ""}{" "}
+                      <Link
+                        className="btn-ghost"
+                        href={`/departments/settings?edit=${year.id}`}
+                      >
+                        {t(lang, "settings.year.edit")}
+                      </Link>
                     </span>
                     <strong>
                       {t(lang, "settings.year.enrolled", {
@@ -146,6 +162,9 @@ export default async function SettingsPage() {
             ) : (
               <p className="sub">{t(lang, "settings.year.no_years")}</p>
             )}
+            {editingYear ? (
+              <YearEditForm lang={lang} year={editingYear} />
+            ) : null}
             {currentYear ? null : (
               <AcademicYearForm lang={lang} activeCount={activeCount} />
             )}

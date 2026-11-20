@@ -8,6 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getMyMadrasa } from "@/lib/students";
+import { yearRangesOverlap } from "@/lib/academicYears";
 import { isAppAdmin, isMadrasaOwner } from "@/lib/approval";
 import { isLang, t, type Lang } from "@/i18n/dictionary";
 
@@ -191,6 +192,79 @@ export async function createPastAcademicYear(
 
   await writeAudit(supabase, mine.madrasaId, mine.userId, "academic_year_past_created", {
     year_id: year.id as string,
+    label,
+  });
+
+  revalidatePath("/departments/settings");
+  return { ok: true, count: 0 };
+}
+
+/**
+ * تعلیمی سال درست کریں — صرف مالک یا ایڈمن۔
+ * نام + شروع کی تاریخ + ختم کی تاریخ بدلتی ہے؛ "موجودہ" ہونا، اندراج
+ * اور امتحان نہیں بدلتے (سب سال کی پہچان/id سے جڑے ہیں)۔ سال مٹتا نہیں۔
+ * جانچ: نام خالی نہیں، شروع < ختم، دوسرے سال سے ٹکراؤ نہیں۔
+ */
+export async function updateAcademicYear(
+  formData: FormData,
+): Promise<YearResult> {
+  const lang = formLang(formData);
+  const yearId = clean(formData.get("year_id"), 40);
+  const label = clean(formData.get("label"), 20);
+  const startDate = clean(formData.get("start_date"), 10);
+  const endDate = clean(formData.get("end_date"), 10);
+  if (!label) return { error: t(lang, "settings.year.err.label") };
+  if (!validDate(startDate) || !validDate(endDate))
+    return { error: t(lang, "settings.year.err.date") };
+  if (startDate >= endDate)
+    return { error: t(lang, "settings.year.err.range") };
+
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
+  const owner = await isMadrasaOwner(supabase);
+  const admin = await isAppAdmin(supabase);
+  if (!owner && !admin) return { error: t(lang, "common.not_allowed") };
+
+  // سال میرا ہونا چاہیے
+  const { data: year } = await supabase
+    .from("academic_years")
+    .select("id")
+    .eq("id", yearId)
+    .eq("madrasa_id", mine.madrasaId)
+    .single();
+  if (!year) return { error: t(lang, "settings.year.err.failed") };
+
+  // دوسرے سال سے ٹکراؤ نہیں
+  const { data: others } = await supabase
+    .from("academic_years")
+    .select("id, start_date, end_date")
+    .eq("madrasa_id", mine.madrasaId)
+    .neq("id", yearId);
+  const clash = (others ?? []).some((o) =>
+    yearRangesOverlap(
+      { start_date: startDate, end_date: endDate },
+      {
+        start_date: o.start_date as string,
+        end_date: o.end_date as string,
+      },
+    ),
+  );
+  if (clash) return { error: t(lang, "settings.year.err.overlap") };
+
+  const { error } = await supabase
+    .from("academic_years")
+    .update({ label, start_date: startDate, end_date: endDate })
+    .eq("id", yearId)
+    .eq("madrasa_id", mine.madrasaId);
+  if (error) {
+    if ((error as { code?: string } | null)?.code === "23505")
+      return { error: t(lang, "settings.year.err.label_exists") };
+    return { error: t(lang, "settings.year.err.failed") };
+  }
+
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "academic_year_edited", {
+    year_id: yearId,
     label,
   });
 

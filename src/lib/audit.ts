@@ -10,6 +10,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   student_created: "طالب علم شامل کیا گیا",
   student_updated: "طالب علم کا ریکارڈ بدلا گیا",
   students_promoted: "طالبات کی اگلے سال میں ترقی کی گئی",
+  academic_year_edited: "تعلیمی سال درست کیا گیا",
   teacher_created: "استاد شامل کیا گیا",
   teacher_updated: "استاد کا ریکارڈ بدلا گیا",
   staff_created: "عملے کا رکن شامل کیا گیا",
@@ -176,6 +177,7 @@ export const AUDIT_CATEGORIES = [
       "workspace_created",
       "workspace_transferred",
       "backup_restored",
+      "academic_year_edited",
     ],
   },
 ] as const;
