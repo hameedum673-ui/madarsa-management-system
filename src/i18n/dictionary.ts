@@ -279,6 +279,8 @@ const ur: Dict = {
   "student.history.marks": "نمبر",
   "student.history.no_year": "سال درج نہیں",
   "student.history.class": "جماعت",
+  "student.fee_history.title": "فیس کی تاریخ",
+  "student.fee_history.none": "ابھی کوئی فیس درج نہیں۔",
 
   "student.import.title": "ایک ساتھ داخلہ (CSV)",
   "student.import.link": "ایک ساتھ داخلہ",
@@ -2083,6 +2085,8 @@ const ar: Dict = {
   "student.history.marks": "الدرجة",
   "student.history.no_year": "السنة غير مسجلة",
   "student.history.class": "الصف",
+  "student.fee_history.title": "سجل الرسوم",
+  "student.fee_history.none": "لا توجد رسوم مسجلة بعد.",
 
   "student.import.title": "إدخال جماعي (CSV)",
   "student.import.link": "إدخال جماعي",

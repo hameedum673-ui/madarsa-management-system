@@ -23,6 +23,9 @@ import { getMyLanguage } from "@/lib/language";
 import { studentStatusLabel, t } from "@/i18n/dictionary";
 import { getStudentExamHistory } from "@/lib/exams";
 import StudentHistory from "@/app/departments/students/[id]/StudentHistory";
+import StudentFeeHistory, {
+  type FeeHistoryRow,
+} from "@/app/departments/students/[id]/StudentFeeHistory";
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -62,6 +65,9 @@ export default async function StudentDetailPage({
   let canEnrollPast = false;
   // نتائج کی تاریخ — صرف اسی طالبہ کے؛ نہ ملے تو خالی (صفحہ نہیں ٹوٹے گا)
   let history: Awaited<ReturnType<typeof getStudentExamHistory>> = [];
+  // فیس کی تاریخ — صرف اسے دکھے گی جسے آمدنی (فیس) کی اجازت ہے
+  let fees: FeeHistoryRow[] = [];
+  let showFees = false;
   try {
     const mine = await getMyMadrasa(supabase);
     if (mine) {
@@ -78,11 +84,26 @@ export default async function StudentDetailPage({
       );
     }
     canEnrollPast = await isModuleAllowedForMe(supabase, "students");
+    showFees = await isModuleAllowedForMe(supabase, "income");
+    if (showFees && mine) {
+      const { data: feeData } = await supabase
+        .from("fee_payments")
+        .select(
+          "id, receipt_number, fee_month, amount, payment_date, payment_method, status",
+        )
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("student_id", student.id)
+        .order("fee_month", { ascending: false })
+        .order("payment_date", { ascending: false });
+      fees = (feeData ?? []) as FeeHistoryRow[];
+    }
   } catch {
     pastYears = [];
     pastEnrollments = [];
     canEnrollPast = false;
     history = [];
+    fees = [];
+    showFees = false;
   }
 
   return (
@@ -191,6 +212,8 @@ export default async function StudentDetailPage({
           regNo={student.registration_number}
           groups={history}
         />
+
+        {showFees ? <StudentFeeHistory lang={lang} fees={fees} /> : null}
 
       </div>
     </div>
