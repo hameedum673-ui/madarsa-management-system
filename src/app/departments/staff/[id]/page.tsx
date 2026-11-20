@@ -8,6 +8,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyAllowedSections } from "@/lib/permissions";
 import { isMadrasaOwner } from "@/lib/approval";
 import { getMyMadrasa } from "@/lib/students";
+import {
+  buildTeacherAttendanceHistory,
+  type AttendanceStatus,
+  type TeacherAttendanceHistory,
+} from "@/lib/attendance";
 import StaffHistory from "@/app/departments/staff/[id]/StaffHistory";
 import type { SalaryHistoryRow } from "@/app/departments/teachers/[id]/TeacherHistory";
 import { getMyLanguage } from "@/lib/language";
@@ -45,26 +50,52 @@ export default async function StaffDetailPage({
   if (!allowedSections.has(member.section)) notFound();
   const lang = await langP;
 
-  // عملے کی تاریخ — صرف تنخواہوں کی تاریخ، صرف مالک کے لیے
+  // عملے کی تاریخ — حاضری سب کو، تنخواہیں صرف مالک کے لیے
   // (تنخواہوں والا صفحہ بھی صرف مالک کا ہے)؛ نہ ملے تو خالی
+  let att: TeacherAttendanceHistory = {
+    months: [],
+    present: 0,
+    absent: 0,
+    leave: 0,
+    sick: 0,
+    total: 0,
+    percentage: 0,
+  };
   let salaries: SalaryHistoryRow[] = [];
   let showSalaries = false;
   try {
+    const mine = await getMyMadrasa(supabase);
+    if (mine) {
+      const { data: attData } = await supabase
+        .from("staff_attendance")
+        .select("date, status")
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("staff_id", member.id);
+      att = buildTeacherAttendanceHistory(
+        (attData ?? []) as { date: string; status: AttendanceStatus }[],
+      );
+    }
     showSalaries = await isMadrasaOwner(supabase);
-    if (showSalaries) {
-      const mine = await getMyMadrasa(supabase);
-      if (mine) {
-        const { data: salData } = await supabase
-          .from("salary_payments")
-          .select("salary_month, payment_date, amount, payment_method, status")
-          .eq("madrasa_id", mine.madrasaId)
-          .eq("person_type", "staff")
-          .eq("person_id", member.id)
-          .order("salary_month", { ascending: false });
-        salaries = (salData ?? []) as SalaryHistoryRow[];
-      }
+    if (showSalaries && mine) {
+      const { data: salData } = await supabase
+        .from("salary_payments")
+        .select("salary_month, payment_date, amount, payment_method, status")
+        .eq("madrasa_id", mine.madrasaId)
+        .eq("person_type", "staff")
+        .eq("person_id", member.id)
+        .order("salary_month", { ascending: false });
+      salaries = (salData ?? []) as SalaryHistoryRow[];
     }
   } catch {
+    att = {
+      months: [],
+      present: 0,
+      absent: 0,
+      leave: 0,
+      sick: 0,
+      total: 0,
+      percentage: 0,
+    };
     salaries = [];
     showSalaries = false;
   }
@@ -133,6 +164,7 @@ export default async function StaffDetailPage({
 
         <StaffHistory
           lang={lang}
+          att={att}
           salaries={salaries}
           showSalaries={showSalaries}
         />
