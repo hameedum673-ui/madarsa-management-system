@@ -126,9 +126,12 @@ export async function previewImport(
   if (records.length === 0)
     return { error: t(lang, "student.import.err.no_rows") };
   const header = records[0].map((h) => h.trim().toLowerCase());
+  // سرخی: نئی فائل (9 کالم، پتہ سمیت) یا پرانی فائل (8 کالم، پتہ
+  // بغیر) — دونوں چلیں؛ کالموں کی ترتیب وہی رہے
   const headerOk =
-    header.length === IMPORT_HEADERS.length &&
-    IMPORT_HEADERS.every((h, i) => header[i] === h);
+    (header.length === IMPORT_HEADERS.length ||
+      header.length === IMPORT_HEADERS.length - 1) &&
+    IMPORT_HEADERS.slice(0, header.length).every((h, i) => header[i] === h);
   if (!headerOk)
     return { error: t(lang, "student.import.err.bad_header") };
 
@@ -268,6 +271,8 @@ export async function confirmImport(
           return r.admissionDate ?? "";
         case "district":
           return r.district ?? "";
+        case "address":
+          return r.address ?? "";
         default:
           return "";
       }
@@ -302,6 +307,7 @@ export async function confirmImport(
         class_name: clean.className || null,
         admission_date: clean.admissionDate,
         district: clean.district || null,
+        address: clean.address || null,
         status: "active",
       })
       .select("id")
@@ -328,6 +334,7 @@ export async function confirmImport(
             class_name: clean.className || null,
             admission_date: clean.admissionDate,
             district: clean.district || null,
+            address: clean.address || null,
             status: "active",
           })
           .select("id")

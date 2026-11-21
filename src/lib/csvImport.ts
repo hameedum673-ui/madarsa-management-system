@@ -24,6 +24,7 @@ export const IMPORT_HEADERS = [
   "admission_date",
   "district",
   "guardian_name",
+  "address",
 ] as const;
 
 export interface ImportRow {
@@ -37,6 +38,7 @@ export interface ImportRow {
   className: string;
   admissionDate: string;
   district: string;
+  address: string;
 }
 
 /** CSV متن کو قطاروں میں توڑیں — ہر قطار کھیتوں کی فہرست */
@@ -122,7 +124,9 @@ function normalizeDate(value: string): string | null {
   }
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-  const d = new Date(iso + "T00:00:00");
+  // "Z" لازم — ورنہ سرور کے ٹائم زون میں آدھی رات UTC میں پچھلا دن
+  // بن جاتی ہے اور ہر تاریخ غلط قرار پاتی ہے (پاکستان +05:00)
+  const d = new Date(iso + "T00:00:00Z");
   if (Number.isNaN(d.getTime())) return null;
   // 31-02-2025 جیسی جعلی تاریخ پکڑیں (Date اسے 3 مارچ بنا دیتا ہے)
   if (d.toISOString().slice(0, 10) !== iso) return null;
@@ -174,6 +178,8 @@ export function validateImportRow(
   // دونوں شکلیں قبول؛ محفوظ ہمیشہ ISO شکل ہوتی ہے
   const admissionDate = normalizeDate(admissionDateRaw);
   const district = clean(fields[IMPORT_HEADERS.indexOf("district")], 100);
+  // پتہ — آخری کالم، اختیاری (پرانی 8 کالم والی فائل میں یہ کھیت نہیں ہوتا)
+  const address = clean(fields[IMPORT_HEADERS.indexOf("address")], 500);
 
   if (!name) return { errorKey: "student.err.name_required" };
   if (!fatherName) return { errorKey: "student.err.father_required" };
@@ -199,6 +205,7 @@ export function validateImportRow(
       className,
       admissionDate,
       district,
+      address,
     },
   };
 }
