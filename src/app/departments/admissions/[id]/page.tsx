@@ -128,6 +128,14 @@ export default async function AdmissionDetailPage({
             <span dir="ltr">{admission.whatsapp_number ?? "—"}</span>
           </div>
           <div className="row">
+            <span>{t(lang, "student.form.district")}</span>
+            <span>{admission.district ?? "—"}</span>
+          </div>
+          <div className="row">
+            <span>{t(lang, "student.form.address")}</span>
+            <span>{admission.address ?? "—"}</span>
+          </div>
+          <div className="row">
             <span>{t(lang, "admission.detail.prev_madrasa")}</span>
             <span>{admission.previous_madrasa ?? "—"}</span>
           </div>

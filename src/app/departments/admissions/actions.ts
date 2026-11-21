@@ -71,6 +71,7 @@ interface AdmissionFields {
   admissionType: AdmissionType;
   studentId: string;
   district: string;
+  address: string;
   previousMadrasa: string;
   note: string;
 }
@@ -93,6 +94,7 @@ function validateFields(
   const admissionType = clean(formData.get("admission_type"), 20);
   const studentId = clean(formData.get("student_id"), 50);
   const district = clean(formData.get("district"), 100);
+  const address = clean(formData.get("address"), 500);
   const previousMadrasa = clean(formData.get("previous_madrasa"), 200);
   const note = clean(formData.get("note"), 500);
 
@@ -134,6 +136,7 @@ function validateFields(
       admissionType: admissionType as AdmissionType,
       studentId,
       district,
+      address,
       previousMadrasa,
       note,
     },
@@ -224,6 +227,7 @@ export async function addAdmission(formData: FormData): Promise<AddResult> {
       admission_type: f.admissionType,
       student_id: f.admissionType === "returning" ? f.studentId : null,
       district: f.district || null,
+      address: f.address || null,
       previous_madrasa: f.previousMadrasa || null,
       note: f.note || null,
       status: "pending",
@@ -311,6 +315,11 @@ export async function approveAdmission(
     if ((admission.district as string | null) ?? null) {
       returningUpdate.district = admission.district as string;
     }
+    // پتہ بھی اسی طرح — صرف تب بدلے جب داخلے میں لکھا ہو (خالی ہو تو
+    // پرانی طالبہ کا پتہ ویسا ہی رہے — مٹے نہیں)
+    if ((admission.address as string | null) ?? null) {
+      returningUpdate.address = admission.address as string;
+    }
     const { error: updateError } = await supabase
       .from("students")
       .update(returningUpdate)
@@ -381,7 +390,7 @@ export async function approveAdmission(
       class_name: (admission.class_name as string | null) ?? null,
       admission_date: admission.admission_date as string,
       admission_type: "new",
-      address: null,
+      address: (admission.address as string | null) ?? null,
       district: (admission.district as string | null) ?? null,
       status: "active",
     })

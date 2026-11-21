@@ -51,6 +51,8 @@ export interface Admission {
   class_name: string | null;
   admission_date: string;
   admission_type: AdmissionType;
+  district: string | null;
+  address: string | null;
   previous_madrasa: string | null;
   note: string | null;
   status: AdmissionStatus;

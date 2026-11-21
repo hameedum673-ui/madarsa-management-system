@@ -41,6 +41,7 @@ export interface AdmissionStudent {
   guardian_phone: string | null;
   whatsapp_number: string | null;
   district: string | null;
+  address: string | null;
   status: string;
 }
 
@@ -72,6 +73,7 @@ export default function AdmissionForm({
   const [guardianPhone, setGuardianPhone] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [district, setDistrict] = useState("");
+  const [address, setAddress] = useState("");
 
   const selectedStudent =
     students.find((s) => s.id === studentId) ?? null;
@@ -90,6 +92,7 @@ export default function AdmissionForm({
     setGuardianPhone("");
     setWhatsappNumber("");
     setDistrict("");
+    setAddress("");
   }
 
   function handleStudentChange(id: string) {
@@ -103,6 +106,7 @@ export default function AdmissionForm({
       setGuardianPhone("");
       setWhatsappNumber("");
       setDistrict("");
+      setAddress("");
       return;
     }
     setApplicantName(student.name);
@@ -112,6 +116,7 @@ export default function AdmissionForm({
     setGuardianPhone(student.guardian_phone ?? "");
     setWhatsappNumber(student.whatsapp_number ?? "");
     setDistrict(student.district ?? "");
+    setAddress(student.address ?? "");
     setDepartment(student.department);
     setSection(student.section);
   }
@@ -332,6 +337,18 @@ export default function AdmissionForm({
             placeholder={t(lang, "student.form.district_ph")}
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">{t(lang, "student.form.address")}</span>
+          <textarea
+            className="field-input field-textarea"
+            name="address"
+            maxLength={500}
+            placeholder={t(lang, "student.form.address_ph")}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
           />
         </label>
 
