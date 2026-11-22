@@ -7,25 +7,35 @@
 
 import { useRouter } from "next/navigation";
 import { DEPARTMENT_IDS, SECTION_IDS } from "@/lib/students";
+import type { ClassOption } from "@/lib/classes";
 import { t, type Lang } from "@/i18n/dictionary";
 
 export default function ReportFilters({
   date,
   department,
   section,
+  className,
+  classes,
   allowedSections,
   lang = "ur",
 }: {
   date: string;
   department: string;
   section: string;
+  className: string;
+  classes: ClassOption[];
   allowedSections: string[];
   lang?: Lang;
 }) {
   const router = useRouter();
-  function go(nextDate: string, nextDept: string, nextSection: string) {
+  function go(
+    nextDate: string,
+    nextDept: string,
+    nextSection: string,
+    nextClass: string,
+  ) {
     router.push(
-      `/departments/att-students/report?date=${nextDate}&department=${nextDept}&section=${nextSection}`,
+      `/departments/att-students/report?date=${nextDate}&department=${nextDept}&section=${nextSection}&class=${encodeURIComponent(nextClass)}`,
     );
   }
 
@@ -38,7 +48,7 @@ export default function ReportFilters({
           type="date"
           value={date}
           onChange={(e) => {
-            if (e.target.value) go(e.target.value, department, section);
+            if (e.target.value) go(e.target.value, department, section, className);
           }}
         />
       </label>
@@ -47,7 +57,7 @@ export default function ReportFilters({
         <select
           className="field-input"
           value={department}
-          onChange={(e) => go(date, e.target.value, section)}
+          onChange={(e) => go(date, e.target.value, section, className)}
         >
           <option value="all">{t(lang, "att.form.all_depts")}</option>
           {DEPARTMENT_IDS.map((d) => (
@@ -64,12 +74,27 @@ export default function ReportFilters({
         <select
           className="field-input"
           value={section}
-          onChange={(e) => go(date, department, e.target.value)}
+          onChange={(e) => go(date, department, e.target.value, className)}
         >
           <option value="all">{t(lang, "common.all")}</option>
           {SECTION_IDS.filter((s) => allowedSections.includes(s)).map((s) => (
             <option key={s} value={s}>
               {t(lang, `section.${s}`)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span className="field-label">{t(lang, "col.class")}</span>
+        <select
+          className="field-input"
+          value={className}
+          onChange={(e) => go(date, department, section, e.target.value)}
+        >
+          <option value="all">{t(lang, "common.all")}</option>
+          {classes.map((c) => (
+            <option key={c.name} value={c.name}>
+              {c.name}
             </option>
           ))}
         </select>

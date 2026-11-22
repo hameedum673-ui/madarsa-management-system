@@ -25,6 +25,7 @@ import {
 } from "@/lib/students";
 import ReportFilters from "@/app/departments/att-students/report/ReportFilters";
 import { getMyLanguage } from "@/lib/language";
+import { getActiveClasses } from "@/lib/classes";
 import { t } from "@/i18n/dictionary";
 
 function formatDate(value: string): string {
@@ -43,7 +44,7 @@ function namesList(students: ReportStudent[]): string {
 export default async function ClassAttendanceReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; department?: string; section?: string }>;
+  searchParams: Promise<{ date?: string; department?: string; section?: string; class?: string }>;
 }) {
   const sp = await searchParams;
   const date =
@@ -53,15 +54,21 @@ export default async function ClassAttendanceReportPage({
       ? sp.department
       : "all";
   const supabase = await createClient();
-  const [allowedSections, lang] = await Promise.all([
+  const [allowedSections, lang, classes] = await Promise.all([
     getMyAllowedSections(supabase),
     getMyLanguage(),
+    getActiveClasses(supabase),
   ]);
   const rawSection = sp.section ?? "all";
   const section: SectionId | "all" =
     (SECTION_IDS as string[]).includes(rawSection) &&
     allowedSections.has(rawSection as SectionId)
       ? (rawSection as SectionId)
+      : "all";
+  const rawClass = (sp.class ?? "all").trim();
+  const className: string | "all" =
+    rawClass !== "all" && classes.some((c) => c.name === rawClass)
+      ? rawClass
       : "all";
 
   let studentsQuery = supabase
@@ -74,6 +81,9 @@ export default async function ClassAttendanceReportPage({
   }
   if (section !== "all") {
     studentsQuery = studentsQuery.eq("section", section);
+  }
+  if (className !== "all") {
+    studentsQuery = studentsQuery.eq("class_name", className);
   }
   if (allowedSections.size < 2) {
     studentsQuery = studentsQuery.eq(
@@ -134,6 +144,8 @@ export default async function ClassAttendanceReportPage({
               date={date}
               department={department}
               section={section}
+              className={className}
+              classes={classes}
               allowedSections={[...allowedSections]}
               lang={lang}
             />
