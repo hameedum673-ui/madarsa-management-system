@@ -12,9 +12,11 @@ import {
 } from "@/lib/students";
 import StudentForm from "@/app/departments/students/StudentForm";
 import PastEnrollmentForm from "@/app/departments/students/[id]/PastEnrollmentForm";
+import CurrentYearEnrollButton from "@/app/departments/students/[id]/CurrentYearEnrollButton";
 import { updateStudent } from "@/app/departments/students/actions";
 import { getActiveClasses } from "@/lib/classes";
 import {
+  getCurrentAcademicYear,
   getPastAcademicYears,
   getStudentPastEnrollments,
 } from "@/lib/academicYears";
@@ -63,6 +65,9 @@ export default async function StudentDetailPage({
     ReturnType<typeof getStudentPastEnrollments>
   > = [];
   let canEnrollPast = false;
+  // موجودہ سال — صرف اس صورت میں بٹن دکھے گا جب اندراج نہ ہو
+  let currentYear: Awaited<ReturnType<typeof getCurrentAcademicYear>> = null;
+  let hasCurrentEnrollment = false;
   // نتائج کی تاریخ — صرف اسی طالبہ کے؛ نہ ملے تو خالی (صفحہ نہیں ٹوٹے گا)
   let history: Awaited<ReturnType<typeof getStudentExamHistory>> = [];
   // فیس کی تاریخ — صرف اسے دکھے گی جسے آمدنی (فیس) کی اجازت ہے
@@ -77,6 +82,16 @@ export default async function StudentDetailPage({
         mine.madrasaId,
         student.id,
       );
+      currentYear = await getCurrentAcademicYear(supabase, mine.madrasaId);
+      if (currentYear) {
+        const { data: curEnroll } = await supabase
+          .from("enrollments")
+          .select("id")
+          .eq("student_id", student.id)
+          .eq("academic_year_id", currentYear.id)
+          .limit(1);
+        hasCurrentEnrollment = (curEnroll ?? []).length > 0;
+      }
       history = await getStudentExamHistory(
         supabase,
         mine.madrasaId,
@@ -101,6 +116,8 @@ export default async function StudentDetailPage({
     pastYears = [];
     pastEnrollments = [];
     canEnrollPast = false;
+    currentYear = null;
+    hasCurrentEnrollment = false;
     history = [];
     fees = [];
     showFees = false;
@@ -201,6 +218,19 @@ export default async function StudentDetailPage({
                 department={student.department}
                 section={student.section}
                 existing={pastEnrollments}
+              />
+            </>
+          ) : null}
+
+          {canEnrollPast && currentYear && !hasCurrentEnrollment ? (
+            <>
+              <h3 className="form-section-title">
+                {t(lang, "student.current_enroll.title")}
+              </h3>
+              <CurrentYearEnrollButton
+                lang={lang}
+                studentId={student.id}
+                yearLabel={currentYear.label}
               />
             </>
           ) : null}

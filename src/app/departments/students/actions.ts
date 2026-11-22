@@ -20,7 +20,11 @@ import {
   type SectionId,
   type StudentStatus,
 } from "@/lib/students";
-import { upsertEnrollment, upsertEnrollmentForYear } from "@/lib/academicYears";
+import {
+  getCurrentAcademicYear,
+  upsertEnrollment,
+  upsertEnrollmentForYear,
+} from "@/lib/academicYears";
 import { isLang, t, type Lang } from "@/i18n/dictionary";
 
 /** مرحلہ 103 — فارم کے چھپے ہوئے خانے سے زبان (نہ ملی تو اردو) */
@@ -378,6 +382,79 @@ export async function enrollInPastYear(
     year_id: yearId,
     year_label: year.label as string,
     class_name: className,
+  });
+
+  revalidatePath(`/departments/students/${id}`);
+  revalidatePath("/departments/students");
+  return { ok: true };
+}
+
+/**
+ * طالبہ کو موجودہ سال میں داخلہ دیں — طالبہ کی تفصیل کا صفحہ۔
+ * درآمد میں غلط سال چننے پر درست کرنے کے لیے (مثال: 1446/47 کی
+ * بجائے 1447/48ھ)۔ طالب علم کی موجودہ جماعت سے اندراج بنتا ہے۔
+ */
+export async function enrollInCurrentYear(
+  id: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const lang = formLang(formData);
+
+  const supabase = await createClient();
+  const mine = await getMyMadrasa(supabase);
+  if (!mine) return { error: t(lang, "common.not_logged_in") };
+  if (!(await isModuleAllowedForMe(supabase, "students"))) {
+    return { error: t(lang, "common.not_allowed") };
+  }
+
+  // طالبہ اپنے مدرسے کی ہو اور شعبہ کھلا ہو
+  const { data: student, error: studentError } = await supabase
+    .from("students")
+    .select("id, registration_number, name, department, section, class_name")
+    .eq("id", id)
+    .eq("madrasa_id", mine.madrasaId)
+    .single();
+  if (studentError || !student) {
+    return { error: t(lang, "student.err.update_failed") };
+  }
+  const allowedSections = await getMyAllowedSections(supabase);
+  if (!allowedSections.has(student.section as SectionId))
+    return { error: t(lang, "student.err.section_denied") };
+
+  // موجودہ سال اپنے مدرسے کا ہو
+  const year = await getCurrentAcademicYear(supabase, mine.madrasaId);
+  if (!year) {
+    return { error: t(lang, "student.current_enroll.err.no_year") };
+  }
+
+  await upsertEnrollment(
+    supabase,
+    mine.madrasaId,
+    id,
+    student.class_name as string | null,
+    student.department as string,
+    student.section as string,
+  );
+
+  // تصدیق — قطار واقعی بن گئی ہو (مددگار غلطی نہیں پھینکتا، اس لیے
+  // یہاں خود جانچتے ہیں؛ نہ بنی ہو تو غلطی دکھائیں، کامیابی کا جھوٹ نہیں)
+  const { data: saved, error: savedError } = await supabase
+    .from("enrollments")
+    .select("id, class_name")
+    .eq("student_id", id)
+    .eq("academic_year_id", year.id)
+    .limit(1);
+  if (savedError || !saved || saved.length === 0) {
+    return { error: t(lang, "student.current_enroll.err.failed") };
+  }
+
+  await writeAudit(supabase, mine.madrasaId, mine.userId, "current_enrollment_saved", {
+    student_id: id,
+    registration_number: student.registration_number as string,
+    name: student.name as string,
+    year_id: year.id,
+    year_label: year.label as string,
+    class_name: (student.class_name as string | null) ?? "",
   });
 
   revalidatePath(`/departments/students/${id}`);
