@@ -22,6 +22,7 @@ import {
   isValidMonth,
   type FeePayment,
 } from "@/lib/fees";
+import { getActiveClasses } from "@/lib/classes";
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("ur-PK");
@@ -30,7 +31,7 @@ function formatDate(value: string): string {
 export default async function IncomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; section?: string; page?: string }>;
+  searchParams: Promise<{ month?: string; section?: string; class?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const month =
@@ -53,6 +54,14 @@ export default async function IncomePage({
       : "all";
 
 
+  // درجے کا فلٹر — فعال جماعت کے نام سے تصدیق (حاضری رپورٹ والا طریقہ)
+  const classes = await getActiveClasses(supabase);
+  const rawClass = (sp.class ?? "all").trim();
+  const className: string | "all" =
+    rawClass !== "all" && classes.some((c) => c.name === rawClass)
+      ? rawClass
+      : "all";
+
   // مرحلہ 59 — صفحہ بندی (ہر صفحے پر 20 ریکارڈ) + شعبہ اب ڈیٹا بیس
   // میں ہی فلٹر ہوتا ہے (ورنہ صفحہ غلط ہوتا)
   const page = parsePage(sp.page);
@@ -66,12 +75,13 @@ export default async function IncomePage({
 
   let query = supabase
     .from("fee_payments")
-    .select("*, students(name, father_name, section)", { count: "exact" })
+    .select("*, students(name, father_name, section, class_name)", { count: "exact" })
     .order("created_at", { ascending: false });
   if (month !== "all") {
     query = query.eq("fee_month", month);
   }
   if (sectionEq) query = query.eq("students.section", sectionEq);
+  if (className !== "all") query = query.eq("students.class_name", className);
   query = query.range(from, to);
   const { data, error, count } = await query;
 
@@ -80,16 +90,17 @@ export default async function IncomePage({
 
   // مرحلہ 59 — شعبہ اب اوپر ڈیٹا بیس میں ہی فلٹر ہوتا ہے
   const payments = (data ?? []) as (FeePayment & {
-    students: { name: string; father_name: string; section: string } | null;
+    students: { name: string; father_name: string; section: string; class_name: string | null } | null;
   })[];
   const pages = pageCount(count);
   // مرحلہ 59 — کل وصول شدہ — پوری فلٹر شدہ فہرست سے (صرف اس صفحے سے نہیں)
   let totalQuery = supabase
     .from("fee_payments")
-    .select("amount, students(section)")
+    .select("amount, students(section, class_name)")
     .eq("status", "active");
   if (month !== "all") totalQuery = totalQuery.eq("fee_month", month);
   if (sectionEq) totalQuery = totalQuery.eq("students.section", sectionEq);
+  if (className !== "all") totalQuery = totalQuery.eq("students.class_name", className);
   const { data: totalData } = await totalQuery;
   const totalCollected = (totalData ?? []).reduce(
     (sum, r) => sum + ((r as { amount: number }).amount ?? 0),
@@ -145,6 +156,21 @@ export default async function IncomePage({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span className="field-label">{t(lang, "col.class")}</span>
+            <select
+              className="field-input"
+              name="class"
+              defaultValue={className}
+            >
+              <option value="all">{t(lang, "common.all")}</option>
+              {classes.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="btn-primary" type="submit">
             {t(lang, "common.view")}
           </button>
@@ -177,6 +203,7 @@ export default async function IncomePage({
                   <th>{t(lang, "col.receipt")}</th>
                   <th>{t(lang, "col.student")}</th>
                   <th>{t(lang, "col.section")}</th>
+                  <th>{t(lang, "col.class")}</th>
                   <th>{t(lang, "fees.month")}</th>
                   <th>{t(lang, "col.amount")}</th>
                   <th>{t(lang, "col.method")}</th>
@@ -202,6 +229,7 @@ export default async function IncomePage({
                         ? t(lang, `section.${p.students.section as SectionId}`)
                         : "—"}
                     </td>
+                    <td>{p.students?.class_name ?? "—"}</td>
                     <td>{formatMonthUrdu(p.fee_month)}</td>
                     <td>{p.amount.toLocaleString("ur-PK")}</td>
                     <td>{t(lang, `fee.method.${p.payment_method}`)}</td>
