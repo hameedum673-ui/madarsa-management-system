@@ -4,6 +4,7 @@
  * میز ابھی نہ بنی ہو (migration 015 نہ چلی ہو) تو صاف پیغام دکھایا جاتا ہے۔
  */
 import BackButton from "@/components/BackButton";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyLanguage } from "@/lib/language";
@@ -64,6 +65,18 @@ export default async function WelfareDetailPage({
     if (madrasa?.name) madrasaName = madrasa.name as string;
   }
 
+  // جڑے ہوئے واؤچر کا نمبر (پرانے ریکارڈوں میں جڑا واؤچر نہیں ہوتا)
+  let voucherNumber = "—";
+  if (record.expense_id) {
+    const { data: expense } = await supabase
+      .from("expenses")
+      .select("voucher_number")
+      .eq("id", record.expense_id)
+      .maybeSingle();
+    if (expense?.voucher_number)
+      voucherNumber = expense.voucher_number as string;
+  }
+
   // مرحلہ 40 — تصویر کے لیے وہی قطاریں جو صفحے پر ہیں
   const imageRows: [string, string][] = [
     [t(lang, "col.student"), record.students?.name ?? "—"],
@@ -108,6 +121,18 @@ export default async function WelfareDetailPage({
           <div className="row">
             <span>{t(lang, "welfare.col_record")}</span>
             <span>{record.record_number}</span>
+          </div>
+          <div className="row">
+            <span>{t(lang, "exp.col_voucher")}</span>
+            <span>
+              {record.expense_id ? (
+                <Link href={`/departments/expenses/${record.expense_id}`}>
+                  {voucherNumber}
+                </Link>
+              ) : (
+                voucherNumber
+              )}
+            </span>
           </div>
           <div className="row">
             <span>{t(lang, "col.student")}</span>

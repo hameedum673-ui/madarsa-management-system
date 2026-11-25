@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { todayInKarachi } from "@/lib/attendance";
 import type { Student } from "@/lib/students";
 import { WELFARE_KINDS } from "@/lib/welfare";
+import { PAYMENT_METHODS } from "@/lib/fees";
 import { t, type Lang } from "@/i18n/dictionary";
 
 type FormAction = (
@@ -100,6 +101,17 @@ export default function WelfareForm({
             required
             defaultValue={todayInKarachi()}
           />
+        </label>
+
+        <label className="field">
+          <span className="field-label">{t(lang, "fee.form.method")}</span>
+          <select className="field-input" name="payment_method" required>
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {t(lang, `fee.method.${m}`)}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 

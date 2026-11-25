@@ -34,6 +34,7 @@ export interface WelfareRecord {
   amount: number;
   record_date: string;
   note: string | null;
+  expense_id: string | null;
   status: WelfareStatus;
   created_by: string | null;
   created_at: string;

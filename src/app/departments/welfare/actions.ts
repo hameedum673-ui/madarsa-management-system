@@ -13,6 +13,10 @@ import { getMyMadrasa } from "@/lib/students";
 import { isMonthClosed, monthOfDate } from "@/lib/monthClosing";
 import { todayInKarachi } from "@/lib/attendance";
 import { WELFARE_KINDS, type WelfareKind } from "@/lib/welfare";
+import {
+  PAYMENT_METHODS,
+  type PaymentMethod,
+} from "@/lib/fees";
 
 type ActionResult = { ok: true; id?: string } | { error: string };
 
@@ -32,6 +36,7 @@ interface WelfareFields {
   kind: WelfareKind;
   amount: number;
   recordDate: string;
+  paymentMethod: PaymentMethod;
   note: string;
 }
 
@@ -45,6 +50,7 @@ function validateFields(
   const amountRaw = clean(formData.get("amount"), 12);
   const amount = Number(amountRaw);
   const recordDate = clean(formData.get("record_date"), 10);
+  const paymentMethod = clean(formData.get("payment_method"), 20);
   const note = clean(formData.get("note"), 500);
 
   if (!studentId) return { error: t(lang, "welfare.err.student_required") };
@@ -56,6 +62,8 @@ function validateFields(
     return { error: t(lang, "funds.err.date_invalid") };
   if (recordDate > todayInKarachi())
     return { error: t(lang, "funds.err.date_future") };
+  if (!PAYMENT_METHODS.includes(paymentMethod as PaymentMethod))
+    return { error: t(lang, "exp.err.method_invalid") };
 
   return {
     fields: {
@@ -63,6 +71,7 @@ function validateFields(
       kind: kind as WelfareKind,
       amount,
       recordDate,
+      paymentMethod: paymentMethod as PaymentMethod,
       note,
     },
   };
@@ -114,7 +123,7 @@ export async function addWelfare(
   // طالبہ اسی مدرسے کی اور فعال ہونی چاہیے
   const { data: student } = await supabase
     .from("students")
-    .select("id")
+    .select("id, name, section")
     .eq("id", f.studentId)
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
@@ -129,6 +138,38 @@ export async function addWelfare(
     .eq("madrasa_id", mine.madrasaId);
   const recordNumber = `W-${String((count ?? 0) + 1).padStart(4, "0")}`;
 
+  // تنخواہوں والا طریقہ — پہلے جڑا ہوا واؤچر بنائیں (زمرہ "دیگر") تاکہ رقم بیلنس میں آئے
+  const { count: expCount } = await supabase
+    .from("expenses")
+    .select("id", { count: "exact", head: true })
+    .eq("madrasa_id", mine.madrasaId);
+  const voucherNumber = `V-${String((expCount ?? 0) + 1).padStart(4, "0")}`;
+  const expenseTitle = `وظائف — ${student.name as string} — ${t("ur", `welfare.kind.${f.kind}`)} — ${recordNumber}`;
+  const { data: expense, error: expenseError } = await supabase
+    .from("expenses")
+    .insert({
+      madrasa_id: mine.madrasaId,
+      voucher_number: voucherNumber,
+      title: expenseTitle,
+      category: "other",
+      section: (student.section as string | null) ?? "banat",
+      amount: f.amount,
+      expense_date: f.recordDate,
+      payment_method: f.paymentMethod,
+      note: f.note || null,
+      status: "active",
+      created_by: mine.userId,
+    })
+    .select("id")
+    .single();
+  if (expenseError || !expense) {
+    if ((expenseError as { code?: string } | null)?.code === "23505") {
+      return { error: t(lang, "exp.err.voucher_clash") };
+    }
+    return { error: t(lang, "funds.err.save_failed") };
+  }
+  const expenseId = expense.id as string;
+
   const { data, error } = await supabase
     .from("welfare_records")
     .insert({
@@ -139,6 +180,7 @@ export async function addWelfare(
       amount: f.amount,
       record_date: f.recordDate,
       note: f.note || null,
+      expense_id: expenseId,
       status: "active",
       created_by: mine.userId,
     })
@@ -146,6 +188,13 @@ export async function addWelfare(
     .single();
 
   if (error || !data) {
+    // ریکارڈ محفوظ نہ ہوا تو جڑا ہوا واؤچر بھی منسوخ کر دیں
+    await supabase
+      .from("expenses")
+      .update({ status: "voided", updated_at: new Date().toISOString() })
+      .eq("id", expenseId)
+      .eq("madrasa_id", mine.madrasaId)
+      .eq("status", "active");
     // ریکارڈ نمبر دو بار بن جائے تو صاف غلطی
     if ((error as { code?: string } | null)?.code === "23505") {
       return { error: t(lang, "welfare.err.record_clash") };
@@ -157,9 +206,12 @@ export async function addWelfare(
     welfare_id: data.id as string,
     record_number: recordNumber,
     kind: f.kind,
+    voucher_number: voucherNumber,
   });
 
   revalidatePath("/departments/welfare");
+  revalidatePath("/departments/expenses");
+  revalidatePath("/departments/monthly");
   revalidatePath("/");
   return { ok: true, id: data.id as string };
 }
@@ -179,7 +231,7 @@ export async function voidWelfare(
   // مرحلہ 39 — بند مہینے کی امداد منسوخ نہیں ہو سکتی
   const { data: row } = await supabase
     .from("welfare_records")
-    .select("record_date")
+    .select("record_date, expense_id")
     .eq("id", id)
     .eq("madrasa_id", mine.madrasaId)
     .eq("status", "active")
@@ -208,6 +260,16 @@ export async function voidWelfare(
     return { error: t(lang, "welfare.err.void_failed") };
   }
 
+  // جڑا ہوا واؤچر بھی منسوخ کریں (پرانے ریکارڈوں میں جڑا واؤچر نہیں ہوتا)
+  if (row?.expense_id) {
+    await supabase
+      .from("expenses")
+      .update({ status: "voided", updated_at: new Date().toISOString() })
+      .eq("id", row.expense_id as string)
+      .eq("madrasa_id", mine.madrasaId)
+      .eq("status", "active");
+  }
+
   await writeAudit(supabase, mine.madrasaId, mine.userId, "welfare_voided", {
     welfare_id: data.id as string,
     record_number: data.record_number as string,
@@ -215,6 +277,8 @@ export async function voidWelfare(
 
   revalidatePath("/departments/welfare");
   revalidatePath(`/departments/welfare/${id}`);
+  revalidatePath("/departments/expenses");
+  revalidatePath("/departments/monthly");
   revalidatePath("/");
   return { ok: true };
 }

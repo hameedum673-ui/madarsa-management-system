@@ -49,6 +49,7 @@ export interface StudentExpense {
   amount: number;
   expense_date: string;
   note: string | null;
+  expense_id: string | null;
   status: StudentExpenseStatus;
   created_by: string | null;
   created_at: string;
