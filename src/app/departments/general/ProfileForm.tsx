@@ -127,6 +127,27 @@ export default function ProfileForm({
             defaultValue={initial.registration_no}
           />
         </label>
+
+        <label className="field">
+          <span className="field-label">
+            {t(lang, "general.form.hijri_offset")}
+          </span>
+          <select
+            className="field-input"
+            name="hijri_offset"
+            defaultValue={String(initial.hijri_offset)}
+          >
+            <option value="-1">
+              {t(lang, "general.hijri_offset.minus1")}
+            </option>
+            <option value="0">
+              {t(lang, "general.hijri_offset.zero")}
+            </option>
+            <option value="1">
+              {t(lang, "general.hijri_offset.plus1")}
+            </option>
+          </select>
+        </label>
       </div>
 
       <label className="field">

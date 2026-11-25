@@ -14,6 +14,7 @@ export interface MadrasaProfile {
   established_year: number | null;
   registration_no: string | null;
   note: string | null;
+  hijri_offset: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,4 +30,5 @@ export interface MadrasaProfileFormValues {
   established_year: string;
   registration_no: string;
   note: string;
+  hijri_offset: number;
 }

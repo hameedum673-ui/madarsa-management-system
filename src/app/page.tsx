@@ -233,6 +233,23 @@ export default async function DashboardPage() {
     }
   })();
 
+  // ہجری تاریخ کی درستگی (migration 066) — نہ چلی ہو تو 0 (حسابی تاریخ)
+  const hijriOffsetP = (async (): Promise<number> => {
+    if (!mine) return 0;
+    try {
+      const { data: profile, error } = await supabase
+        .from("madrasa_profile")
+        .select("hijri_offset")
+        .eq("madrasa_id", mine.madrasaId)
+        .maybeSingle();
+      if (error || !profile) return 0;
+      const v = profile.hijri_offset as number | null;
+      return v === -1 || v === 1 ? v : 0;
+    } catch {
+      return 0;
+    }
+  })();
+
   const myProfileP = (async (): Promise<{
     name: string | null;
     role: string | null;
@@ -371,6 +388,7 @@ export default async function DashboardPage() {
     madrasaName,
     madrasaAddress,
     madrasaLogoUrl,
+    hijriOffset,
     myProfile,
     isOwner,
     backupDates,
@@ -385,6 +403,7 @@ export default async function DashboardPage() {
     madrasaNameP,
     madrasaAddressP,
     madrasaLogoUrlP,
+    hijriOffsetP,
     myProfileP,
     isOwnerP,
     backupP,
@@ -503,6 +522,7 @@ export default async function DashboardPage() {
         madrasaName={madrasaName}
         madrasaAddress={madrasaAddress}
         madrasaLogoUrl={madrasaLogoUrl}
+        hijriOffset={hijriOffset}
         isAdmin={isAdmin || isOwner}
         userName={userName}
         userRole={userRole}

@@ -43,6 +43,7 @@ export default function TopBar({
   madrasaName,
   madrasaAddress,
   madrasaLogoUrl,
+  hijriOffset = 0,
   isAdmin = true,
   userName,
   userRole,
@@ -54,6 +55,7 @@ export default function TopBar({
   madrasaName?: string | null;
   madrasaAddress?: string | null;
   madrasaLogoUrl?: string | null;
+  hijriOffset?: number;
   isAdmin?: boolean;
   userName?: string | null;
   userRole?: string | null;
@@ -86,12 +88,14 @@ export default function TopBar({
         }).format(now),
       );
       setHijri(
-        lang === "ar" ? hijriTodayArabic(now) : hijriTodayUrdu(now),
+        lang === "ar"
+          ? hijriTodayArabic(now, hijriOffset)
+          : hijriTodayUrdu(now, hijriOffset),
       );
     } catch {
       /* تاریخ دستیاب نہ ہو تو جگہ خالی رہتی ہے، جیسے اصل فائل میں تھا */
     }
-  }, [lang]);
+  }, [lang, hijriOffset]);
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {

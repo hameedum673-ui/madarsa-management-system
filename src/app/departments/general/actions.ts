@@ -42,6 +42,11 @@ export async function updateMadrasaProfile(
   const establishedYearRaw = clean(formData.get("established_year"), 4);
   const registrationNo = clean(formData.get("registration_no"), 100);
   const note = clean(formData.get("note"), 500);
+  const hijriOffsetRaw = clean(formData.get("hijri_offset"), 3);
+  const hijriOffset =
+    hijriOffsetRaw === "-1" || hijriOffsetRaw === "1"
+      ? Number(hijriOffsetRaw)
+      : 0;
 
   if (!name) return { error: t(lang, "general.err.name_required") };
   if (phone && !PHONE_RE.test(phone))
@@ -88,6 +93,7 @@ export async function updateMadrasaProfile(
     established_year: establishedYear,
     registration_no: registrationNo || null,
     note: note || null,
+    hijri_offset: hijriOffset,
     updated_at: new Date().toISOString(),
   };
   const { error: profileError } = await supabase

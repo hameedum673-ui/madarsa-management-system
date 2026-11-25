@@ -64,6 +64,10 @@ export default async function GeneralPage() {
         : "",
     registration_no: profile?.registration_no ?? "",
     note: profile?.note ?? "",
+    hijri_offset:
+      profile?.hijri_offset === -1 || profile?.hijri_offset === 1
+        ? profile.hijri_offset
+        : 0,
   };
 
   const lang = await langP;

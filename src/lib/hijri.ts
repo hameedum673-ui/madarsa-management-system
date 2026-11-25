@@ -11,6 +11,8 @@
  * انشانکن: حساب میں ایک دن کا اضافہ کیا گیا ہے تاکہ تاریخ ام القریٰ اور
  * سول اسلامی کیلنڈر کے درمیان آئے — 2025-2027 کے ہفتہ وار نمونے میں یہ
  * دونوں حوالوں سے اکثر بالکل درست اور زیادہ سے زیادہ ایک دن کا فرق رکھتی ہے۔
+ * درستگی (migration 066): مالک عمومی ریکارڈ میں `hijri_offset` (-1/0/1)
+ * بدل سکتا ہے — حساب میں اتنے دن کا فرق لگا دیا جاتا ہے۔
  */
 
 export const HIJRI_MONTHS_UR = [
@@ -67,17 +69,19 @@ function jdToIslamic(jd: number): { day: number; month: number; year: number } {
   return { day, month, year };
 }
 
-/** عیسوی تاریخ (سال، مہینہ، دن) ← ہجری تاریخ (ایک دن کی انشانکن کے ساتھ) */
+/** عیسوی تاریخ (سال، مہینہ، دن) ← ہجری تاریخ (ایک دن کی انشانکن + مالک کی درستگی کے ساتھ) */
 export function gregorianToHijri(
   y: number,
   m: number,
   d: number,
+  offset = 0,
 ): { day: number; month: number; year: number } {
-  return jdToIslamic(gregorianToJD(y, m, d) + 1);
+  const off = offset === -1 || offset === 1 ? offset : 0;
+  return jdToIslamic(gregorianToJD(y, m, d) + 1 + off);
 }
 
 /** دی گئی تاریخ کی پاکستان کے وقت کے مطابق ہجری تاریخ — اردو الفاظ میں */
-export function hijriTodayUrdu(now: Date): string {
+export function hijriTodayUrdu(now: Date, offset = 0): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Karachi",
     year: "numeric",
@@ -86,7 +90,7 @@ export function hijriTodayUrdu(now: Date): string {
   }).formatToParts(now);
   const get = (type: string) =>
     Number(parts.find((p) => p.type === type)?.value ?? 0);
-  const h = gregorianToHijri(get("year"), get("month"), get("day"));
+  const h = gregorianToHijri(get("year"), get("month"), get("day"), offset);
   const num = (n: number) =>
     n.toLocaleString("ur-PK", { useGrouping: false });
   return `${num(h.day)} ${HIJRI_MONTHS_UR[h.month - 1]}، ${num(h.year)}ھ`;
@@ -109,7 +113,7 @@ export const HIJRI_MONTHS_AR = [
 ];
 
 /** دی گئی تاریخ کی پاکستان کے وقت کے مطابق ہجری تاریخ — عربی الفاظ میں */
-export function hijriTodayArabic(now: Date): string {
+export function hijriTodayArabic(now: Date, offset = 0): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Karachi",
     year: "numeric",
@@ -118,7 +122,7 @@ export function hijriTodayArabic(now: Date): string {
   }).formatToParts(now);
   const get = (type: string) =>
     Number(parts.find((p) => p.type === type)?.value ?? 0);
-  const h = gregorianToHijri(get("year"), get("month"), get("day"));
+  const h = gregorianToHijri(get("year"), get("month"), get("day"), offset);
   const num = (n: number) =>
     n.toLocaleString("ar-EG", { useGrouping: false });
   return `${num(h.day)} ${HIJRI_MONTHS_AR[h.month - 1]}، ${num(h.year)}هـ`;
