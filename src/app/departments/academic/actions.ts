@@ -38,7 +38,9 @@ function clean(value: FormDataEntryValue | null, max = 200): string {
 
 function isValidDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const d = new Date(`${value}T00:00:00`);
+  // "Z" لازم — ورنہ سرور کے ٹائم زون میں آدھی رات UTC میں پچھلا دن
+  // بن جاتی ہے اور ہر تاریخ غلط قرار پاتی ہے (پاکستان +05:00)
+  const d = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
 
