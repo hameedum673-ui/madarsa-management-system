@@ -12,6 +12,10 @@
    باقی سب کچھ ویسے ہی نیٹ ورک سے آتا ہے — کوئی کاپی نہیں،
    کوئی محفوظ کرنا نہیں۔ نیٹ ہو تو ہمیشہ تازہ ڈیٹا آتا ہے
    (network-first)؛ نیٹ نہ ہو تو محفوظ کاپی دکھتی ہے۔
+   آدھا نیٹ (وائی فائی لگا، اصل نیٹ نہیں) ہو تو نیٹ کا جواب
+   3 سیکنڈ سے زیادہ نہیں انتظار کیا جاتا — 3 سیکنڈ میں جواب
+   نہ آئے تو محفوظ کاپی فوراً دکھتی ہے، اور نیٹ کا جواب بعد
+   میں آئے تو کاپی پیچھے سے تازہ ہو جاتی ہے۔
    محفوظ کاپی میں صرف وہی ہوتا ہے جو اسی فون کے اسی لاگ ان والے
    صارف نے آن لائن کھولا ہو — دوسرے کا ڈیٹا کبھی نہیں آتا۔
    کوئی نیا پیکج نہیں — ہاتھ سے لکھا چھوٹا worker، جیسا پہلے تھا۔ */
@@ -19,6 +23,8 @@
 const CACHE_VERSION = "jms-offline-v1";
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
+// نیٹ کا جواب اتنی دیر میں نہ آئے تو محفوظ کاپی دکھا دو
+const NETWORK_TIMEOUT_MS = 3000;
 
 /**
  * اس درخواست کی کاپی محفوظ ہو سکتی ہے؟ — تو کیچ کی کنجی دیں، ورنہ null۔
@@ -127,9 +133,11 @@ self.addEventListener("fetch", (event) => {
   if (!key) return; // باقی سب نیٹ ورک سے ہی — کوئی کاپی نہیں
   event.respondWith(
     (async () => {
+      const cache = await caches.open(PAGE_CACHE);
       const cacheKey = new Request(self.location.origin + key);
-      try {
-        const res = await fetch(req);
+      // نیٹ کی ایک ہی کوشش — جواب آئے تو کاپی تازہ کر دو؛
+      // یہ کوشش پیچھے سے چلتی رہتی ہے، چاہے مہلت ختم ہو جائے
+      const network = fetch(req).then(async (res) => {
         // صرف 200 + بغیر رخ موڑے (redirect) والا جواب محفوظ ہو —
         // لاگ آؤٹ پر / لاگ ان پر موڑا ہوا جواب ڈیش بورڈ کی کاپی نہ بنے
         if (
@@ -137,19 +145,37 @@ self.addEventListener("fetch", (event) => {
           res.ok &&
           new URL(res.url).pathname === new URL(req.url).pathname
         ) {
-          const cache = await caches.open(PAGE_CACHE);
           await cache.put(cacheKey, res.clone());
         }
         return res;
+      });
+      network.catch(() => {}); // پیچھے والی کوشش کی ناکامی خاموش رہے
+      try {
+        // نیٹ 3 سیکنڈ میں جواب دے تو وہی لو، ورنہ محفوظ کاپی
+        const res = await Promise.race([
+          network,
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error("network-timeout")),
+              NETWORK_TIMEOUT_MS,
+            ),
+          ),
+        ]);
+        return res;
       } catch (err) {
-        const cache = await caches.open(PAGE_CACHE);
         const cached = await cache.match(cacheKey);
         if (cached) return cached;
-        throw err;
+        // کاپی بھی نہیں — نیٹ کا انتظار کرو: جواب آئے تو وہ، ورنہ ناکامی
+        return network;
       }
     })(),
   );
 });
 
 // صرف جانچ کے لیے — براؤزر میں یہ نام محفوظ رہتا ہے، کوئی فرق نہیں پڑتا
-self.__offlineTest = { offlinePageKey, isStaticAsset, CACHE_VERSION };
+self.__offlineTest = {
+  offlinePageKey,
+  isStaticAsset,
+  CACHE_VERSION,
+  NETWORK_TIMEOUT_MS,
+};
