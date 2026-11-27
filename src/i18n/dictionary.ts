@@ -1919,6 +1919,10 @@ const ur: Dict = {
   "promotion.confirm": "ترقی کی تصدیق کریں",
   "promotion.done": "{n} طالبات کی ترقی ہو گئی۔",
   "promotion.err.save": "ترقی محفوظ نہ ہو سکی — دوبارہ کوشش کریں۔",
+  "offline.title": "آف لائن ہیں",
+  "offline.old_data": "یہ پرانا ڈیٹا ہے — انٹرنیٹ نہیں ہے۔",
+  "offline.saved_at": "آخری بار محفوظ: {date}",
+  "offline.view_only": "صرف دیکھ سکتے ہیں — کچھ محفوظ نہیں ہوگا۔",
 };
 
 const ar: Dict = {
@@ -3793,6 +3797,10 @@ const ar: Dict = {
   "promotion.confirm": "تأكيد الترقية",
   "promotion.done": "تمت ترقية {n} من الطلاب.",
   "promotion.err.save": "تعذّر حفظ الترقية — حاول مرة أخرى.",
+  "offline.title": "أنت غير متصل بالإنترنت",
+  "offline.old_data": "هذه بيانات قديمة — لا يوجد اتصال بالإنترنت.",
+  "offline.saved_at": "آخر حفظ: {date}",
+  "offline.view_only": "يمكنك العرض فقط — لن يتم حفظ أي شيء.",
 };
 
 /** انگریزی اس مرحلے میں خالی ہے — t کی کمی پر اردو دکھے گی۔ */

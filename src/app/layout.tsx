@@ -3,6 +3,7 @@ import { Noto_Naskh_Arabic, Noto_Nastaliq_Urdu } from "next/font/google";
 import "./globals.css";
 import AutoLogout from "@/components/AutoLogout";
 import NavigationLoader from "@/components/NavigationLoader";
+import OfflineBanner from "@/components/OfflineBanner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { getMyLanguage } from "@/lib/language";
 import { getMyTheme } from "@/lib/theme";
@@ -90,6 +91,7 @@ export default async function RootLayout({
       <body>
         <AutoLogout />
         <NavigationLoader />
+        <OfflineBanner lang={lang} />
         <ServiceWorkerRegister />
         <div className="wrap">{children}</div>
       </body>
