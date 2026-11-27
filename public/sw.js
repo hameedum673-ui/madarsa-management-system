@@ -1,8 +1,12 @@
 /* مرحلہ 131 — آف لائن دیکھنا (صرف دیکھنا)۔
-   service worker اب 3 صفحوں + لاگ ان شیل کی کاپی محفوظ کرتا ہے،
-   تاکہ بغیر نیٹ کے بھی وہ دکھ سکیں:
+   service worker اب 3 صفحوں + ان تک جانے والے بیچ والے صفحوں +
+   لاگ ان شیل کی کاپی محفوظ کرتا ہے، تاکہ بغیر نیٹ کے بھی وہ دکھ
+   سکیں اور ڈیش بورڈ سے ان تک جایا جا سکے:
      /  (مین ڈیش بورڈ)
+     /departments/admissions-students  (بیچ والا حب — طلبہ کی طرف)
+     /departments/students-idcards  (بیچ والا حب — طلبہ کی طرف)
      /departments/students  (طلبہ کی فہرست — پہلا صفحہ، بغیر فلٹر)
+     /departments/exams  (امتحانات کی فہرست — پہلا صفحہ، بغیر فلٹر)
      /departments/exams/<id>  (امتحان کی تفصیل / نتیجہ)
      /login  (صرف شیل — سائن ان نیٹ کے بغیر نہیں ہوگا)
    باقی سب کچھ ویسے ہی نیٹ ورک سے آتا ہے — کوئی کاپی نہیں،
@@ -46,7 +50,10 @@ function offlinePageKey(url, isNavigate) {
   const isPage =
     p === "/" ||
     p === "/login" ||
+    p === "/departments/admissions-students" ||
+    p === "/departments/students-idcards" ||
     p === "/departments/students" ||
+    p === "/departments/exams" ||
     /^\/departments\/exams\/[^/]+$/.test(p);
   if (!isPage) return null;
   // دستاویز کی کنجی راستہ؛ RSC کی کنجی راستہ + نشان
