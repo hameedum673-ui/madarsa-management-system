@@ -1,5 +1,5 @@
 /* مرحلہ 131 — آف لائن دیکھنا (صرف دیکھنا)۔
-   service worker اب 3 صفحوں + ان تک جانے والے بیچ والے صفحوں +
+   service worker اب 7 صفحوں + ان تک جانے والے بیچ والے صفحوں +
    لاگ ان شیل کی کاپی محفوظ کرتا ہے، تاکہ بغیر نیٹ کے بھی وہ دکھ
    سکیں اور ڈیش بورڈ سے ان تک جایا جا سکے:
      /  (مین ڈیش بورڈ)
@@ -8,6 +8,10 @@
      /departments/students  (طلبہ کی فہرست — پہلا صفحہ، بغیر فلٹر)
      /departments/exams  (امتحانات کی فہرست — پہلا صفحہ، بغیر فلٹر)
      /departments/exams/<id>  (امتحان کی تفصیل / نتیجہ)
+     /departments/teachers  (اساتذہ کی فہرست — پہلا صفحہ، بغیر فلٹر)
+     /departments/staff  (عملے کی فہرست — پہلا صفحہ، بغیر فلٹر)
+     /departments/income  (آمدنی کا حب — فیس کی طرف)
+     /departments/income/fees  (فیس کی فہرست — پہلا صفحہ، بغیر فلٹر)
      /login  (صرف شیل — سائن ان نیٹ کے بغیر نہیں ہوگا)
    باقی سب کچھ ویسے ہی نیٹ ورک سے آتا ہے — کوئی کاپی نہیں،
    کوئی محفوظ کرنا نہیں۔ نیٹ ہو تو ہمیشہ تازہ ڈیٹا آتا ہے
@@ -26,9 +30,12 @@
    3 سیکنڈ کی مہلت ختم ہوتے ہی وہ آدھی کاپی دکھتی تھی اور صفحہ
    خالی رہتا تھا۔ اب prefetch درخواست کو بالکل نہیں چھوا جاتا
    (نہ کاپی بنتی ہے، نہ کاپی دکھتی ہے) اور کیچ کا ورژن v2 ہے
-   تاکہ پرانی زہریلی کاپیاں مٹ جائیں۔ */
+   تاکہ پرانی زہریلی کاپیاں مٹ جائیں۔
+   مرحلہ 2 (2026-11-28): اساتذہ، عملہ، آمدنی کا حب اور فیس کی
+   فہرست بھی آف لائن — ورژن v3، تاکہ پرانی build کی کاپیاں مٹ
+   جائیں اور سب صفحے نئے سرے سے محفوظ ہوں۔ */
 
-const CACHE_VERSION = "jms-offline-v2";
+const CACHE_VERSION = "jms-offline-v3";
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 // نیٹ کا جواب اتنی دیر میں نہ آئے تو محفوظ کاپی دکھا دو
@@ -68,6 +75,10 @@ function offlinePageKey(url, isNavigate) {
     p === "/departments/students-idcards" ||
     p === "/departments/students" ||
     p === "/departments/exams" ||
+    p === "/departments/teachers" ||
+    p === "/departments/staff" ||
+    p === "/departments/income" ||
+    p === "/departments/income/fees" ||
     /^\/departments\/exams\/[^/]+$/.test(p);
   if (!isPage) return null;
   // دستاویز کی کنجی راستہ؛ RSC کی کنجی راستہ + نشان
