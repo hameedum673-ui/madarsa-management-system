@@ -191,7 +191,7 @@ export default async function FinReportsPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/reports-hub" />
           <h2>{t(lang, "finreports.title")}</h2>
           <span className="page-count">
             {t(lang, "finreports.range", {

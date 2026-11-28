@@ -246,7 +246,7 @@ export default async function YearlyPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/reports-hub" />
           <h2>{t(lang, "yearly.title")}</h2>
           <span className="page-count">{year}</span>
         </div>

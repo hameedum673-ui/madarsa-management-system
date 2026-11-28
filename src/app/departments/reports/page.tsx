@@ -258,7 +258,7 @@ export default async function ReportsPage({
     <div className="module-view open">
       <div className="page-card">
         <div className="page-head">
-          <BackButton />
+          <BackButton href="/departments/reports-hub" />
           <h2>{t(lang, "hub.reports")}</h2>
           <PrintButton lang={lang} />
         </div>
