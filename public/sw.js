@@ -18,9 +18,17 @@
    میں آئے تو کاپی پیچھے سے تازہ ہو جاتی ہے۔
    محفوظ کاپی میں صرف وہی ہوتا ہے جو اسی فون کے اسی لاگ ان والے
    صارف نے آن لائن کھولا ہو — دوسرے کا ڈیٹا کبھی نہیں آتا۔
-   کوئی نیا پیکج نہیں — ہاتھ سے لکھا چھوٹا worker، جیسا پہلے تھا۔ */
+   کوئی نیا پیکج نہیں — ہاتھ سے لکھا چھوٹا worker، جیسا پہلے تھا۔
+   درستی 3 (2026-11-27): پسِ منظر کی پیش لوڈ (prefetch) کاپی سے
+   خالی صفحہ — Next.js لنک دکھتے ہی صفحہ آدھا لوڈ کر لیتا ہے
+   (Next-Router-Prefetch: 1) اور وہ آدھی کاپی اسی کنجی سے محفوظ
+   ہو جاتی تھی جس سے اصلی بٹن دبانے والی RSC آتی ہے؛ سست نیٹ پر
+   3 سیکنڈ کی مہلت ختم ہوتے ہی وہ آدھی کاپی دکھتی تھی اور صفحہ
+   خالی رہتا تھا۔ اب prefetch درخواست کو بالکل نہیں چھوا جاتا
+   (نہ کاپی بنتی ہے، نہ کاپی دکھتی ہے) اور کیچ کا ورژن v2 ہے
+   تاکہ پرانی زہریلی کاپیاں مٹ جائیں۔ */
 
-const CACHE_VERSION = "jms-offline-v1";
+const CACHE_VERSION = "jms-offline-v2";
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 // نیٹ کا جواب اتنی دیر میں نہ آئے تو محفوظ کاپی دکھا دو
@@ -66,6 +74,11 @@ function offlinePageKey(url, isNavigate) {
   return isNavigate ? p : `${p}?rsc`;
 }
 
+/** پسِ منظر کی پیش لوڈ (prefetch) درخواست؟ — اس کی کاپی کبھی نہ بنے۔ */
+function isPrefetchRequest(req) {
+  return req.headers.get("Next-Router-Prefetch") === "1";
+}
+
 /** جامد فائلیں — نام سے پہچانی جاتی ہیں، پرانی نہیں ہوتیں۔ */
 function isStaticAsset(url) {
   let u;
@@ -103,6 +116,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
+
+  // پسِ منظر کی پیش لوڈ — اسے بالکل نہ چھوئیں: یہ نیٹ ورک سے ہی
+  // جائے؛ نہ اس کی کاپی بنے، نہ اسے کاپی دکھائی جائے
+  if (isPrefetchRequest(req)) return;
 
   // جامد فائلیں — پہلے کاپی، پیچھے سے تازہ کریں
   if (isStaticAsset(req.url)) {
@@ -176,6 +193,7 @@ self.addEventListener("fetch", (event) => {
 self.__offlineTest = {
   offlinePageKey,
   isStaticAsset,
+  isPrefetchRequest,
   CACHE_VERSION,
   NETWORK_TIMEOUT_MS,
 };
