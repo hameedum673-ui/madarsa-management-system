@@ -12,6 +12,11 @@
      /departments/staff  (عملے کی فہرست — پہلا صفحہ، بغیر فلٹر)
      /departments/income  (آمدنی کا حب — فیس کی طرف)
      /departments/income/fees  (فیس کی فہرست — پہلا صفحہ، بغیر فلٹر)
+     /departments/reports-hub  (رپورٹس کا حب)
+     /departments/monthly  (ماہانہ حسابات — موجودہ مہینہ)
+     /departments/yearly  (سالانہ حسابات — موجودہ سال)
+     /departments/fin-reports  (مالیاتی رپورٹس — اس مہینے کا اب تک)
+     /departments/reports  (عمومی رپورٹس — سب حصے)
      /login  (صرف شیل — سائن ان نیٹ کے بغیر نہیں ہوگا)
    باقی سب کچھ ویسے ہی نیٹ ورک سے آتا ہے — کوئی کاپی نہیں،
    کوئی محفوظ کرنا نہیں۔ نیٹ ہو تو ہمیشہ تازہ ڈیٹا آتا ہے
@@ -33,9 +38,12 @@
    تاکہ پرانی زہریلی کاپیاں مٹ جائیں۔
    مرحلہ 2 (2026-11-28): اساتذہ، عملہ، آمدنی کا حب اور فیس کی
    فہرست بھی آف لائن — ورژن v3، تاکہ پرانی build کی کاپیاں مٹ
-   جائیں اور سب صفحے نئے سرے سے محفوظ ہوں۔ */
+   جائیں اور سب صفحے نئے سرے سے محفوظ ہوں۔
+   مرحلہ 3 (2026-11-28): رپورٹس کا حب + چاروں رپورٹیں (ماہانہ،
+   سالانہ، مالیاتی، عمومی — صرف پہلا/موجودہ نظارہ) بھی آف لائن —
+   ورژن v4۔ */
 
-const CACHE_VERSION = "jms-offline-v3";
+const CACHE_VERSION = "jms-offline-v4";
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 // نیٹ کا جواب اتنی دیر میں نہ آئے تو محفوظ کاپی دکھا دو
@@ -79,6 +87,11 @@ function offlinePageKey(url, isNavigate) {
     p === "/departments/staff" ||
     p === "/departments/income" ||
     p === "/departments/income/fees" ||
+    p === "/departments/reports-hub" ||
+    p === "/departments/monthly" ||
+    p === "/departments/yearly" ||
+    p === "/departments/fin-reports" ||
+    p === "/departments/reports" ||
     /^\/departments\/exams\/[^/]+$/.test(p);
   if (!isPage) return null;
   // دستاویز کی کنجی راستہ؛ RSC کی کنجی راستہ + نشان
